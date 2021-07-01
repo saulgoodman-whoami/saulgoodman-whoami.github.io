@@ -4,6 +4,33 @@
   
     
     <entry>
+      <title>内网渗透中当 RDP 凭证没勾选保存，如何获取到明文凭证信息？</title>
+      <link href="/2021/07/01/dumping-rdp-credentials/"/>
+      <url>/2021/07/01/dumping-rdp-credentials/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>在内网渗透过程中常常会碰到当前跳板机有 <code>RDP</code> 的连接记录，有些管理员会勾选保存密码，这个时候就可以通过 <code>mimikatz</code> 来获取明文凭证；但有些管理员就不会勾选保存密码，这个时候我们如何获取到 <code>RDP</code> 的连接凭证？</p></blockquote><h2 id="SharpRDPThief"><a href="#SharpRDPThief" class="headerlink" title="SharpRDPThief"></a>SharpRDPThief</h2><p><code>SharpRDPThief</code> 是 <code>RDPThief</code> 的 <code>C#</code> 实现。它使用 <code>EasyHook</code> 将一个 <code>DLL</code> 注入 <code>mstsc.exe</code>，然后它会挂钩 <code>CryptProtectMemory api</code> 调用。<code>hook</code> 将从传递给 <code>CryptProtectMemory</code> 的地址中获取密码，然后通过 <code>EasyHook</code> 的 <code>IPC</code> 服务器将其发送到主进程。<br>目前这只是概念实现的证明，需要 <code>RDPHook.dll</code> 与 <code>SharpRDPThief.exe</code> 位于同一目录中。<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/eidnEI.jpg"><br>此时如果客户端使用了 <code>mstsc</code> 并输入了 <code>user</code>、<code>pass</code> ：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Z28H8Q.jpg"><br><code>SharpRDPThief</code>  就会把 <code>RDPhook.dll</code> 注入到 <code>mstsc</code> 进程从而获取到 <code>user</code>、<code>pass</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/ndCgdb.jpg"></p><h2 id="RdpThief"><a href="#RdpThief" class="headerlink" title="RdpThief"></a>RdpThief</h2><p><code>RdpThief</code> 本身是一个独立的 <code>DLL</code>，当它被注入到 <code>mstsc.exe</code> 进程中时，将执行 <code>API</code> 挂钩，提取明文凭据并将它们保存到文件中。<br>当在 <code>Cobalt Strike</code> 上加载 a<code>ggressor</code> 脚本时，三个新命令将可用：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rdpthief_enable – 启用新 mstsc.exe 进程的心跳检查并注入它们。</span><br><span class="line">rdpthief_disable – 禁用新 mstsc.exe 的心跳检查，但不会卸载已加载的 DLL。</span><br><span class="line">rdpthief_dump – 打印提取的凭据（如果有就会打印出来）</span><br></pre></td></tr></table></figure><p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/1eGILs.jpg"><br>可能是我 <code>CS</code> 版本问题，把 <code>rdpthief_dump</code> 的结果复制到文本就能看到 <code>ip</code>、<code>user</code>、<code>pass</code> 了：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/mcIEbw.jpg"><br>它实际把凭据保存到了 <code>%temp%\data.bin</code> 文件里：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/cFDiFO.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/7SrA0T.jpg"></p><h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a href="https://www.mdsec.co.uk/2019/11/rdpthief-extracting-clear-text-credentials-from-remote-desktop-clients/">https://www.mdsec.co.uk/2019/11/rdpthief-extracting-clear-text-credentials-from-remote-desktop-clients/</a><br><a href="https://github.com/0x09AL/RdpThief">https://github.com/0x09AL/RdpThief</a><br><a href="https://github.com/passthehashbrowns/SharpRDPThief">https://github.com/passthehashbrowns/SharpRDPThief</a></p><h2 id="公众号"><a href="#公众号" class="headerlink" title="公众号"></a>公众号</h2><p><strong>若有好的建议和合作可以通过公众号与我联系！</strong><br>微信公众号：<code>渗透攻击红队</code><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/logo/vxgzh.jpeg"></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> RedTeam </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 内网渗透 </tag>
+            
+            <tag> 红队技术 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Shellcode 隐写到像素 RGB 免杀上线到 CobaltStrike、Metasploit</title>
       <link href="/2021/06/27/bypass-image-rgb/"/>
       <url>/2021/06/27/bypass-image-rgb/</url>
