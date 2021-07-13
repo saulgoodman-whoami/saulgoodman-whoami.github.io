@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-DC_2-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-DC_2-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 23, 2020&nbsp;&nbsp;14:41:35</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=31062986&auto=1&height=66"></iframe>
+
+<h2 id="靶机简介"><a href="#靶机简介" class="headerlink" title="靶机简介"></a>靶机简介</h2><p>Much like DC-1, DC-2 is another purposely built vulnerable lab for the purpose of gaining experience in the world of penetration testing.<br>As with the original DC-1, it’s designed with beginners in mind.<br>Linux skills and familiarity with the Linux command line are a must, as is some experience with basic penetration testing tools.<br>Just like with DC-1, there are five flags including the final flag.<br>And again, just like with DC-1, the flags are important for beginners, but not so important for those who have experience.<br>In short, the only flag that really counts, is the final flag.<br>For beginners, Google is your friend. Well, apart from all the privacy concerns etc etc.<br>I haven’t explored all the ways to achieve root, as I scrapped the previous version I had been working on, and started completely fresh apart from the base OS install.<br>靶机地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/dc-2,311/">https://www.vulnhub.com/entry/dc-2,311/</a><br>这个靶机和<code>DC-1</code>是一个系列的，总共有<code>5</code>个Flag，最后一个Flag是在 <code>root</code> 目录下！</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机 <code>IP</code> 后对它一顿梭哈：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -p- -T4 192.168.1.143</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1146.png" alt="图片"></p>
+<p>扫描出来后发现它开放了 <code>80</code>（http）和 <code>7744</code>（ssh）服务，我们先从 <code>80</code> 开始，先对它进行目录扫描看看它有那些目录文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.1.143</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1147.png" alt="图片"></p>
+<h2 id="Flag1"><a href="#Flag1" class="headerlink" title="Flag1"></a>Flag1</h2><p>访问 <code>http://192.168.1.143</code>  发现它重定向到了这个 URL：<code>http://dc-2/</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1148.png" alt="图片"></p>
+<p>这个时候我们设置一下 <code>hosts</code> 就可以了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/hosts</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1149.png" alt="图片"></p>
+<p>设置好后再重新访问 <code>web</code> 就是正常的页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1150.png" alt="图片"></p>
+<p>从页面上来看网站使用的 <code>CMS</code> 是 <code>Wordpress</code>，这个时候我在页面上找到了第一个 <code>Flag</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Flag 1:</span><br><span class="line"></span><br><span class="line">Your usual wordlists probably won’t work, so instead, maybe you just need to be cewl.</span><br><span class="line"></span><br><span class="line">More passwords is always better, but sometimes you just can’t win them all.</span><br><span class="line"></span><br><span class="line">Log <span class="keyword">in</span> as one to see the next flag.</span><br><span class="line"></span><br><span class="line">If you can’t find it, <span class="built_in">log</span> <span class="keyword">in</span> as another.</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1151.png" alt="图片"></p>
+<p>翻译过来的意思就是让我们用 <code>cewl</code> 来生成一个字典，字典越大越好，然后用一个身份登陆进网站后台我们会得到下一个提示！</p>
+<h2 id="Flag2"><a href="#Flag2" class="headerlink" title="Flag2"></a>Flag2</h2><p>既然提示是让我们登陆一个用户到后台，那么我就先来探测一下网站的用户有哪些：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wpscan --url http://dc-2 -e u</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1152.png" alt="图片"></p>
+<p>由上图可知，<code>wpscan</code> 探测出来用户由三个：<code>admin</code>、<code>jerry</code>、<code>tom</code>！</p>
+<p>随后我用第一个<code>Flag</code>的提示，用 KALI 自带的 <code>cewl</code> 来对网站页面进行搜集来生成一个字典：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cewl http://dc-2 -w pass</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1153.png" alt="图片"></p>
+<p>然后我吧刚刚 <code>wpscan</code> 探测出来的用户名保存到 user 文件里：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1154.png" alt="图片"></p>
+<p>一切就绪之后用 <code>wpscan</code> 来对用户进行爆破枚举：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wpscan --url http://dc-2 -U user -P pass</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1155.png" alt="图片"></p>
+<p>爆破枚举后得到了他们的密码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Username: jerry, Password: adipiscing</span><br><span class="line">Username: tom, Password: parturient</span><br></pre></td></tr></table></figure>
+
+<p>随后用得到的用户密码登陆到后台获取到了<code>Flag2</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Flag 2:</span><br><span class="line"></span><br><span class="line">If you can&#x27;t exploit WordPress and take a shortcut, there is another way.</span><br><span class="line"></span><br><span class="line">Hope you found another entry point.</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1156.png" alt="图片"></p>
+<p>翻译过来的意思是：我们不能以 <code>Wordpress</code> 作为捷径，你需要找到另一种方法！</p>
+<h2 id="Flag3"><a href="#Flag3" class="headerlink" title="Flag3"></a>Flag3</h2><p>我这人偏偏不信邪！我在后台尝试看看能不能获取到一枚 <code>webshell</code>，但是，但是我失败了！</p>
+<p>好吧，我刘某人听你一次！！！</p>
+<p>既然它提示不能从 <code>Web</code> 下手，那么它只开放了一个 <code>7744</code>（ssh）服务，估计就是想让我们登陆到它到 <code>ssh</code>！恰好我们刚才枚举出来了两个用户密码，随后我尝试用得到到账号和密码来登陆 <code>ssh</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh tom@192.168.1.143 -p 7744</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1157.png" alt="图片"></p>
+<p>成功登陆到 <code>tom</code> 用户！登陆之后我发现我执行不了一些命令：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1158.png" alt="图片"></p>
+<p>这个时候因为我们的shell是<code>rbash</code>，所以 <code>shell</code> 被限制了！随后我看了看当前的环境变量：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1159.png" alt="图片"></p>
+<p>查看了环境变量，发现被写到了 <code>/home/tom/usr/bin</code> 下面！由于我们的 <code>shell</code> 被限制了，所以导致我们不能执行一些命令！</p>
+<p>我先是 <code>vi</code> 来转义一下受限制的 <code>shell</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vi</span><br><span class="line">:<span class="built_in">set</span> shell=/bin/bash</span><br><span class="line">:shell</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1160.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1161.png" alt="图片"></p>
+<p>然后再设置一下环境变量：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/bin:/usr/bin:<span class="variable">$PATH</span></span><br><span class="line"><span class="built_in">export</span> SHELL=/bin/bash:<span class="variable">$SHELL</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1162.png" alt="图片"></p>
+<p>这个时候就能执行命令了！然后查看了一下 <code>flag3.txt</code> 文件找到了新的线索：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Poor old Tom is always running after Jerry. Perhaps he should su for all the stress he causes.</span><br></pre></td></tr></table></figure>
+
+<p>翻译过来的意思就是：可怜的老汤姆总是在追求杰瑞。也许他应该为他所造成的压力而道歉。</p>
+<h2 id="Flag4"><a href="#Flag4" class="headerlink" title="Flag4"></a>Flag4</h2><p>随后我切换用户到 <code>jerry</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">su jerry</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1163.png" alt="图片"></p>
+<p>登陆到 <code>jerry</code> 用户之后，拿到了 <code>Flag4</code> ！随后又得到了一个提示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Good to see that you<span class="string">&#x27;ve made it this far - but you&#x27;</span>re not home yet. </span><br><span class="line"></span><br><span class="line">You still need to get the final flag (the only flag that really counts!!!).  </span><br><span class="line"></span><br><span class="line">No hints here - you<span class="string">&#x27;re on your own now.  :-)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">Go on - git outta here!!!!</span></span><br></pre></td></tr></table></figure>
+
+<p>翻译过来到意思大概就是恭喜我们走到这一步，最后一步就是拿到 <code>root</code> 权限到意思！</p>
+<h2 id="Flag5"><a href="#Flag5" class="headerlink" title="Flag5"></a>Flag5</h2><p>只剩下随后一个 <code>flag</code> 了，我们只需要提升权限为 <code>root</code> 就可以了。</p>
+<p>我习惯性的 <code>sudo -l</code> 发现 <code>jerry</code> 可以以 <code>root</code> 身份去执行 <code>git</code> 命令：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1164.png" alt="图片"></p>
+<p>那么很简单了，我找到了几个 <code>poc</code> ：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1165.png" alt="图片"></p>
+<p>随便使用了一个成功提权为 <code>root</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1166.png" alt="图片"></p>
+<p>最后也是在 <code>/root</code> 目录下拿到了 <code>Flag</code>！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/23/Vulnhub-DC-2/">http://example.com/2020/02/23/Vulnhub-DC-2/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/02/25/Vulnhub-Mr-Robot-1/">VulnHub通关日记-Mr-Robot-1-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/02/18/Red-Teaming-CFS/">CFS靶机实战演练-从外网杀进三层内网，横向渗透拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

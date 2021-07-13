@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>用户密码重置找回10种常见姿势 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">用户密码重置找回10种常见姿势</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">May 28, 2019&nbsp;&nbsp;22:29:54</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/21.jpg" alt="图片"></p>
+<p>本篇文章来源<a target="_blank" rel="noopener" href="https://www.sqlsec.com/2017/10/resetpass.html" title="国光">国光</a>记的笔记，原型是大神<code>carry_your</code>讲师(360补天排名第一)的<code>任意用户密码重置的10种常见姿势</code>总结的笔记。</p>
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1297389899&auto=1&height=66"></iframe>
+
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>本次文章主要针对挖掘逻辑漏洞中的任意用户密码重置方法和原理从10种常见情况进行了讲述，并结合漏洞挖掘中的真实案例场景与数据包演示了重置密码漏洞的检测方法，让大家对这一类逻辑漏洞有从浅入深，逐步深奥的见解。</p>
+<h2 id="验证码不失效"><a href="#验证码不失效" class="headerlink" title="验证码不失效"></a>验证码不失效</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/22.png" alt="图片"></p>
+<h2 id="造成原因"><a href="#造成原因" class="headerlink" title="造成原因"></a>造成原因</h2><p>找回密码的时候获取的验证码缺少时间限制仅值判断了验证码是够正确未判断验证码是否过期</p>
+<h2 id="测试方法"><a href="#测试方法" class="headerlink" title="测试方法"></a>测试方法</h2><p>通过<code>枚举</code>找到真正的验证码输入验证码完成验证</p>
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p>输入目标手机号，获取验证码随意输入验证码<code>1234</code>点击下一步，拦截数据包:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/23.png" alt="图片"></p>
+<p>数据包</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">POST /Account/CheckYQCode HTTP/1.1</span><br><span class="line">Host: www.xxxx.cn</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0</span><br><span class="line">Accept: */*Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Content-Type: application/x-www-form-urlencoded; charset=UTF-8</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Referer:</span><br><span class="line">http://www.xxxx.cn/userCenter/toForgetPsdPage.html?mobile=</span><br><span class="line">Content-Length: 11</span><br><span class="line">Cookie: ASP.NET_SessionId=30jfruwn22h2xng3ahhzo2jxConnection: close</span><br><span class="line"></span><br><span class="line">YQCode=1234</span><br></pre></td></tr></table></figure>
+
+<p>这种验证码<code>不失效</code>而且验证码是<code>4</code>位数的情况下,直接爆破 看包的返回长度或者内容来找到正确的验证码。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/24.png" alt="图片"></p>
+<p>得到正确的验证码是<code>1059</code>然后到网站上输入验证码跳转到输入新密码的页面完成<code>重置密码</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/25.png" alt="图片"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这种验证码不失效的情况现在已经是非常少见的了，而且验证码的位数也很少有简单的<code>4</code>位验证码了。现在绝大多数是这样的：<code>6</code>位数的验证码而且15分钟内有效，这样子的话爆破的可能性就非常的低了。</p>
+<h2 id="验证码直接返回"><a href="#验证码直接返回" class="headerlink" title="验证码直接返回"></a>验证码直接返回</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/26.png" alt="图片"></p>
+<h2 id="造成原因-1"><a href="#造成原因-1" class="headerlink" title="造成原因"></a>造成原因</h2><p>输入手机号后点击获取验证码，验证码在<code>客户端</code>生成，并直接返回在<code>Response</code>以方便对接下来的验证码进行比对。</p>
+<h2 id="测试方法-1"><a href="#测试方法-1" class="headerlink" title="测试方法"></a>测试方法</h2><p>直接输入目标手机号，点击获取验证码，并观察返回包即可。在返回包中得到目标手机号获取的验证码，进而完成验证，重置密码成功。</p>
+<h2 id="案例-1"><a href="#案例-1" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/27.png" alt="图片"></p>
+<h2 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h2><p>这种情况上次狗哥也拿出来了这样一个类似的案例，记得他那个情况是在找回密码返回包中，直接返回了旧密码的<code>md5</code>值，然后修改返回包可以直接重置管理员的密码。</p>
+<h2 id="验证码未绑定用户"><a href="#验证码未绑定用户" class="headerlink" title="验证码未绑定用户"></a>验证码未绑定用户</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/28.png" alt="图片"></p>
+<h2 id="造成原因-2"><a href="#造成原因-2" class="headerlink" title="造成原因"></a>造成原因</h2><p>输入手机号和验证码进行重置密码的时候，仅对验证码是够正确进行了判断，未对该验证码是否与手机号匹配做验证。</p>
+<h2 id="测试方法-2"><a href="#测试方法-2" class="headerlink" title="测试方法"></a>测试方法</h2><p>在提交手机号和验证码的时候，替换手机号为他人手机号进行测试，成功通过验证并重置他人密码。</p>
+<h2 id="案例一"><a href="#案例一" class="headerlink" title="案例一"></a>案例一</h2><p>首先使用自己的手机号接收验证码</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/29.png" alt="图片"></p>
+<p>然后输入自己的手机号接收到的验证码，点击下一步并拦截数据包。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/30.png" alt="图片"></p>
+<p>最后替换数据包里的目标手机号，然后发包<code>数据包</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">POST /tofindPasswordByPhone3.do HTTP/1.1</span><br><span class="line">Host: www.xxxx.com</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Referer: http://www.xxxx.com/tofindPasswordByPhone2.do?mobile=131234xxxxx&amp;captcha=qkan&amp;checkbox=on</span><br><span class="line">Cookie: JSESSIONID=D4DB3147DBF941799B9CA74E4364F2F9; CNZZDATA1257851838=1754906772-1467355802-%7C1467355802; Hm_lvt_203f11422b4fcc8e2be8c54b036c5ff9=1467357432; Hm_lpvt_203f11422b4fcc8e2be8c54b036c5ff9=1467357978; smsRand=&quot;d9[x]1gSjADrs[d]&quot;; td_cookie=699947232;</span><br><span class="line">Connection: close</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Content-Length: 33</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>mobile</code>的值改为我们想要重置的用户手机号点击下一步，跳转到设置密码的页面输入新密码，提交就成功重置了<code>13888888888</code>的密码。</p>
+<h2 id="案例二"><a href="#案例二" class="headerlink" title="案例二"></a>案例二</h2><p>这个案例是验证码未绑定用户延伸一下，有时候测试会遇到这种，我们发现用户名被加密了，有无法得到具体的加密算法，怎么办？</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/31.png" alt="图片"></p>
+<p>其实大部分这种情况我们都不需要知道加密算法，比如这里例子，得到<code>liuyy</code>的加密后的值是<code>80e688602c4b11e66320c421e3b71ef2</code>，那么我们就可以直接利用这个<code>keyCode</code>参数了。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/32.png" alt="图片"></p>
+<p>步骤是一样的，输入我们的用户名和收到的验证码，然后把我们的<code>keycode</code>替换为<code>liuyy</code>的那个<code>keycode</code>，这样就可以重置liuyy的密码了。(漏洞原因还是是判断了验证码是否正确，而没有判断该验证码是否跟该用户匹配。)</p>
+<h2 id="总结-2"><a href="#总结-2" class="headerlink" title="总结"></a>总结</h2><p>这种情况没有遇到过，学习了，以后在找回密码的时候会这么测试的。现在看来对于白帽子来说有2个手机号是多么的方便了。<br>案例二中如何获取到其他用户的<code>keyCode</code>呢？这里的话正常走一遍找回密码的流程，然后抓包就会在数据包中找到加密后的<code>keyCode</code>了，这样就可以重置任意用户的密码了。</p>
+<h2 id="修改接受验证码的手机或邮箱"><a href="#修改接受验证码的手机或邮箱" class="headerlink" title="修改接受验证码的手机或邮箱"></a>修改接受验证码的手机或邮箱</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/33.png" alt="图片"></p>
+<h2 id="造成原因-3"><a href="#造成原因-3" class="headerlink" title="造成原因"></a>造成原因</h2><p>用户名、手机号、验证码三者没有统一进行验证，仅判断了三者中的手机号和验证是否匹配和正确，如果正确则判断成功并进入下一流程。</p>
+<p>测试方法<br>输入用户名获取验证码，修改接收验证码的手机号为自己的号码，自己手机成功接收验证码，提交到网站进行验证，验证成功并进入下一流程。</p>
+<h2 id="案例-2"><a href="#案例-2" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/34.png" alt="图片"></p>
+<p>点击找回密码，首先我们输入<code>zhangwei</code>，然后点击获取验证码，这个时候把<code>手机号</code>改为我们自己的号码，(一般情况下这里是在数据包中进行修改的)，然后输入我们<code>自己</code>的号码和验证码，成功跳到重置密码的页面，密码重置成功。</p>
+<h2 id="总结-3"><a href="#总结-3" class="headerlink" title="总结"></a>总结</h2><p><code>carry_your</code>大神说这种情况下还是比较常见的，这里不是很能理解，为什么程序员开发的时候不做用户名和手机号的匹配呢？我平时测试的时候，很少遇到这种不做用户名和手机号匹配的情况 ⊙﹏⊙|||</p>
+<h2 id="本地验证绕过"><a href="#本地验证绕过" class="headerlink" title="本地验证绕过"></a>本地验证绕过</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/35.png" alt="图片"></p>
+<h2 id="造成原因-4"><a href="#造成原因-4" class="headerlink" title="造成原因"></a>造成原因</h2><p>客户端在<code>本地进行</code>验证码是否正确的<code>判断</code>，而该<code>判断结果</code>也可以在本地修改，最终导致<code>欺骗客户端</code>，误以为我们已经输入了正确的验证码。</p>
+<h2 id="测试方法-3"><a href="#测试方法-3" class="headerlink" title="测试方法"></a>测试方法</h2><p>重置目标用户，输入错误验证码，修改返回包，把错误改为正确，即可绕过验证步骤，最终重置用户密码。</p>
+<h2 id="案例-3"><a href="#案例-3" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/36.png" alt="图片"></p>
+<p>输入手机号<code>13888888888</code>，输入验证码<code>123456</code>，验证码错误的时候，返回包返回的是<code>0</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/37.png" alt="图片"></p>
+<p>这里我们所做的就是把<code>0</code>修改为<code>1</code>，可以借工具修改返回包，我们把<code>0</code>改为<code>1</code>，然后查看页面，成功跳转到修改密码的页面，输入新密码即可修改用户<code>13888888888</code>的密码</p>
+<h2 id="总结-4"><a href="#总结-4" class="headerlink" title="总结"></a>总结</h2><p><code>who_jeff</code>大神曾经分享给过这样一个类似的案例，当时他是在一个安卓<code>app</code>上进行抓包测试的，当时就直接修改返回包 来欺骗本地的<code>app</code>客户端的，成功重置任意用户的密码。</p>
+<h2 id="跳过验证步骤"><a href="#跳过验证步骤" class="headerlink" title="跳过验证步骤"></a>跳过验证步骤</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/38.png" alt="图片"></p>
+<p>##造成原因</p>
+<p>对修改密码的步骤，没有做校验，导致可以直接输入最终修改密码的网址，直接跳转到该页面，然后输入新密码达到重置密码的目的。</p>
+<h2 id="测试方法-4"><a href="#测试方法-4" class="headerlink" title="测试方法"></a>测试方法</h2><p>首先使用<code>自己</code>的账号<code>走一次流程</code>，<code>获取</code>每个步骤的页面<code>链接</code>，然后记录页面<code>3</code>对应的输入新密码的链接，重置他人用户时，获取验证码后，直接输入页面<code>3</code>链接到新密码的界面，输入密码重置成功。</p>
+<h2 id="案例-4"><a href="#案例-4" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/39.png" alt="图片"></p>
+<p>首先我们走一下所有的步骤，页面1、页面2、页面3，然后记录下页面3的链接</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/40.png" alt="图片"></p>
+<p>然后尝试重置他人的用户。(ps:页面<code>3</code>是在我们的邮箱里接收到的链接)<br>是某集团系统，所以用户<code>wangshuai</code>，邮箱对应<code>wangshuai@xxx.com.cn</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/41.png" alt="图片"></p>
+<p>使用账户<code>wangshuai</code>，点击获取验证码，然后补齐下面的链接<code>https://xxx/page/login/veifyAccess.html?username=wangshuai&amp;email=wangshuai@xxx.com.cn</code>，访问后即可<code>直接重置</code>该用户的密码</p>
+<h2 id="总结-5"><a href="#总结-5" class="headerlink" title="总结"></a>总结</h2><p>这个漏洞不用按照正常的流程来走，这里的话直接补齐设置新密码的链接，然后利用这里链接可以直接重置任意用户的密码。</p>
+<h2 id="未校验用户字段的值"><a href="#未校验用户字段的值" class="headerlink" title="未校验用户字段的值"></a>未校验用户字段的值</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/42.png" alt="图片"></p>
+<h2 id="造成原因-5"><a href="#造成原因-5" class="headerlink" title="造成原因"></a>造成原因</h2><p>在整个重置密码的流程中，只对<code>验证码</code>和<code>手机号</code>做了校验，<code>未对</code>后面<code>设置新密码</code>的用户身份做<code>判断</code>，导致在<code>最后一步</code>通过修改用户身份来<code>重置他人</code>的密码。</p>
+<h2 id="测试方法-5"><a href="#测试方法-5" class="headerlink" title="测试方法"></a>测试方法</h2><p>使用<code>自己</code>的手机号<code>走流程</code>，在走到<code>最后一个</code>设置密码的<code>流程</code>时，<code>修改数据包</code>里的用户信息。</p>
+<h2 id="案例-5"><a href="#案例-5" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/43.png" alt="图片"></p>
+<p>使用自己的手机号走流程，最后一步的数据包:</p>
+<p>数据包</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">POST /yw_xxx/regist/saveNewPwd.action HTTP/1.1</span><br><span class="line">Host: www.xxx.com</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Referer: http://www.xxx.com/yw_xxx/regist/toSetPwd.action</span><br><span class="line">Cookie: td_cookie=2080441838; JSESSIONID=530DD2516536F63131A1C098089CF2FB; JSESSIONID=5F3E182FAE378C1E799342C059F923B9Connection: close</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Content-Length: 57</span><br><span class="line"></span><br><span class="line">upassword=qwer1111&amp;upassword1=qwer1111&amp;mphone=131234xxxxx</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到密码找回成功</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/44.png" alt="图片"></p>
+<p>而且参数中只有<code>密码</code>和<code>用户名</code>，<code>cookie</code>值无效，只需要修改指定用户名的值，就可以重置他人的用户密码。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/45.png" alt="图片"></p>
+<p>修改用户为<code>13888888888</code>，在发送数据包，我们就成功的把<code>138</code>的密码修改为<code>qwer111</code></p>
+<h2 id="总结-6"><a href="#总结-6" class="headerlink" title="总结"></a>总结</h2><p>这里的话关键是在最后一步重置密码的时候替换目标手机号，这种其实也是比较暴力的，拿到这个链接的话 可以无条件批量重置任意用户的密码，这里面利用<code>burp</code>可以批量枚举手机号码的<code>mphone</code>参数。</p>
+<h2 id="修改密码处id可替换"><a href="#修改密码处id可替换" class="headerlink" title="修改密码处id可替换"></a>修改密码处id可替换</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/46.png" alt="图片"></p>
+<h2 id="造成原因-6"><a href="#造成原因-6" class="headerlink" title="造成原因"></a>造成原因</h2><p>修改密码的时候，没有对<code>原密码</code>进行判断，且根据<code>id</code>的值来修改用户的密码，类似的<code>SQL</code>语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update user set  password=&quot;qwer1234&quot; where id = ‘1’</span><br></pre></td></tr></table></figure>
+
+<p>修改数据包里的id的值，即可修改他人密码。</p>
+<h2 id="测试方法-6"><a href="#测试方法-6" class="headerlink" title="测试方法"></a>测试方法</h2><p>修改自己用户密码，抓取数据包，替换数据包中用户对应的<code>id</code>值，即可修改他人的密码。</p>
+<h2 id="案例-6"><a href="#案例-6" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/47.png" alt="图片"></p>
+<p>点击<code>立即提交</code>，得到右边的数据包，测试发现修改id为<code>5</code>，就可以把对应的用户密码修改为<code>123456</code>，没有对用户的原始密码判断，也没有判断<code>id</code>是否属于该用户。</p>
+<p>数据包:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">POST /Index/user/userinfo.html HTTP/1.1</span><br><span class="line">Host: 192.168.8.31:8088Content-Length: 63Cache-Control: max-age=0</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</span><br><span class="line">Origin: http://192.168.8.31:8088</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 UBrowser/6.1.2107.202 Safari/537.36</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Referer: http://192.168.8.31:8088/Index/user/userinfo.html</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.8</span><br><span class="line">Cookie: PHPSESSID=28af1649bcbcb0e0dd83afa017691a03; __sticket=hKdyp310daeBfKWqgnimZoB2zrKwespkfaaVm4KKpN-Fp3tokWJ-YJeQqWOXe9mpf5-br8dox6SUlX_Rgn2t05GVpZ6Jqoaqg3zMoY-rnnM.6.a.</span><br><span class="line"></span><br><span class="line">id=6&amp;user_name=kefu1&amp;password=123456&amp;name=kefu123&amp;email=&amp;phone=</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>id</code>和<code>kefu1</code>的所在参数<code>user_name</code>并没有去判断是否为用一个用户，这里修改<code>id</code>是可以任意修改其他用户的密码的。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/48.png" alt="图片"></p>
+<p>这里在不修改<code>user_name</code>的情况下，只修改<code>id</code>值就<code>成功重置</code>了用户的密码。</p>
+<h2 id="总结-7"><a href="#总结-7" class="headerlink" title="总结"></a>总结</h2><p>这种也比较暴力流氓，可以通过枚举<code>id</code>的值 ，来大批量重置任意用户密码的漏洞，因为不需要用户名了，只需要知道<code>id</code>值即可，危害比较大。</p>
+<h2 id="cookie值的替换"><a href="#cookie值的替换" class="headerlink" title="cookie值的替换"></a>cookie值的替换</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/49.png" alt="图片"></p>
+<h2 id="造成原因-7"><a href="#造成原因-7" class="headerlink" title="造成原因"></a>造成原因</h2><p>重置密码走到最后一步的时候仅判断唯一的用户标识<code>cookie</code>是否存在，并没有判断该<code>cookie</code>有没有通过之前重置密码过程的验证，导致可替换<code>cookie</code>重置他人用户密码。(<code>cookie</code>可指定用户获取。)</p>
+<h2 id="测试方法-7"><a href="#测试方法-7" class="headerlink" title="测试方法"></a>测试方法</h2><p>重置自己用户密码到达最后阶段，抓到数据包，并在<code>第一阶段</code>重新获取目标用户<code>cookie</code>，替换<code>cookie</code>到我们抓取的数据包中，发包测试。</p>
+<h2 id="案例-7"><a href="#案例-7" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/50.png" alt="图片"></p>
+<p>首先我们重置自己的用户<code>wang111</code>的密码到最后一步，成功重置密码，抓到如下数据包。</p>
+<p>数据包:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">POST /ppc/valid/resetPassword.do HTTP/1.1</span><br><span class="line">Host: www.xxx.com</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0</span><br><span class="line">Accept: application/json, text/javascript, */*; q=0.01</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Content-Type: application/x-www-form-urlencoded; charset=UTF-8</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Referer: http://www.xxx.com/ppc/valid/showResetPassword.do</span><br><span class="line">Content-Length: 37</span><br><span class="line">Cookie: JSESSIONID=E1AC27A7302C03C9432DE2254B99311A</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">password=qwer1111&amp;rePassword=qwer1111</span><br></pre></td></tr></table></figure>
+
+<p>这里的数据包中并没有出现用用户的参数信息，所以这里面的话，可以判断这里应该是用<code>cookie</code>作为身份的判断的。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/51.png" alt="图片"></p>
+<p>到第一步去获取验证码的时候，点击下一页，可以获取到该用户<code>wangshuai</code>对应的内容</p>
+<p><code>Cookie: JSESSIONID=E1AC27A7302C03C9432DE2254B99311A</code></p>
+<p>拿到这个<code>cookie</code>就意味着可以利用这个身份判断标识去重置这个用户的密码了。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/52.png" alt="图片"></p>
+<p>替换得到的cookie值，即把cookie对应的用户wangshuai的密码修改为qwer1234</p>
+<h2 id="总结-8"><a href="#总结-8" class="headerlink" title="总结"></a>总结</h2><p>关键点:<code>cookie</code>可指定用户获取,尝试用他人账号来找回密码的时候，抓取数据包，可以从中提取出<code>cookie</code>值，然后就可以利用这个<code>cookie</code>值，就可以重置指定用户的密码了。</p>
+<h2 id="修改信息时替换字段值"><a href="#修改信息时替换字段值" class="headerlink" title="修改信息时替换字段值"></a>修改信息时替换字段值</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/53.png" alt="图片"></p>
+<h2 id="造成原因-8"><a href="#造成原因-8" class="headerlink" title="造成原因"></a>造成原因</h2><p>在执行修改信息的<code>sql</code>语句的时候，用户的密码也当作字段执行了，而且是根据<code>隐藏</code>参数<code>loginid</code>来执行的，这样就导致<code>修改隐藏</code>参数<code>loginid</code>的值，就可以修改他人的用户密码。</p>
+<h2 id="测试方法-8"><a href="#测试方法-8" class="headerlink" title="测试方法"></a>测试方法</h2><p>修改个人资料的时候，抓取数据包，然后来修改数据包的参数和对应的值，参数名一般可以在<code>其他地方</code>找到，<code>替换</code>隐藏<code>参数</code>即可修改他人的密码等信息。</p>
+<h2 id="案例-8"><a href="#案例-8" class="headerlink" title="案例"></a>案例</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/54.png" alt="图片"></p>
+<p>点击<code>保存信息</code>抓取数据包</p>
+<p>数据包:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">POST /xxxxx/employee_updateEmployeeInf.action HTTP/1.1</span><br><span class="line">Host: www.xxxxx.com</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Referer: https://www.xxxxx.com/xxxxx/employee_forUpdate.action</span><br><span class="line">Cookie: JSESSIONID=A115648DB5F49215078E583ABB6A665A; FLGSID=FLGSRV1; loginUrl=&quot;&quot;Connection: close</span><br><span class="line">Content-Type: multipart/form-data;boundary=---------------------------222991508618208</span><br><span class="line">Content-Length: 709</span><br><span class="line">-----------------------------222991508618208</span><br><span class="line">Content-Disposition: form-data; name=&quot;mobileNo&quot;</span><br><span class="line">177XXXXXXXX</span><br><span class="line">-----------------------------222991508618208</span><br><span class="line">Content-Disposition: form-data; name=&quot;departId&quot;</span><br><span class="line">49</span><br><span class="line">-----------------------------222991508618208</span><br><span class="line">Content-Disposition: form-data; name=&quot;minority&quot;</span><br><span class="line">-----------------------------222991508618208</span><br><span class="line">Content-Disposition: form-data; name=&quot;sex&quot;</span><br><span class="line">1</span><br><span class="line">-----------------------------222991508618208</span><br><span class="line">Content-Disposition: form-data; name=&quot;birthday&quot;</span><br><span class="line">19920829</span><br><span class="line">-----------------------------222991508618208</span><br><span class="line">Content-Disposition: form-data; name=&quot;photo&quot;; filename=&quot;&quot;</span><br><span class="line">Content-Type: application/octet-stream</span><br><span class="line">-----------------------------222991508618208--</span><br></pre></td></tr></table></figure>
+
+<p>可以看到数据包里只有这几个参数<code>mobileNo、departId、minority、sex、birthdaymobileNo</code>是用户对应的手机号我们尝试修改<code>mobileNo</code>的值，所获得的效果就是我们的手机号修改了，而这个手机号本身就是可以修改的。这个数据包中并没有找到我们标识用户身份的参数信息，唯一可以修改的手机号也只是表单中直接修改可以改变的。接下来我们去找一下隐藏参数。。。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">view-source:https://www.xxx.com/ua/employee/forUpdate.do</span><br></pre></td></tr></table></figure>
+
+<p>查看下这个页面的源代码，找到了一个参数<code>loginId</code>，这个参数是对应用户身份的而我们发现 上面的数据包里没有这个参数，那么我们是否可以自己添加上去呢？</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/55.png" alt="图片"></p>
+<p>这里修改数据包，添加字段<code>loginId</code>，并且把值修改为他人的用户，发包返回修改成功，这样就成功的把用户<code>871xxxx</code>的密码改为跟我们密码相同的值。</p>
+<h2 id="总结-9"><a href="#总结-9" class="headerlink" title="总结"></a>总结</h2><p>最后一种要稍微复杂一点，得去找到隐藏参数:<code>loginId</code>然后再修改数据包，以后挖洞的时候，多留意这些。</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/05/28/penetrationtest-1/">http://example.com/2019/05/28/penetrationtest-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E6%8C%96%E6%8E%98/"># 漏洞挖掘</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/05/30/python-1/">Python武器库-简易的端口扫描器</a>
+            
+            
+            <a class="next" rel="next" href="/2019/05/27/xss-2/">通过图片触发XssPayload从而绕过WAF</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

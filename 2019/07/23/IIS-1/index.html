@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>IIS-PUT漏洞 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">IIS-PUT漏洞</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">July 23, 2019&nbsp;&nbsp;10:48:03</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1308492&auto=1&height=66"></iframe>
+
+<h2 id="IIS简介"><a href="#IIS简介" class="headerlink" title="IIS简介"></a>IIS简介</h2><p>iis是Internet Information Services的缩写，意为互联网信息服务，是由微软公司提供的基于运行Microsoft Windows的互联网基本服务。</p>
+<p>最初是Windows NT版本的可选包，随后内置在Windows 2000、Windows XP Professional和Windows Server 2003一起发行，但在Windows XP Home版本上并没有IIS。</p>
+<p>IIS是一种Web（网页）服务组件，其中包括Web服务器、FTP服务器、NNTP服务器和SMTP服务器，分别用于网页浏览、文件传输、新闻服务和邮件发送等方面，它使得在网络（包括互联网和局域网）上发布信息成了一件很容易的事。</p>
+<h2 id="Put漏洞造成原因"><a href="#Put漏洞造成原因" class="headerlink" title="Put漏洞造成原因"></a>Put漏洞造成原因</h2><p>IIS Server在Web服务扩展中开启了<code>WebDAV</code>，配置了可以<code>写入的权限</code>，造成<code>任意文件上传</code>。</p>
+<h2 id="实验环境搭建"><a href="#实验环境搭建" class="headerlink" title="实验环境搭建"></a>实验环境搭建</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1：安装VMware</span><br><span class="line"></span><br><span class="line">2：安装WIN2003</span><br><span class="line"></span><br><span class="line">3：配置网络连接</span><br><span class="line"></span><br><span class="line">4：安装IIS6.0(64bit)</span><br><span class="line"></span><br><span class="line">以上需要很长时间，安装完实验环境再看下面的文章</span><br></pre></td></tr></table></figure>
+<p>VMware虚拟机选择的网络是.NET模式，或者桥接模式也可以！但前提必须让2003和物理机相互Ping通才可以！</p>
+<p>有时候互相Ping不通可能是防火墙的原因，可以吧防火墙关闭就可以Ping通了</p>
+<p>在这里我的物理机IP：<code>192.168.1.100</code></p>
+<p>WIN2003的IP:<code>192.168.119.133</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/155.png" alt="图片"></p>
+<p>然后配置完IIS后我们用物理机访问WIN2003的IP看看能不能打开网页：</p>
+<p>访问：<a target="_blank" rel="noopener" href="http://192.168.119.133/">http://192.168.119.133/</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/157.png" alt="图片"></p>
+<p>说明是可以访问到的（一切就绪）</p>
+<h2 id="需要用到的工具"><a href="#需要用到的工具" class="headerlink" title="需要用到的工具"></a>需要用到的工具</h2><p>IIS写权限的利用 - 桂林老兵：<a target="_blank" rel="noopener" href="https://www.arpun.com/soft/13406.html">下载链接</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/156.png" alt="图片"></p>
+<h2 id="IIS-PUT漏洞演示实战"><a href="#IIS-PUT漏洞演示实战" class="headerlink" title="IIS-PUT漏洞演示实战"></a>IIS-PUT漏洞演示实战</h2><p>首先来到Internet信息服务(IIS)管理器 - Web服务扩展：</p>
+<p>可以看到WebDAV扩展是禁止的</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/158.png" alt="图片"></p>
+<p>我们首先来上传一个文件试试，看看能不能上传成功：</p>
+<p>上传IIS写权限的利用工具的相对路径下的text.txt文件</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/159.png" alt="图片"></p>
+<p>选择PUT方式、域名填写WIN2003的IP地址、请求文件是相对路径下的text.txt文件：提交数据包：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/160.png" alt="图片"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HTTP/<span class="number">1.1</span> <span class="number">501</span> Not Implemented</span><br><span class="line">Content-Length: <span class="number">0</span></span><br><span class="line">Server: Microsoft-IIS/<span class="number">6.0</span></span><br><span class="line">MicrosoftOfficeWebServer: <span class="number">5.0</span>_Pub</span><br><span class="line">X-Powered-By: ASP.NET</span><br><span class="line">Date: Tue, <span class="number">23</span> Jul <span class="number">2019</span> <span class="number">04</span>:<span class="number">30</span>:<span class="number">21</span> GMT</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这个时候利用工具返回的数据包是<code>501</code>的状态码，从这个利用软件返回的结果说明没有成功</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/161.png" alt="图片"></p>
+<p>网站服务器里也没有上传成功</p>
+<p>这个时候我们把WebDAV设置为允许、然后网站主目录下设置可写入权限：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/162.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/163.png" alt="图片"></p>
+<p>这个时候就有可能照成任意文件上传，我们再来试试上传：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/164.png" alt="图片"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HTTP/<span class="number">1.1</span> <span class="number">200</span> OK</span><br><span class="line">Date: Tue, <span class="number">23</span> Jul <span class="number">2019</span> <span class="number">04</span>:<span class="number">58</span>:<span class="number">04</span> GMT</span><br><span class="line">Server: Microsoft-IIS/<span class="number">6.0</span></span><br><span class="line">MicrosoftOfficeWebServer: <span class="number">5.0</span>_Pub</span><br><span class="line">X-Powered-By: ASP.NET</span><br><span class="line">Content-Length: <span class="number">0</span></span><br><span class="line">Allow: OPTIONS, TRACE, GET, HEAD, DELETE, PUT, COPY, MOVE, PROPFIND, PROPPATCH, SEARCH, LOCK, UNLOCK</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/165.png" alt="图片"></p>
+<p>这个时候就可以上传txt文件了！</p>
+<p>当然有时候我遇到返回状态码为:401、400的，是因为网站主目录没设置给<code>Everyone</code>权限才导致上传失败！</p>
+<p>我们上传脚本文件asp试试：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/166.png" alt="图片"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">HTTP/<span class="number">1.1</span> <span class="number">200</span> OK</span><br><span class="line">Date: Tue, <span class="number">23</span> Jul <span class="number">2019</span> <span class="number">05</span>:<span class="number">09</span>:<span class="number">47</span> GMT</span><br><span class="line">Server: Microsoft-IIS/<span class="number">6.0</span></span><br><span class="line">MicrosoftOfficeWebServer: <span class="number">5.0</span>_Pub</span><br><span class="line">X-Powered-By: ASP.NET</span><br><span class="line">Content-Length: <span class="number">0</span></span><br><span class="line">Allow: OPTIONS, TRACE, GET, HEAD, DELETE, PUT, COPY, MOVE, PROPFIND, PROPPATCH, SEARCH, LOCK, UNLOCK</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>服务器看看上传成功没有：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/167.png" alt="图片"></p>
+<p>很显然<code>shell.asp</code>没有成功上传上去</p>
+<p>这个时候，利用工具有一个<code>MOVE</code>方式，我们再上传<code>shell.asp</code>木马上去试试：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/168.png" alt="图片"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">HTTP/<span class="number">1.1</span> <span class="number">201</span> Created</span><br><span class="line">Date: Tue, <span class="number">23</span> Jul <span class="number">2019</span> <span class="number">05</span>:<span class="number">13</span>:<span class="number">17</span> GMT</span><br><span class="line">Server: Microsoft-IIS/<span class="number">6.0</span></span><br><span class="line">MicrosoftOfficeWebServer: <span class="number">5.0</span>_Pub</span><br><span class="line">X-Powered-By: ASP.NET</span><br><span class="line">Location: http:<span class="comment">//www.pig.com/shell.asp</span></span><br><span class="line">Content-Type: text/xml</span><br><span class="line">Content-Length: <span class="number">0</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这个时候成功上传一句话木马到服务器！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/169.png" alt="图片"></p>
+<h2 id="漏洞修复建议"><a href="#漏洞修复建议" class="headerlink" title="漏洞修复建议"></a>漏洞修复建议</h2><p>1：关闭WebDAV</p>
+<p>2：关闭写入权限</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/07/23/IIS-1/">http://example.com/2019/07/23/IIS-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/IIS/"># IIS</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/08/02/IIS-2/">IIS-短文件名猜解漏洞</a>
+            
+            
+            <a class="next" rel="next" href="/2019/07/06/metasploit-2/">Metasploit-基本使用和控制台命令</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

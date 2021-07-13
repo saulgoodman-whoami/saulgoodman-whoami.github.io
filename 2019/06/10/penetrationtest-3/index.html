@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>SSRF漏洞原理与利用 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">SSRF漏洞原理与利用</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">June 10, 2019&nbsp;&nbsp;11:13:37</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1343389182&auto=1&height=66"></iframe>
+
+<h2 id="什么是SSRF？"><a href="#什么是SSRF？" class="headerlink" title="什么是SSRF？"></a>什么是SSRF？</h2><p>SSRF(Server-Side Request Forgery)，<code>服务器端请求伪造</code>；利用一个可以发起<code>网络请求</code>的<code>服务</code>，可以当做<code>跳板</code>来<code>攻击</code>其他服务。</p>
+<h2 id="Know-IT-SSRF有什么能耐？"><a href="#Know-IT-SSRF有什么能耐？" class="headerlink" title="Know IT, SSRF有什么能耐？"></a>Know IT, SSRF有什么能耐？</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/61.png" alt="图片"></p>
+<p>内外网的<code>端口</code>和<code>服务探测</code></p>
+<p>主机本地<code>敏感数据</code>的<code>读取</code></p>
+<p>内外网主机<code>应用程序漏洞</code>的<code>利用</code></p>
+<p>…… 等等</p>
+<h2 id="怎么找到SSRF漏洞？"><a href="#怎么找到SSRF漏洞？" class="headerlink" title="怎么找到SSRF漏洞？"></a>怎么找到SSRF漏洞？</h2><p>能够<code>对外发起网络请求</code>的地方，就可能存在<code>SSRF</code>漏洞</p>
+<p>从<code>远程服务器请求资源</code>(Upload from URL,Import &amp; Export RSS feed)</p>
+<p>数据库内置功能(Oracle、MongoDB、MSSQL、Postgres、CouchDB)</p>
+<p>Webmail收取其他邮箱邮件(POP3/IMAP/SMTP)</p>
+<p><code>文件处理</code>,<code>编码处理</code>，<code>属性信息处理</code>(ffpmg,ImageMaic,DOCX,PDF,XML处理器)</p>
+<h2 id="测试靶场PHP源码"><a href="#测试靶场PHP源码" class="headerlink" title="测试靶场PHP源码"></a>测试靶场PHP源码</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">function curl($url)&#123;</span><br><span class="line">	$ch = curl_init();</span><br><span class="line">	curl_setopt($ch, CURLOPT_URL, $url);</span><br><span class="line">	curl_setopt($ch, CURLOPT_HEADER, 0);</span><br><span class="line">	curl_exec($ch);</span><br><span class="line">	curl_close($ch);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$url = $_GET[&#x27;url&#x27;];</span><br><span class="line">curl($url);</span><br><span class="line">?&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="SSRF漏洞的利用"><a href="#SSRF漏洞的利用" class="headerlink" title="SSRF漏洞的利用"></a>SSRF漏洞的利用</h2><p>访问URL：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://127.0.0.1/web/ssrf.php?url=www.baidu.com">http://127.0.0.1/web/ssrf.php?url=www.baidu.com</a></p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/62.png" alt="图片"></p>
+<p>可以看到，用<code>GET</code>请求让服务端请求<code>百度</code>的<code>URL</code>成功</p>
+<p>当我们设置参数<code>URL</code>为内网的时候，那就会<code>泄露/探测</code>到<code>内网</code>的<code>信息</code></p>
+<p>比如<code>内网</code>下有一个<code>http://127.0.0.1/phpmyadmin/</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/63.png" alt="图片"></p>
+<p>我们尝试让服务端请求这个<code>phpmyadmin</code>,其构造<code>URL</code>:</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://localhost/web/ssrf.php?url=127.0.0.1/phpmyadmin/">http://localhost/web/ssrf.php?url=127.0.0.1/phpmyadmin/</a></p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/64.png" alt="图片"></p>
+<h2 id="BurpSuite-Intruder模块探测内网端口"><a href="#BurpSuite-Intruder模块探测内网端口" class="headerlink" title="BurpSuite - Intruder模块探测内网端口"></a>BurpSuite - Intruder模块探测内网端口</h2><p>首先访问URL：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://localhost/web/ssrf.php?url=127.0.0.1">http://localhost/web/ssrf.php?url=127.0.0.1</a></p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/65.png" alt="图片"></p>
+<p>然后打开<code>BurpSuite</code>抓包：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/66.png" alt="图片"></p>
+<p>数据包如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">GET /web/ssrf.php?url=127.0.0.1 HTTP/1.1</span><br><span class="line">Host: localhost</span><br><span class="line">Cache-Control: max-age=0</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.8</span><br><span class="line">Connection: close</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>右键 - <code>Send to Inturder</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/67.png" alt="图片"></p>
+<p>设置变量:</p>
+<blockquote>
+<p>GET /web/ssrf.php?url=127.0.0.1:§port§</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/68.png" alt="图片"></p>
+<p>设置字典：</p>
+<p>Number: From:1 - To:65535 - Step:1</p>
+<p><code>数字类型</code>（Number）——这种类型的<code>Payload</code>是指根据配置，生成一系列的<code>数字</code>作为Payload</p>
+<p><code>Type</code>表示使用<code>序列</code>还是<code>随机数</code></p>
+<p><code>From</code>表示从什么<code>数字</code>开始</p>
+<p><code>To</code>表示到什么<code>数字</code>截止</p>
+<p><code>Step</code>表示<code>步长</code>是多少</p>
+<p>…… 具体的可以看看BurpSuite实用手册</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/69.png" alt="图片"></p>
+<h3 id="Start-Attack："><a href="#Start-Attack：" class="headerlink" title="Start Attack："></a>Start Attack：</h3><p>Intruder attack 结果：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/70.png" alt="图片"></p>
+<blockquote>
+<p>扫描/探测后，开放了：80、8080、912、902、3306端口</p>
+</blockquote>
+<p><code>80</code>：<code>HTTP</code></p>
+<p><code>8080</code>：<code>代理服务器</code>端口(因为打开了BurpSuite)</p>
+<p><code>912</code>：<code>虚拟机</code>监听端口</p>
+<p><code>902</code>：<code>Vmware</code>使用的端口</p>
+<p><code>3306</code>：<code>Mysql</code>服务默认端口</p>
+<h2 id="SSRF漏洞修复建议"><a href="#SSRF漏洞修复建议" class="headerlink" title="SSRF漏洞修复建议"></a>SSRF漏洞修复建议</h2><p><code>过滤</code>返回信息，<code>验证</code>远程服务器对请求的响应是比较容易的方法。如果<code>web应用</code>是去获取某一种类型的文件。那么在把<code>返回结果</code>展示给用户之前<code>先验证返回的信息</code>是否<code>符合标准</code>。</p>
+<p><code>统一</code>错误信息，避免用户可以根据<code>错误信息</code>来<code>判断</code>远端服务器的<code>端口状态</code>。</p>
+<p>限制请求的端口为<code>http</code>常用的端口，比如，<code>80</code>,<code>443</code>,<code>8080</code>,<code>8090</code>。</p>
+<p><code>黑名单</code>内网ip。避免应用被用来获取获取内网数据，攻击内网。</p>
+<p>禁用不需要的协议。仅仅<code>允许http</code>和<code>https</code>请求。可以防止类似于<code>file:///</code>,<code>gopher://</code>,<code>ftp:// </code>等引起的问题。</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/06/10/penetrationtest-3/">http://example.com/2019/06/10/penetrationtest-3/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SSRF/"># SSRF</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/06/17/penetrationtest-4/">浅谈XXE漏洞</a>
+            
+            
+            <a class="next" rel="next" href="/2019/06/02/penetrationtest-2/">新思路多句话过D盾、安全狗、阿里云等WAF</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

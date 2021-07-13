@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>诸神之眼-Nmap-使用指南 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">诸神之眼-Nmap-使用指南</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 18, 2019&nbsp;&nbsp;9:02:38</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%AD%A6%E5%99%A8%E5%BA%93/">武器库</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="Nmap简介"><a href="#Nmap简介" class="headerlink" title="Nmap简介"></a>Nmap简介</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/480.png" alt="图片"></p>
+<p>Nmap，也就是Network Mapper，最早是Linux下的网络扫描和嗅探工具包。</p>
+<p>Nmap是一款网络扫描和主机检测的非常有用的工具。 Nmap是不局限于仅仅收集信息和枚举，同时可以用来作为一个漏洞探测器或安全扫描器。它可以适用于winodws,linux,mac等操作系统。Nmap是一款非常强大的实用工具,可用于：</p>
+<ul>
+<li>检测活在网络上的主机（主机发现）</li>
+<li>检测主机上开放的端口（端口发现或枚举）</li>
+<li>检测到相应的端口（服务发现）的软件和版本</li>
+<li>检测操作系统，硬件地址，以及软件版本</li>
+<li>检测脆弱性的漏洞（Nmap的脚本）</li>
+</ul>
+<h2 id="Nmap安装"><a href="#Nmap安装" class="headerlink" title="Nmap安装"></a>Nmap安装</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://nmap.org/">https://nmap.org</a></p>
+</blockquote>
+<p>根据自己的操作系统来选择下载的对应版本！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/481.png" alt="图片"></p>
+<p>下载完后会生成一个<code>nmap.exe</code>、<code>zenmap.exe</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/483.png" alt="图片"></p>
+<p><code>nmap.exe</code> 是命令行模式下运行的！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/482.png" alt="图片"></p>
+<p><code>zenmap.exe</code>是图形化下的！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/484.png" alt="图片"></p>
+<p>一般来说使用命令行下的<code>Nmap</code>最好！</p>
+<h2 id="Nmap详细使用手册"><a href="#Nmap详细使用手册" class="headerlink" title="Nmap详细使用手册"></a>Nmap详细使用手册</h2><h3 id="Nmap扫描原理示意图"><a href="#Nmap扫描原理示意图" class="headerlink" title="Nmap扫描原理示意图"></a>Nmap扫描原理示意图</h3><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/485.png" alt="图片"></p>
+<h3 id="Nmap列举远程机器开放的端口"><a href="#Nmap列举远程机器开放的端口" class="headerlink" title="Nmap列举远程机器开放的端口"></a>Nmap列举远程机器开放的端口</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap.exe scanme.nmap.org</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/486.png" alt="图片"></p>
+<p>从上图可知，目标开放了<code>22</code>,<code>80</code>,<code>9929</code>,<code>31337</code>端口</p>
+<ul>
+<li><p>PORT<br>指的是开放的端口</p>
+</li>
+<li><p>STATE<br>指的是状态<br><code>Open</code><br>表示端口处于<code>开放</code>状态<br><code>Closed</code><br>表示端口处于<code>关闭</code>状态<br><code>Filterd</code><br>表示端口处于过滤无法收到返回的<code>Probe</code>状态<br><code>Opend/UnFilterd</code><br>表示端口处于<code>开放</code>或者是<code>过滤</code>状态<br><code>Closed/UnFilterd</code><br>表示端口处于<code>关闭</code>或者<code>未过滤</code>状态</p>
+</li>
+<li><p>SERVICE<br>指的是端口对应的服务</p>
+</li>
+</ul>
+<p><code>nmap</code>进行探测之前要吧域名通过<code>DNS</code>服务器解析为<code>IP</code>地址，我们也可以通过指定的<code>DNS</code>服务器进行解析！</p>
+<h3 id="使用指定的DNS服务器进行解析扫描"><a href="#使用指定的DNS服务器进行解析扫描" class="headerlink" title="使用指定的DNS服务器进行解析扫描"></a>使用指定的DNS服务器进行解析扫描</h3><p>有的时候，我们需要来指定<code>DNS</code>服务器来进行探测，因为有些域名的公司的架设使用的解析是谷歌的<code>DNS</code>，这样我们指定了就会扫描的更仔细一些</p>
+<blockquote>
+<p>–dns-servers</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap.exe --dns-servers 8.8.8.8 scanme.nmap.org</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/487.png" alt="图片"></p>
+<p>从上图可以看到，我们指定了谷歌的<code>DNS</code>来对域名解析扫描：</p>
+<h3 id="躲避防火墙安全机制进行扫描探测"><a href="#躲避防火墙安全机制进行扫描探测" class="headerlink" title="躲避防火墙安全机制进行扫描探测"></a>躲避防火墙安全机制进行扫描探测</h3><p>对于已经知道主机存活或者防火墙开启的机器，可以使用<code>-Pn</code>来停止探测之前的<code>ICMP</code>请求，已达到不触发防火墙安全机制。</p>
+<blockquote>
+<p>-Pn</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap.exe -Pn scanme.nmap.org</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/488.png" alt="图片"></p>
+<h2 id="Nmap对一个端口范围进行扫描探测"><a href="#Nmap对一个端口范围进行扫描探测" class="headerlink" title="Nmap对一个端口范围进行扫描探测"></a>Nmap对一个端口范围进行扫描探测</h2><p>对于默认的端口范围，并不能满足日常的工作需要；可以使用<code>-p m-n</code>来指定探测端口访问为<code>m-n</code>之间的所有端口</p>
+<blockquote>
+<p>-p m-n</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">探测1-1000范围内的端口情况</span><br><span class="line">nmap.exe -p 1-1000 scanme.nmap.org</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/489.png" alt="图片"></p>
+<p>未完待续</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/18/Nmap-1/">http://example.com/2019/10/18/Nmap-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Kali-Linux/"># Kali Linux</a>
+                    
+                        <a href="/tags/Nmap/"># Nmap</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/25/penetrationtest-6/">网站路径信息搜集大法</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/17/ThinkPHP-2/">Thinkphp5 5.0.22 / 5.1.29远程执行代码漏洞复现</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

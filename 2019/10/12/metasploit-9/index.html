@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Metasploit之windows提权应用_UAC绕过 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Metasploit之windows提权应用_UAC绕过</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 12, 2019&nbsp;&nbsp;12:37:32</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%AD%A6%E5%99%A8%E5%BA%93/">武器库</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=457219109&auto=1&height=66"></iframe>
+
+<h2 id="什么是UAC"><a href="#什么是UAC" class="headerlink" title="什么是UAC"></a>什么是UAC</h2><blockquote>
+<p>用户帐户控制（简称UAC）是微软公司在其Windows Vista，及更⾼版本操作系统中采用的一种控制机制。通过 本文你将了解它是如何保护你免受恶意软件侵害的，以及忽略UAC提示将可能给你系统带来的麻烦。</p>
+</blockquote>
+<h3 id="UAC实例"><a href="#UAC实例" class="headerlink" title="UAC实例"></a>UAC实例</h3><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/432.png" alt="图片"></p>
+<p>可以看到，我<code>sessions</code>有4个，我先进入到一个不是系统权限的session：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/433.png" alt="图片"></p>
+<p><code>hashdunm</code>失败，这就是权限问题，我们没有用管理员权限运行！</p>
+<p>我们来到肉鸡这里，右键以管理员权限运行就会弹出这个：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/434.png" alt="图片"></p>
+<p>而这个就是<code>UAC</code>!</p>
+<p>而如果我们用了<code>管理员权限</code>运行，这个时候就可以<code>hashdump</code>了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/435.png" alt="图片"></p>
+<p>有的你运行一个软件它会弹出一个框框问你是否要运行：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/436.png" alt="图片"></p>
+<p>如果你点击确认/是的话，那么你就过了<code>UAC</code>的权限！这个时候就可以进行一个真正的管理员权限的操作!</p>
+<h3 id="UAC是如何运作的"><a href="#UAC是如何运作的" class="headerlink" title="UAC是如何运作的"></a>UAC是如何运作的</h3><p>一旦程序执⾏涉及<code>系统更改</code>/<code>特定任务</code>就会触发UAC。除非尝试执行他们的进程<code>以管理员权限运行</code>，否则这些操作都将被阻止。</p>
+<p>没有管理员权限将无法执⾏以下操作：</p>
+<ul>
+<li>注册表修改（如果注册表项位于如HKEY_LOCAL_MACHINE下（因为它影响多个⽤户户），它将是只读的）</li>
+<li>加载设备驱动程序</li>
+<li>DLL注入</li>
+<li>修改系统时间(clock)</li>
+<li>修改⽤户帐户控制设置（通过注册表可以启用/禁用它，但你需要正确的权限才能执行该操作）</li>
+<li>修改受保护的目录（例如Windows⽂件夹，Program Files）</li>
+<li>计划任务（例如，以管理员权限自启动）</li>
+</ul>
+<h2 id="Bypass-UAC"><a href="#Bypass-UAC" class="headerlink" title="Bypass-UAC"></a>Bypass-UAC</h2><p>有的时候我们没有办法以管理员身份来运行我们的程序，只能以普通用户的权限来运行，这个时候怎么来绕过<code>UAC</code>来用管理员权限运行呢？</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">msf5 exploit(multi/handler) &gt; search bypassuac</span><br><span class="line"></span><br><span class="line">Matching Modules</span><br><span class="line">================</span><br><span class="line"></span><br><span class="line">   #   Name                                                   Disclosure Date  Rank       Check  Description</span><br><span class="line">   -   ----                                                   ---------------  ----       -----  -----------</span><br><span class="line">   0   exploit/windows/local/bypassuac                        2010-12-31       excellent  No     Windows Escalate UAC Protection Bypass</span><br><span class="line">   1   exploit/windows/local/bypassuac_comhijack              1900-01-01       excellent  Yes    Windows Escalate UAC Protection Bypass (Via COM Handler Hijack)</span><br><span class="line">   2   exploit/windows/local/bypassuac_eventvwr               2016-08-15       excellent  Yes    Windows Escalate UAC Protection Bypass (Via Eventvwr Registry Key)</span><br><span class="line">   3   exploit/windows/local/bypassuac_fodhelper              2017-05-12       excellent  Yes    Windows UAC Protection Bypass (Via FodHelper Registry Key)</span><br><span class="line">   4   exploit/windows/local/bypassuac_injection              2010-12-31       excellent  No     Windows Escalate UAC Protection Bypass (In Memory Injection)</span><br><span class="line">   5   exploit/windows/local/bypassuac_injection_winsxs       2017-04-06       excellent  No     Windows Escalate UAC Protection Bypass (In Memory Injection) abusing WinSXS</span><br><span class="line">   6   exploit/windows/local/bypassuac_silentcleanup          2019-02-24       excellent  No     Windows Escalate UAC Protection Bypass (Via SilentCleanup)</span><br><span class="line">   7   exploit/windows/local/bypassuac_sluihijack             2018-01-15       excellent  Yes    Windows UAC Protection Bypass (Via Slui File Handler Hijack)</span><br><span class="line">   8   exploit/windows/local/bypassuac_vbs                    2015-08-22       excellent  No     Windows Escalate UAC Protection Bypass (ScriptHost Vulnerability)</span><br><span class="line">   9   exploit/windows/local/bypassuac_windows_store_filesys  2019-08-22       manual     Yes    Windows 10 UAC Protection Bypass Via Windows Store (WSReset.exe)</span><br><span class="line">   10  exploit/windows/local/bypassuac_windows_store_reg      2019-02-19       manual     Yes    Windows 10 UAC Protection Bypass Via Windows Store (WSReset.exe) and Registry</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>我是先把<code>meterpreter</code>会话放到后台，然后使用这个模块：</p>
+<blockquote>
+<p>exploit/windows/local/bypassuac</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/437.png" alt="图片"></p>
+<p>show options可以看到他需要设置一个<code>session</code>，然后run:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/438.png" alt="图片"></p>
+<p>这边已经运行成功了！但是我的肉鸡是<code>x64</code>位的，而这个bypassuac是<code>x86</code>,所以不能成功执行<code>hashdump</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/439.png" alt="图片"></p>
+<p>但是可以执行创建或者删除用户:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/442.png" alt="图片"></p>
+<p>如果目标肉鸡是<code>x86</code>的话，就可以执行<code>hashdump</code>以及<code>net user</code>创建或者删除用户的！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/440.png" alt="图片"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/12/metasploit-9/">http://example.com/2019/10/12/metasploit-9/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Metasploit/"># Metasploit</a>
+                    
+                        <a href="/tags/Kali-Linux/"># Kali Linux</a>
+                    
+                        <a href="/tags/UAC/"># UAC</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/13/Bypass-1/">Metasploit-Bypass-360</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/12/metasploit-8/">Metasploit-后渗透Post的常用模块使用</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

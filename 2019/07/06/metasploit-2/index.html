@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Metasploit-基本使用和控制台命令 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Metasploit-基本使用和控制台命令</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">July 6, 2019&nbsp;&nbsp;20:42:31</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%AD%A6%E5%99%A8%E5%BA%93/">武器库</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=4056608&auto=1&height=66"></iframe>
+
+<blockquote>
+<p>因为Kali Linux内预先配置好了Metasploit，所以就不用配置环境变量等等。</p>
+</blockquote>
+<p>终端输入：<code>Msfconsole</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/114.png" alt="图片"></p>
+<p>这个时候就进入到了MSF的控制台，其中<code>TAB</code>键可以自动补全命令等等。</p>
+<p><code>MSF</code>在控制台里可以执行这些命令：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/115.png" alt="图片"></p>
+<h2 id="show命令详解"><a href="#show命令详解" class="headerlink" title="show命令详解"></a>show命令详解</h2><blockquote>
+<p>Metasploit框架中包涵数百个模块，没有人能用脑子把它们的名字全部记下来。在MSF终端中运行show命令会把所有的模块显示出来，也可以指定模块的类型来缩小搜索范围。</p>
+</blockquote>
+<p>show 命令有这些： </p>
+<p>这些命令会显示<code>Metasploit</code>框架中所有可用的渗透攻击模块。在MSF终端中，你可以针对渗透测试中发现的安全漏洞来实施相应的渗透攻击。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/116.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show auxiliary</span><br></pre></td></tr></table></figure>
+<p>这个命令会显示所有的辅助模块以及他们的用途。在Metasploit中，辅助模块的用途非常广泛，它们可以是扫描器、拒绝服务攻击工具、Fuzz测试器，以及其他类型的工具。</p>
+<p>当你选择了一个模块，并输入<code>msf &gt; show options</code>后，会列出这个模块所需的各种参数。如果当你没有选择任何模块，那么输入这个命令会显示所有的全局参数。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show options</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/117.png" alt="图片"></p>
+<p><code>show missing</code>是查看哪些参数是需要配置的</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show missing</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/118.png" alt="图片"></p>
+<p>可以看到<code>RHOST</code>需要设置，但是我们没设置就是空的！</p>
+<h2 id="search命令详解"><a href="#search命令详解" class="headerlink" title="search命令详解"></a>search命令详解</h2><blockquote>
+<p>Metasploit提供了search命令。它可以在msf终端中执行。用户可以直接根据关键词，进行搜索。例如，search smb 搜索smb相关的模块。用户也可以指定关键词的类型。Metasploit将关键词分为app、author、bid、cve、edb、name、osvdb、platform、ref、type十种类型。这样，用户就可以通过指定不同类型的关键词，达到精确搜索。例如，search name:smb platform:windows 就可以搜索Windows平台的smb相关的模块。</p>
+</blockquote>
+<p>比如我们想要用<strong>ms10-046</strong>相关的模块就可以使用<code>search</code>命令：（类似于find命令）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">search ms10-146</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/119.png" alt="图片"></p>
+<p>其中<strong>search</strong>相关使用可以输入：<code>search -h</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/120.png" alt="图片"></p>
+<p>假如我们要搜索<code>cve</code>里包含<strong>2018</strong>的，就可以这样搜索：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">search cve:2018</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/121.png" alt="图片"></p>
+<p>这样就可以快速搜索到我们想要的模块，不然搜索出来的都是一大堆眼花缭乱的。</p>
+<p>假如我们要搜索<code>exploit</code>（攻击模块）类型的模块：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">search <span class="built_in">type</span>:exploit</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/122.png" alt="图片"></p>
+<h2 id="use命令详解"><a href="#use命令详解" class="headerlink" title="use命令详解"></a>use命令详解</h2><blockquote>
+<p>如果找到了自己要用的攻击模块/辅助模块，就可以用use来调用该模块</p>
+</blockquote>
+<p>假如我们要用：<code>exploit/windows/smb/ms08_067_netapi</code> 这个模块</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">use exploit/windows/smb/ms08_067_netapi </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/123.png" alt="图片"></p>
+<p>这个时候就进入到了<code>exploit/windows/smb/ms08_067_netapi</code>这个模块里。</p>
+<p>进入到模块里就可使用<code>info</code>查看当前模块的基本信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">info</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/124.png" alt="图片"><br><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/125.png" alt="图片"></p>
+<h2 id="set命令详解"><a href="#set命令详解" class="headerlink" title="set命令详解"></a>set命令详解</h2><blockquote>
+<p>如果选择好了相应的漏洞利用模块，就可以使用set命令来设置一些参数，如ip、端口等等</p>
+</blockquote>
+<p>查看当前设置情况:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shop options</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/126.png" alt="图片"></p>
+<p>这个时候<code>RHOST</code>（攻击目标IP）是空的，我们就要设置一下：（攻击目标IP：1.1.1.1）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> RHOST 1.1.1.1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/127.png" alt="图片"></p>
+<p>这个时候再<code>show options</code>就可以看到<code>RHOST</code>已经设置为了<code>1.1.1.1</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/128.png" alt="图片"></p>
+<h2 id="unset命令详解"><a href="#unset命令详解" class="headerlink" title="unset命令详解"></a>unset命令详解</h2><blockquote>
+<p>如果你刚set设置了参数，你想取消掉刚刚的设置，那么就可以使用unset</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">unset</span> RHOST</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/129.png" alt="图片"></p>
+<h2 id="setg命令详解"><a href="#setg命令详解" class="headerlink" title="setg命令详解"></a>setg命令详解</h2><blockquote>
+<p>setg这个命令是全局设置的意思，假如你想把所有的模块的RHOST设置为192.168.1.1，那么就可以使用setg</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setg RHOST 192.168.1.1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/130.png" alt="图片"><br><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/131.png" alt="图片"></p>
+<h4 id="unsetg和刚刚的unset是一样！"><a href="#unsetg和刚刚的unset是一样！" class="headerlink" title="unsetg和刚刚的unset是一样！"></a>unsetg和刚刚的unset是一样！</h4><h2 id="check命令详解"><a href="#check命令详解" class="headerlink" title="check命令详解"></a>check命令详解</h2><blockquote>
+<p>如果你设置好一切参数后，可以使用check命令来探测目标IP、端口…是否存在ms08_067这个漏洞，只是去验证是否存在这个漏洞，并没有去利用它</p>
+</blockquote>
+<p>其中大部分的<code>exploit</code>攻击模块里，大部分都不能<code>check</code>验证漏洞（要么是利用漏洞，要么是不利用漏洞），一般不用到<code>check</code>，一般直接是去利用漏洞，而不是验证！</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">check</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/132.png" alt="图片"></p>
+<h2 id="back命令详解"><a href="#back命令详解" class="headerlink" title="back命令详解"></a>back命令详解</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/133.png" alt="图片"></p>
+<p>如果想回到<code>MSF</code>更目录下，就可以使用<code>back</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msf exploit(windows/smb/ms08_067_netapi) &gt; back</span><br><span class="line">msf &gt; </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/134.png" alt="图片"></p>
+<h2 id="db-相关命令详解"><a href="#db-相关命令详解" class="headerlink" title="db_*相关命令详解"></a>db_*相关命令详解</h2><p>首先进入<code>MSF</code>控制台后，可以输入<code>db_status</code>查看数据库状态（后台数据库有没有连接上）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; db_status </span><br><span class="line">[*] postgresql selected, no connection</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/135.png" alt="图片"></p>
+<p>显示：<strong>postgresql selected, no connection</strong>,说明还没有连接到数据库</p>
+<p>这个时候回到<code>kali</code>终端输入命令：<code>msfdb start</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@liuwx:~<span class="comment"># msfdb start</span></span><br><span class="line">[+] Starting database</span><br></pre></td></tr></table></figure>
+
+<p>这个时候输入命令(查看5432端口是否开放，开放说明postgresql数据库是开启的)：<code>netstat -pantu | grep 5432</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -pantu | grep 5432</span><br></pre></td></tr></table></figure>
+
+<p>输入命令启动<code>postgresql</code>数据库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@liuwx:~<span class="comment"># service postgresql start</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/136.png" alt="图片"></p>
+<p>查看5432端口是否开放:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root@liuwx:~<span class="comment"># netstat -pantu | grep 5432</span></span><br><span class="line"></span><br><span class="line">tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      8031/postgres       </span><br><span class="line">tcp6       0      0 ::1:5432                :::*                    LISTEN      8031/postgres       </span><br></pre></td></tr></table></figure>
+
+<p>如果还是这样的话：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/137.png" alt="图片"></p>
+<p>那么就是初次使用数据库服务时需初始化，以便创建系统默认的数据库及数据库用户</p>
+<p>命令如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">msfdb init（默认创建的数据库名：msf，msf_test;用户名：msf；口令默认为空）</span><br><span class="line">msf init msf msf_test msf</span><br><span class="line">msfdb reinit</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/138.png" alt="图片"></p>
+<p>创建了数据库后，就可以连接到数据库了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; db_status </span><br><span class="line">[*] postgresql connected to msf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/139.png" alt="图片"></p>
+<p><strong>为什么要使用数据库呢？</strong></p>
+<blockquote>
+<p>其实不使用数据库也是可以使用MSF的，只是在信息收集发现那些机器存在漏洞，机器的账号密码没有办法存储下来，所以就需要用到msfdb（postgresql）数据库！</p>
+</blockquote>
+<h2 id="db-相关命令详解-1"><a href="#db-相关命令详解-1" class="headerlink" title="db_*相关命令详解"></a>db_*相关命令详解</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">db_connect         :  数据库连接信息</span><br><span class="line">db_export          : 数据库导出</span><br><span class="line">db_nmap            : 启动nmap扫描,并把结果保存到数据库中</span><br><span class="line">db_remove          :  数据库删除</span><br><span class="line">db_status          : 数据库连接状态</span><br><span class="line">db_disconnect      : 数据库断开连接</span><br><span class="line">db_import          : 导入到数据库</span><br><span class="line">db_rebuild_cache   : 把数据缓存到数据库,再次进行search搜索的时候就可以提高效率</span><br><span class="line">db_save            : 保存数据库</span><br><span class="line">hosts   　　　　      : 扫描主机记录</span><br><span class="line">hosts[xx.xx.xx.xx]: 显示特定主机的记录</span><br><span class="line">hosts -u  　　　     : 显示是开机状态的主机</span><br><span class="line">hosts -c　　　       : 后面跟上你想要看的列名,多个列之间逗号隔开</span><br><span class="line">hosts -S　　　       : Search缩写, 用于关键字匹配(多字段搜索)</span><br><span class="line">hosts -p　　　       : 端口搜索. 与-S不同的是只能精准匹配端口一项</span><br><span class="line">services     　  　 : 显示端口信息 (搜索规则和hosts等同),可以指定范围 例 : services -p 1-200</span><br></pre></td></tr></table></figure>
+
+<h2 id="db-status"><a href="#db-status" class="headerlink" title="db_status"></a>db_status</h2><blockquote>
+<p>查看msfdb数据库（postgresql）是否连接到了MSF</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; db_status </span><br><span class="line">[*] postgresql connected to msf</span><br><span class="line">这样就是连接到了MSF数据库</span><br></pre></td></tr></table></figure>
+
+<h2 id="db-rebuild-cache"><a href="#db-rebuild-cache" class="headerlink" title="db_rebuild_cache"></a>db_rebuild_cache</h2><blockquote>
+<p>把数据缓存到数据库,再次进行search搜索的时候就可以提高效率</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; db_rebuild_cache </span><br><span class="line">[*] Purging and rebuilding the module cache <span class="keyword">in</span> the background...</span><br></pre></td></tr></table></figure>
+
+<h1 id="db-nmap"><a href="#db-nmap" class="headerlink" title="db_nmap"></a>db_nmap</h1><blockquote>
+<p>这个其实就是集成在msf里的nmap里，只不过使用db_nmap扫描结果会保存到msf这个数据库里！</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; db_nmap 192.168.1.1</span><br><span class="line">[*] Nmap: Starting Nmap 7.70 ( https://nmap.org ) at 2019-07-04 12:51 CST</span><br><span class="line">[*] Nmap: Nmap scan report <span class="keyword">for</span> 192.168.1.1</span><br><span class="line">[*] Nmap: Host is up (0.00070s latency).</span><br><span class="line">[*] Nmap: Not shown: 998 filtered ports</span><br><span class="line">[*] Nmap: PORT     STATE SERVICE</span><br><span class="line">[*] Nmap: 80/tcp   open  http</span><br><span class="line">[*] Nmap: 1900/tcp open  upnp</span><br><span class="line">[*] Nmap: MAC Address: C0:A5:DD:37:87:E8 (Shenzhen Mercury Communication Technologies)</span><br><span class="line">[*] Nmap: Nmap <span class="keyword">done</span>: 1 IP address (1 host up) scanned <span class="keyword">in</span> 4.94 seconds</span><br></pre></td></tr></table></figure>
+
+<p>一旦使用<code>db_namp</code>对一个<code>IP</code>扫描并<code>成功扫描</code>后的结果会自动存储到数据库里：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; hosts</span><br><span class="line"></span><br><span class="line">Hosts</span><br><span class="line">=====</span><br><span class="line"></span><br><span class="line">address      mac                name  os_name  os_flavor  os_sp  purpose  info  comments</span><br><span class="line">-------      ---                ----  -------  ---------  -----  -------  ----  --------</span><br><span class="line">192.168.1.1  c0:a5:dd:37:87:e8        Unknown                    device         </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/140.png" alt="图片"></p>
+<p>因为我们扫描的是<code>192.168.1.1</code>是<code>路由器</code>，显示不出什么效果，我就扫描我物理机<code>192.168.1.100</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; db_nmap 192.168.1.100</span><br><span class="line">[*] Nmap: Starting Nmap 7.70 ( https://nmap.org ) at 2019-07-04 12:55 CST</span><br><span class="line">[*] Nmap: Nmap scan report <span class="keyword">for</span> 192.168.1.100</span><br><span class="line">[*] Nmap: Host is up (0.0021s latency).</span><br><span class="line">[*] Nmap: Not shown: 991 closed ports</span><br><span class="line">[*] Nmap: PORT      STATE SERVICE</span><br><span class="line">[*] Nmap: 135/tcp   open  msrpc</span><br><span class="line">[*] Nmap: 139/tcp   open  netbios-ssn</span><br><span class="line">[*] Nmap: 443/tcp   open  https</span><br><span class="line">[*] Nmap: 445/tcp   open  microsoft-ds</span><br><span class="line">[*] Nmap: 902/tcp   open  iss-realsecure</span><br><span class="line">[*] Nmap: 912/tcp   open  apex-mesh</span><br><span class="line">[*] Nmap: 49152/tcp open  unknown</span><br><span class="line">[*] Nmap: 49153/tcp open  unknown</span><br><span class="line">[*] Nmap: 49154/tcp open  unknown</span><br><span class="line">[*] Nmap: MAC Address: F4:B5:20:05:38:8A (Biostar Microtech international)</span><br><span class="line">[*] Nmap: Nmap <span class="keyword">done</span>: 1 IP address (1 host up) scanned <span class="keyword">in</span> 1.45 seconds</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/141.png" alt="图片"></p>
+<p>这个时候又多出了一个IP、MAC地址：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">msf &gt; hosts</span><br><span class="line"></span><br><span class="line">Hosts</span><br><span class="line">=====</span><br><span class="line"></span><br><span class="line">address        mac                name  os_name  os_flavor  os_sp  purpose  info  comments</span><br><span class="line">-------        ---                ----  -------  ---------  -----  -------  ----  --------</span><br><span class="line">192.168.1.1    c0:a5:dd:37:87:e8        Unknown                    device         </span><br><span class="line">192.168.1.100  f4:b5:20:05:38:8a        Unknown                    device         </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/142.png" alt="图片"></p>
+<p>如果我们想要查看192.168.1.100主机的详细信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hosts 192.168.1.100</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/143.png" alt="图片"></p>
+<p>因为我的物理机（192.168.1.100）是开启了防火墙，所以操作系统没显示出来！</p>
+<p>假如我们要搜索扫描结果的一些关键字：例如搜索带<code>192</code>开头的ip：（这个一般用于搜索操作系统等等）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hosts -S（大写） 192</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/144.png" alt="图片"></p>
+<p>除了主机信息我们刚刚扫描的主机还有一些端口信息，如何显示扫描的端口信息：<code>services</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">services </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/145.png" alt="图片"></p>
+<p>其中<code>services</code>可以搭配<code>-S</code>（大S）来使用，假设要搜索端口<code>445</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">services -S 445</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/146.png" alt="图片"></p>
+<h2 id="db-export"><a href="#db-export" class="headerlink" title="db_export"></a>db_export</h2><blockquote>
+<p>一般我们使用db.，想要吧数据库导出,就可以使用db_export</p>
+</blockquote>
+<p>假如我们想要吧扫描的数据结果导出为<code>1.xml</code>：(具体的可以使用<strong>db_export -h</strong>来查看帮助文档)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">db_export -f xml /root/1.xml</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/147.png" alt="图片"></p>
+<h2 id="db-import"><a href="#db-import" class="headerlink" title="db_import"></a>db_import</h2><blockquote>
+<p>一般我们把扫描的结果导出了，下一次想要加载之前导出的扫描结果，就可使用db_import导入进来</p>
+</blockquote>
+<p>吧之前导出的<code>/root/1.xml</code>导入进来：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">db_import /root/1.xml</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/148.png" alt="图片"></p>
+<h2 id="sessions"><a href="#sessions" class="headerlink" title="sessions"></a>sessions</h2><p>如果你用<code>MSF</code>拿到一个会话<code>shell</code>，然后你会话运行在后台：</p>
+<p>在后台运行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msf exploit(windows/smb/ms17_010_eternalblue) &gt; exploit -j</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/149.png" alt="图片"><br><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/150.png" alt="图片"></p>
+<p>然后你退出的时候，你想查看已经拿到链接的<code>shell</code>就可以使用<code>session</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">msf exploit(windows/smb/ms17_010_eternalblue) &gt; sessions </span><br><span class="line"></span><br><span class="line">Active sessions</span><br><span class="line">===============</span><br><span class="line"></span><br><span class="line">  Id  Name  Type                     Information                     Connection</span><br><span class="line">  --  ----  ----                     -----------                     ----------</span><br><span class="line">  7         meterpreter x64/windows  NT AUTHORITY\SYSTEM @ LIUWX-PC  192.168.1.106:4444 -&gt; 192.168.1.103:49159 (192.168.1.103)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/151.png" alt="图片"></p>
+<p>如果你想使用这个<code>shell</code>的话，就<code>session -i ID</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">session -i 7</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/152.png" alt="图片"></p>
+<p>这个时候就进入到了这个<code>session</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/153.png" alt="图片"></p>
+<p>本篇文章记录Metasploit的常用命令使用！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/07/06/metasploit-2/">http://example.com/2019/07/06/metasploit-2/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Metasploit/"># Metasploit</a>
+                    
+                        <a href="/tags/Kali-Linux/"># Kali Linux</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/07/23/IIS-1/">IIS-PUT漏洞</a>
+            
+            
+            <a class="next" rel="next" href="/2019/06/17/beef-xss/">BeEF的高级烹饪方式</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

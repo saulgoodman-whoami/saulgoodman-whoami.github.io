@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Apache-目录遍历漏洞 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Apache-目录遍历漏洞</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">August 27, 2019&nbsp;&nbsp;21:24:02</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=863515869&auto=1&height=66"></iframe>
+
+<h2 id="目录遍历"><a href="#目录遍历" class="headerlink" title="目录遍历"></a>目录遍历</h2><p>目录遍历漏洞原理比较简单，就是程序在实现上没有充分过滤用户输入的<code>../</code>之类的目录跳转符，导致恶意用户可以通过提交目录跳转来遍历服务器上的任意文件。这里的目录跳转符可以是<code>../</code>，也可是<code>../</code>的<code>ASCII</code>编码或者是<code>unicode</code>编码等。</p>
+<p>目录遍历的标志：<code>Index of /</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/270.png" alt="图片"></p>
+<h2 id="Google-Hack"><a href="#Google-Hack" class="headerlink" title="Google Hack"></a>Google Hack</h2><p>在<code>漏洞挖掘</code>或者<code>渗透测试</code>的过程中使用Google语法能够很有效帮助我们寻找目录遍历漏洞</p>
+<blockquote>
+<p>intitle:index of</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/271.png" alt="图片"></p>
+<p>这个搜索语法意思是：寻找网站标题中含有：<code>index of</code>的网站：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/272.png" alt="图片"></p>
+<p>可以看到，随便点开一个就是一个目录遍历漏洞</p>
+<h2 id="Apache目录遍历复现"><a href="#Apache目录遍历复现" class="headerlink" title="Apache目录遍历复现"></a>Apache目录遍历复现</h2><p>首先是用<code>PhpStudy</code> + <code>2003</code>服务器搭建的环境，然后再网站更目录下创建了许多的文件夹</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/280.png" alt="图片"></p>
+<p>这个时候访问网站的目录就可以造成目录遍历</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/281.png" alt="图片"></p>
+<p>其实目录遍历就是这么简单的操作。</p>
+<h2 id="目录遍历漏洞的思路"><a href="#目录遍历漏洞的思路" class="headerlink" title="目录遍历漏洞的思路"></a>目录遍历漏洞的思路</h2><p>有的时候在挖掘漏洞过程中，假设有一张图片，可以<code>右键</code>复制图片的<code>地址</code>：</p>
+<p>图片地址：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://www.liuwx.cn/admin/img/1.jpg">http://www.liuwx.cn/admin/img/1.jpg</a></p>
+</blockquote>
+<p>然后我们把图片文件删除并访问这个<code>URL</code>:</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://www.liuwx.cn/admin/img/">http://www.liuwx.cn/admin/img/</a></p>
+</blockquote>
+<p>这个时候就有可能会有目录遍历漏洞！</p>
+<h2 id="漏洞防御"><a href="#漏洞防御" class="headerlink" title="漏洞防御"></a>漏洞防御</h2><p>在<code>httpd.conf</code>文件中找到<code>Options + Indexes + FollowSymLinks + ExecCGI</code>并修改成<code>Options -Indexes + FollowSymLinks + ExecCGI</code>并保存（吧<code>+</code>修改为<code>-</code>）</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/282.png" alt="图片"></p>
+<p>修改为：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/283.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/284.png" alt="图片"></p>
+<p>这个时候就不会存在目录遍历漏洞了</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/08/27/Apache-2/">http://example.com/2019/08/27/Apache-2/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Apache/"># Apache</a>
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/09/03/Nginx-1/">Nginx-解析漏洞</a>
+            
+            
+            <a class="next" rel="next" href="/2019/08/26/xss-1/">一次有趣的X-Forwarded-For头存储XSS</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

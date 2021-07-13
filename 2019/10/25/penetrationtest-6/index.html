@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>网站路径信息搜集大法 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">网站路径信息搜集大法</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 25, 2019&nbsp;&nbsp;18:06:57</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="信息搜集前言"><a href="#信息搜集前言" class="headerlink" title="信息搜集前言"></a>信息搜集前言</h2><p>再我们渗透测试过程中，<code>信息搜集</code>无非是最重要的环节!在有的时候我们需要知道网站的<code>绝对路径</code>,下面我总结了几点查看网站路径的方法</p>
+<h3 id="错误页面爆网站路径"><a href="#错误页面爆网站路径" class="headerlink" title="错误页面爆网站路径"></a>错误页面爆网站路径</h3><h4 id="phpMyAdmin报错路径"><a href="#phpMyAdmin报错路径" class="headerlink" title="phpMyAdmin报错路径"></a>phpMyAdmin报错路径</h4><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/495.png" alt="图片"></p>
+<h4 id="SQL注入点报路径"><a href="#SQL注入点报路径" class="headerlink" title="SQL注入点报路径"></a>SQL注入点报路径</h4><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/493.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">单引号报错路径</span><br><span class="line">www.liuwx.cn/news.php?id=1&#x27;</span><br><span class="line"></span><br><span class="line">错误参数值爆路径</span><br><span class="line">www.liuwx.cn/news.php?id=-1</span><br></pre></td></tr></table></figure>
+
+<h4 id="nginx文件类型错误解析爆路径"><a href="#nginx文件类型错误解析爆路径" class="headerlink" title="nginx文件类型错误解析爆路径"></a>nginx文件类型错误解析爆路径</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nginx文件类型错误解析爆路径</span><br><span class="line">www.liuwx.cn/hack.jpg/x.php</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置文件读取网站路径"><a href="#配置文件读取网站路径" class="headerlink" title="配置文件读取网站路径"></a>配置文件读取网站路径</h3><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/494.png" alt="图片"></p>
+<h4 id="Xampp套件"><a href="#Xampp套件" class="headerlink" title="Xampp套件"></a>Xampp套件</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Xampp文件路径</span><br><span class="line">C:\xampp\htdocs</span><br><span class="line"></span><br><span class="line">httpd.com配置文件</span><br><span class="line">C:\xampp\apache\conf/httpd.conf</span><br><span class="line"></span><br><span class="line">vhosts.conf虚拟主机</span><br><span class="line">C:\xampp\apache\onf\extra\httpd-vhosts.conf</span><br></pre></td></tr></table></figure>
+
+<h4 id="phpnow套件"><a href="#phpnow套件" class="headerlink" title="phpnow套件"></a>phpnow套件</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">网站默认路径</span><br><span class="line">D:\PHPnow-1.5.6\htdocs</span><br><span class="line"></span><br><span class="line">httpd.conf配置文件</span><br><span class="line">D:\PHPnow-1.5.6\Apache-20\conf\httpd.conf</span><br><span class="line"></span><br><span class="line">vhosts.conf虚拟主机</span><br><span class="line">D:\PHPnow-1.5.6\Apache-20\conf\extra\vhosts.conf</span><br></pre></td></tr></table></figure>
+
+<h4 id="phpstudy套件"><a href="#phpstudy套件" class="headerlink" title="phpstudy套件"></a>phpstudy套件</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">网站默认路径</span><br><span class="line">C:\phpstudy\www</span><br><span class="line"></span><br><span class="line">httpd.conf配置文件</span><br><span class="line">C:\phpStudy\Apache\conf\httpd.conf</span><br><span class="line"></span><br><span class="line">vhosts.conf虚拟主机</span><br><span class="line">C:\phpStudy\Apache\conf\extra\httpd-vhosts.conf</span><br></pre></td></tr></table></figure>
+
+<h4 id="LAMPP套件"><a href="#LAMPP套件" class="headerlink" title="LAMPP套件"></a>LAMPP套件</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">网站默认路径</span><br><span class="line">/opt/lampp/htdocs</span><br><span class="line"></span><br><span class="line">httpd.conf配置文件</span><br><span class="line">/opt/lampp/etc/httpd.conf</span><br><span class="line"></span><br><span class="line">vhosts.conf虚拟主机</span><br><span class="line">/opt/lampp/etc/extra/httpd-vhosts.conf</span><br></pre></td></tr></table></figure>
+
+<h3 id="读取配置文件"><a href="#读取配置文件" class="headerlink" title="读取配置文件"></a>读取配置文件</h3><h4 id="利用Mysql内置函数"><a href="#利用Mysql内置函数" class="headerlink" title="利用Mysql内置函数"></a>利用Mysql内置函数</h4><p>但是这个对于<code>Mysql</code>数据库有版本限制，当前用户还得拥有<code>file</code>权限的前提下</p>
+<p><code>load_file()</code>和<code>load data infile()</code>方法为：<br>新建一个表，读取文件为<code>字符串</code>格式插入表中，然后读出表中数据。<code>load_file()</code>也可以直接读取文件内容</p>
+<p>system cat函数读取<br>httpd.conf、vhosts.conf<br>select load_file(“D:/xampp/apache/conf/httpd.conf”);</p>
+<h3 id="phpinfo函数"><a href="#phpinfo函数" class="headerlink" title="phpinfo函数"></a>phpinfo函数</h3><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/491.png" alt="图片"></p>
+<h4 id="httpd-conf配置文件指定"><a href="#httpd-conf配置文件指定" class="headerlink" title="httpd.conf配置文件指定"></a>httpd.conf配置文件指定</h4><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/492.png" alt="图片"></p>
+<h4 id="DocumentRoot"><a href="#DocumentRoot" class="headerlink" title="DocumentRoot"></a>DocumentRoot</h4><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/492.png" alt="图片"></p>
+<h4 id="Document-Root参数"><a href="#Document-Root参数" class="headerlink" title="Document_Root参数"></a>Document_Root参数</h4><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/490.png" alt="图片"></p>
+<h2 id="结尾"><a href="#结尾" class="headerlink" title="结尾"></a>结尾</h2><p>本章就到这，再次强调一遍：信息搜集真的很重要！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/25/penetrationtest-6/">http://example.com/2019/10/25/penetrationtest-6/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/%E4%BF%A1%E6%81%AF%E6%90%9C%E9%9B%86/"># 信息搜集</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/29/penetrationtest-7/">Metasploit提权Windows_Server_2008服务器</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/18/Nmap-1/">诸神之眼-Nmap-使用指南</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

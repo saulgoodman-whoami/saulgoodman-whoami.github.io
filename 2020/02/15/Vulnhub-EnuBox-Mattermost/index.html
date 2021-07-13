@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>VulnHub通关日记-EnuBox_Mattermost，逆向分析文件获取Flag | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">VulnHub通关日记-EnuBox_Mattermost，逆向分析文件获取Flag</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">February 15, 2020&nbsp;&nbsp;11:06:45</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Vulnhub/">Vulnhub</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=29418944&auto=1&height=66"></iframe>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>靶机地址：<a target="_blank" rel="noopener" href="https://www.vulnhub.com/entry/enubox-mattermost,414/">https://www.vulnhub.com/entry/enubox-mattermost,414/</a><br>Name：EnuBox：Mattermost<br>靶机介绍：The Mattermost chatting system may or may not hold sensitive information. Can you find your way in?</p>
+<h2 id="信息搜集"><a href="#信息搜集" class="headerlink" title="信息搜集"></a>信息搜集</h2><p>拿到靶机 <code>IP</code> 之后上神器 <code>NMAP</code> 对它就是一顿梭哈：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A -p- -T4 192.168.1.137</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1034.png" alt="图片"></p>
+<p>扫描完成后，发现它开放了 <code>21</code>（ftp）、<code>22</code>（ssh）、<code>80</code>（http）、<code>3389</code>（XRDP远程桌面）、<code>8065</code>（web） 端口。</p>
+<p>其中 <code>ftp</code> 可以用匿名用户 <code>anonymous</code> 登陆：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1035.png" alt="图片"></p>
+<p>由上图所示登陆到它的 <code>ftp</code> 后没有显示任何文件！那么我们还是先来看看 <code>web</code> （80、8065）的目录文件把：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.1.137</span><br><span class="line">dirb http://192.168.1.137:8065</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1036.png" alt="图片"></p>
+<p>枚举目录出来后先是看了 <code>80</code> 端口的 <code>index.html</code>，它显示的是 <code>403</code> 没有找到，但是页面上的信息提示有一个 <code>README.md</code> 的文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1037.png" alt="图片"></p>
+<p>我访问 <code>README.md</code> 发现是 <code>404</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.137/README.md</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1038.png" alt="图片"></p>
+<p>这个时候先放弃 <code>80</code> 端口，来到 <code>8065</code> 端口看看，它扫描出来是有一个 <code>robots.txt</code> 文件，访问但是空白的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.137:8065/robots.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1039.png" alt="图片"></p>
+<p>这个时候我直接访问它的首页发现是一个登陆页面：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.137:8065/login </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1040.png" alt="图片"></p>
+<h2 id="tftp下载README-md文件"><a href="#tftp下载README-md文件" class="headerlink" title="tftp下载README.md文件"></a>tftp下载README.md文件</h2><p>它使用的 <code>CMS</code> 是 <code>Mattermost</code> ，它是一款易于使用、经过简化且可扩展的团队通信和企业消息传送系统。</p>
+<p>尝试若口令无果，<code>Google</code> 上只有它的默认 <code>Mysql</code> 的账号密码，我用来尝试登陆 <code>Web</code> 无果。</p>
+<p>思路回到上面，刚刚打开 <code>80</code> 端口的 <code>Web</code> 页面它提示了一个 <code>README.md</code><br>文件，是不是作者告诉我们那个是关键点呢？刚好我们有了它的 <code>ftp</code> 匿名用户可以登陆，但是刚刚看过了没有任何文件，正当我一筹莫展的时候我下意识的在 <code>tftp</code> 里尝试能不能把 <code>README.md</code> 下载到本地，没想到真成了！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># 因为我写到这里的时候是第二天了，我重启后靶机的 IP 就变成 192.168.1.138 了！</span><br><span class="line">tftp 192.168.1.138</span><br><span class="line"># TFTP是一个传输文件的简单协议，它基于UDP协议而实现的。</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1041.png" alt="图片"></p>
+<p>把 <code>README.md</code> 下载到本地打开后发现我们得到了一个账号和密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin：ComplexPassword0!</span><br></pre></td></tr></table></figure>
+
+<p>随后我登陆到了它到后台：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.138:8065/login</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1042.png" alt="图片"></p>
+<p>来到后台后我大致看了看它的后台消息，翻译过来好像是一些没用的诗句？</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1043.png" alt="图片"></p>
+<p>额。。。先不管它！我又去了 <code>exploit-db</code> 上寻找了有关 <code>Mattermost</code> 的漏洞，但是没有得到我想要的信息：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1044.png" alt="图片"></p>
+<h2 id="Mattermost-后台获取FTP账号密码"><a href="#Mattermost-后台获取FTP账号密码" class="headerlink" title="Mattermost-后台获取FTP账号密码"></a>Mattermost-后台获取FTP账号密码</h2><p>随后我在后台的头像以及能上传的地方尝试看看能不能获取到一枚 <code>webshell</code>，很显然我没成功，我太菜了。</p>
+<p>正当我一筹莫展的时候我发现了一个系统控制台找到了一个插件 <code>zoom</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1045.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1046.png" alt="图片"></p>
+<p>它默认是 <code>False</code> 关闭的，我把它开启 <code>True</code> 后得到了一枚 <code>URL</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost/JK94vsNKAns6HBkG/AxRt6LwuA7A6N4gk/index.html</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1047.png" alt="图片"></p>
+<p>这个时候我是在 <code>8065</code> 端口打开的 <code>URL</code> 发现没有这个页面：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1048.png" alt="图片"></p>
+<p>但是用 <code>80</code> 端口的 <code>web</code> 去访问这个页面的时候却得到一段提示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.138/JK94vsNKAns6HBkG/AxRt6LwuA7A6N4gk/index.html</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1049.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Hello Admin, FTP credentials help you edit, transfer and delete files from your site. This is why it&#x27;s important to keep these credentials handy. FTP Credentials: ftpuser / ftppassword Make sure to keep these to yourself. </span><br></pre></td></tr></table></figure>
+
+<p>通过这个提示我有得到一枚账号和密码，是 <code>FTP</code> 的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ftpuser：ftppassword</span><br></pre></td></tr></table></figure>
+
+<p>随后我便用得到的账号和密码成功登陆到它的 <code>FTP</code> 服务里：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ftp 192.168.1.148</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1050.png" alt="图片"></p>
+<h2 id="获取到SSH的账号密码"><a href="#获取到SSH的账号密码" class="headerlink" title="获取到SSH的账号密码"></a>获取到SSH的账号密码</h2><p>登陆进去后发现有一个 <code>examples.desktop</code> 文件，还有一个 <code>users</code> 目录、<code>mattermost</code> 目录下有一个 <code>message</code> 文件，我把他们都下载到本地后查看了一下<code>examples.desktop</code> 文件没发现什么：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1051.png" alt="图片"></p>
+<p>查看 <code>message</code> 文件发现里面有一段话：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1052.png" alt="图片"></p>
+<p>这个时候有点懵了，整半天你给我了一句 <code>Welcome！！！</code> ？但是后来把一切结合起来想了想，刚开始是有一个 <code>users</code> 目录，然后是 <code>mattermost</code> 目录下有一个 <code>message</code> 文件，文件内容是 <code>Welcome!!!</code>。</p>
+<p>柯南：<code>真実はいつも一つ</code>（真相只有一个），<code>mattermost</code> 是一个用户名，而 <code>message</code> 文件内容 <code>Welcome!!!</code> 就是密码！！！按照我这个推理我尝试登陆到它到 <code>SSH</code> 没想到真成了！！！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">USER：mattermost</span><br><span class="line">PASS：Welcome!!!</span><br><span class="line">ssh mattermost@192.168.1.138</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1053.png" alt="图片"></p>
+<p>玩 <code>CTF</code> 靶机就是要多思考，根据我们得到到信息要去想它为什么会有这个信息？这个信息的线索是干嘛的？我可以用得到的信息做写什么？</p>
+<p>毕竟<code>CTF</code> 就是这样不按常理出牌，你得像个黑客，以黑客的思维去思考问题！</p>
+<p>登陆到 <code>mattermost</code> 用户后，我习惯性的 <code>sudo -l</code> 发现它没有权限去执行 <code>sudo</code>，需要密码：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1054.png" alt="图片"></p>
+<p>接着我查看了一下有没有一些文件可以以 <code>SUID</code> 权限去执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find / -perm -u=s -type f 2&gt;/dev/null</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1055.png" alt="图片"></p>
+<p>结果发现了刚好有一个文件 <code>secret</code> 文件是可以以 <code>SUID</code> 权限执行的，而且刚好在我所登陆的 <code>mattermost</code> 用户的 家目录下的桌面：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/home/mattermost/Desktop/secret</span><br></pre></td></tr></table></figure>
+
+<h2 id="逆向分析secret文件获取Flag"><a href="#逆向分析secret文件获取Flag" class="headerlink" title="逆向分析secret文件获取Flag"></a>逆向分析secret文件获取Flag</h2><p>随后我来到了 <code>mattermost</code> 用户的家目录，里面有一些目录和文件，除了 <code>Desktop</code> 目录里有文件，其他目录都是空的！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1056.png" alt="图片"></p>
+<p>我先是看了看 <code>README.md</code> 文件，发现里面是一段话，大概意思是你有一个密钥，而且在 <code>30</code> 天后会过期</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Hello User,</span><br><span class="line"></span><br><span class="line">Your secret key is 48912.</span><br><span class="line"></span><br><span class="line">Do not share this key with anyone.</span><br><span class="line"></span><br><span class="line">!! NOTE:: This key is not valid after 30 days and has been changed by our internal systems.</span><br><span class="line">!! NOTE:: Please contact the support desk to get new secret key.</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1057.png" alt="图片"></p>
+<p>吓的我迫不及待地去运行 <code>secret</code> 文件，运行后它让你输入密码，我用刚刚得到的密码发现出错了：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1058.png" alt="图片"></p>
+<p>很显然密码以及过期了！这个时候怎么办呢？我先是把 <code>secret</code> 文件使用 <code>nc</code> 传到 <code>KALI</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1059.png" alt="图片"></p>
+<p>之后各种百度各种Google关于逆向的文章，临时拜佛脚！ WEB狗表示伤不起，一路硬钢下来的！呜呜呜～～～</p>
+<p>经过查看源代码发现了一段代码：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1060.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">undefined8 main(void)</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  long in_FS_OFFSET;</span><br><span class="line">  int local_14;</span><br><span class="line">  long local_10;</span><br><span class="line">  </span><br><span class="line">  local_10 = *(long *)(in_FS_OFFSET + 0x28);</span><br><span class="line">  local_14 = 0;</span><br><span class="line">  puts(&quot;Hello Admin, Please enter the secret key:&quot;);</span><br><span class="line">  __isoc99_scanf(&amp;DAT_00100992,&amp;local_14);</span><br><span class="line">  if (local_14 == 0xf447) &#123;</span><br><span class="line">    setuid(0);</span><br><span class="line">    setgid(0);</span><br><span class="line">    system(&quot;/bin/bash&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  else &#123;</span><br><span class="line">    printf(&quot;Your is either invalid or expired\n.&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  if (local_10 != *(long *)(in_FS_OFFSET + 0x28)) &#123;</span><br><span class="line">                    /* WARNING: Subroutine does not return */</span><br><span class="line">    __stack_chk_fail();</span><br><span class="line">  &#125;</span><br><span class="line">  return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>拿到源代码之后开始审计，幸好以前学过一点点 <code>C</code> 语言，还是能看懂一点的，具体是要让 <code>local_14</code> 的值等于 <code>0xf447</code> ，这个时候就成功运行 <code>system</code> 函数，切换到 <code>/bin/bash</code> ！<code>0xf447</code> 是<code>十六进制</code>，我把它转化为<code>十进制</code>为：<code>62535</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1061.png" alt="图片"></p>
+<p>最后运行 <code>secret</code> 文件获得 <code>root</code> 权限！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1062.png" alt="图片"></p>
+<p>最终也是在 <code>/root/Desktop</code> 下拿到 <code>Flag</code>！</p>
+<h2 id="微信公众号"><a href="#微信公众号" class="headerlink" title="微信公众号"></a>微信公众号</h2><p>公众号：<code>saulGoodman</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/weixin/weixin.jpg" alt="saulGoodman"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/02/15/Vulnhub-EnuBox-Mattermost/">http://example.com/2020/02/15/Vulnhub-EnuBox-Mattermost/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/CTF/"># CTF</a>
+                    
+                        <a href="/tags/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/"># 权限提升</a>
+                    
+                        <a href="/tags/Vulnhub/"># Vulnhub</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2020/02/18/Vulnhub-DC-1/">VulnHub通关日记-DC_1-Walkthrough</a>
+            
+            
+            <a class="next" rel="next" href="/2020/02/14/Vulnhub-five86-2/">VulnHub通关日记-five86-2-Walkthrough</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>护网蓝队及应急响应笔记 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">护网蓝队及应急响应笔记</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">July 3, 2020&nbsp;&nbsp;22:19:31</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E8%93%9D%E9%98%9F/">蓝队</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1645135&auto=1&height=66"></iframe>
+
+<blockquote>
+<p>文章较长，请耐心看完。文章很多地方（大部分）来自于Bypass公众号的应急响应笔记，只不过我都一一复现了一下。</p>
+</blockquote>
+<h1 id="1、应急响应介绍"><a href="#1、应急响应介绍" class="headerlink" title="1、应急响应介绍"></a>1、应急响应介绍</h1><h2 id="第一步：沟通"><a href="#第一步：沟通" class="headerlink" title="第一步：沟通"></a>第一步：沟通</h2><p>联系客户，咨询当前服务器的状态，发生的准确时间点，服务器上有什么业务，提供异常截图，事件发生后有没有做处理，做了那些处理，之前有没有发生过安全事件，是否有完整的日志，服务器上是否存在安全设备。</p>
+<h2 id="第二步：确认"><a href="#第二步：确认" class="headerlink" title="第二步：确认"></a>第二步：确认</h2><p>初步了解服务器相关信息，要去客户对服务器的重要数据进行备份，然后提供给我们应急服务器的账号密码，如果服务器上存在对应Web服务器，需要提供对应的Web域名，整理客户描述信息，进行初步确认，判断是不是安全事件，切不可盲目相信他人所述，如果是安全事件提供对应的防护方案。</p>
+<h2 id="第三步：深入分析"><a href="#第三步：深入分析" class="headerlink" title="第三步：深入分析"></a>第三步：深入分析</h2><p>分析服务器上进程、网络连接、计划任务、日志，查找异常项，帮助客户恢复服务器正常状态，刻画攻击路径。</p>
+<h2 id="第四步：沟通"><a href="#第四步：沟通" class="headerlink" title="第四步：沟通"></a>第四步：沟通</h2><p>保持跟客户的持续沟通，不要让客户感觉你没有在处理事件，及时同步处理进展。有不知道的信息就主动问客户获取，客户提供越多信息，对我们完成应急越有帮助。</p>
+<h2 id="第五步：总结"><a href="#第五步：总结" class="headerlink" title="第五步：总结"></a>第五步：总结</h2><p>整理并输出完整的应急响应报告。</p>
+<h2 id="注意事项："><a href="#注意事项：" class="headerlink" title="注意事项："></a>注意事项：</h2><ul>
+<li>由于应急响应需要注意时效性，客户一般都是非常着急的，尽可能的定位到问题，解决问题才是关键。</li>
+<li>止损是第一。</li>
+<li>不要造成二次伤害。</li>
+</ul>
+<h2 id="应急响应整体思路"><a href="#应急响应整体思路" class="headerlink" title="应急响应整体思路"></a>应急响应整体思路</h2><p>3W1H：W即Who、What、Why，1H即How，做应急响应要带着疑问来做事，一定要收集清楚这些信息。网络拓扑是怎样的？需求是啥？发生了什么事？你能做什么？用户用了什么产品？产品版本多少？病毒库版本多少？多少主机中招了？主机是普通PC还是服务器？服务器是做什么的？信息搜集越多，对应急响应越有利。</p>
+<p>易失性原则：做应急响应免不了要做信息搜集和取证的，但这里是有一定的先后顺序的，即最容易丢失数据，应该最先收集，其他的以此类推。</p>
+<p>要素原则：做应急响应，主要是抓关键证据，即要素，这些要素包括样本、流量、日志、进程及模块、内存、启动项。</p>
+<p>避害原则：做应急响应，要做到趋利避害，不能问题还没有解决，反而引入了新的问题。譬如，自己使用的工具有后门却不知情；给用户使用不恰当的工具或软件造成客户主机出现问题；给别人发样本，不加密，不压缩，导致别人误点中毒，最极端的场景就是给别人发勒索样本不加密压缩，导致别人误点中毒。</p>
+<h2 id="应急响应事件介绍及处理流程"><a href="#应急响应事件介绍及处理流程" class="headerlink" title="应急响应事件介绍及处理流程"></a>应急响应事件介绍及处理流程</h2><h3 id="网络攻击事件"><a href="#网络攻击事件" class="headerlink" title="网络攻击事件"></a>网络攻击事件</h3><ul>
+<li>安全扫描攻击：黑客利用扫描器对目标进行漏洞探测，并在发现漏洞后进一步利用漏洞进行攻击。</li>
+<li>暴力破解攻击：对目标系统账号密码进行暴力破解，获取后台管理员权限。</li>
+<li>系统漏洞攻击：利用操作系统、应用系统中存在漏洞进行攻击。</li>
+<li>WEB漏洞攻击：通过SQL注入、上传漏洞、XSS漏洞、授权绕过等各种WEB漏洞进行攻击。</li>
+<li>拒绝服务攻击：通过大量流量DDOS或者CC攻击目标，使目标服务器无法提供正常服务。</li>
+<li>其他网络攻击行为…</li>
+</ul>
+<h3 id="恶意程序事件"><a href="#恶意程序事件" class="headerlink" title="恶意程序事件"></a>恶意程序事件</h3><ul>
+<li>病毒、蠕虫：造成系统缓慢，数据损坏、运行异常。</li>
+<li>远控木马：主机被黑客远程控制。</li>
+<li>僵尸网络程序（肉鸡行为）：主机对外发动DDOS攻击、对外发起扫描攻击行为。</li>
+<li>挖矿程序：造成系统资源大量消耗。</li>
+</ul>
+<h3 id="Web恶意木马"><a href="#Web恶意木马" class="headerlink" title="Web恶意木马"></a>Web恶意木马</h3><ul>
+<li>Webshell后门：黑客通过Webshell控制主机</li>
+<li>网页挂马：页面被植入病毒内容，影响访问者安全</li>
+<li>网页暗链：网站被植入博彩、色情、游戏等广告内容</li>
+</ul>
+<h3 id="信息破坏事件"><a href="#信息破坏事件" class="headerlink" title="信息破坏事件"></a>信息破坏事件</h3><ul>
+<li>系统配置遭篡改：系统中出现异常的服务、进程、启动项、账号等等</li>
+<li>数据库内容篡改：业务数据遭到而已篡改，引起业务异常和损失</li>
+<li>网站内容篡改事件：网站页面内容被黑客恶意篡改</li>
+<li>信息数据泄露事件：服务器数据、会员账号遭到窃取并泄露</li>
+</ul>
+<h3 id="其他安全事件"><a href="#其他安全事件" class="headerlink" title="其他安全事件"></a>其他安全事件</h3><p>账号被异常登录：系统账号在异地登录，可能出现账号密码泄露，支付盗刷</p>
+<h3 id="事件处理流程"><a href="#事件处理流程" class="headerlink" title="事件处理流程"></a>事件处理流程</h3><ul>
+<li>一般像Web攻击类安全事件，处理方法就是加waf，增加攻击者的攻击成本，然后开始查找漏洞，修复漏洞，如果是CMS漏洞，需要根据官方修复建议进行修复。</li>
+<li>挖矿类安全事件，先暂停挖矿进程，修改远程木马下载地址为本地host，然后排除处理。</li>
+<li>信息泄露安全事件，要根据泄露数据样本判断是哪里存在漏洞，然后采取相应的措施。</li>
+<li>支付类安全事件，禁用支付秘钥，关闭提现业务。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><blockquote>
+<p>沟通-&gt;确认-&gt;异常发生于追踪-&gt;事件处理-&gt;总结</p>
+</blockquote>
+<ul>
+<li>第一步：和客户交流，尽可能多的了解相关业务</li>
+<li>第二步：根据客户描述做好笔记，了解事件主线，及时止损</li>
+<li>第三步：异常发生于追踪</li>
+<li>第四步：事件处理，清除服务器木马，修复漏洞</li>
+<li>第五步：总结写报告</li>
+</ul>
+<h1 id="2、Linux-Windows入侵命令排查初步"><a href="#2、Linux-Windows入侵命令排查初步" class="headerlink" title="2、Linux/Windows入侵命令排查初步"></a>2、Linux/Windows入侵命令排查初步</h1><h2 id="Linux排查方法"><a href="#Linux排查方法" class="headerlink" title="Linux排查方法"></a>Linux排查方法</h2><h3 id="1、系统完整性"><a href="#1、系统完整性" class="headerlink" title="1、系统完整性"></a>1、系统完整性</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm -Va</span><br></pre></td></tr></table></figure>
+
+<h3 id="2、进程"><a href="#2、进程" class="headerlink" title="2、进程"></a>2、进程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">top</span><br><span class="line">ps -aux</span><br><span class="line">lsof</span><br></pre></td></tr></table></figure>
+
+<h3 id="3、网络连接"><a href="#3、网络连接" class="headerlink" title="3、网络连接"></a>3、网络连接</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -pantu</span><br></pre></td></tr></table></figure>
+
+<h3 id="4、开机启动项"><a href="#4、开机启动项" class="headerlink" title="4、开机启动项"></a>4、开机启动项</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/etc/init.d/*</span><br><span class="line">/etc/rc*.d/</span><br><span class="line">/etc/rc.local</span><br></pre></td></tr></table></figure>
+
+<h3 id="5、Webshell查杀"><a href="#5、Webshell查杀" class="headerlink" title="5、Webshell查杀"></a>5、Webshell查杀</h3><p>河马Webshell查杀，自写脚本</p>
+<h3 id="6、计划任务"><a href="#6、计划任务" class="headerlink" title="6、计划任务"></a>6、计划任务</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cat /var/log/cron | grep &quot;bash&quot;</span><br><span class="line">cat /var/log/cron | grep &quot;wget&quot;</span><br><span class="line">cat /var/log/cron | grep &quot;cat&quot;</span><br><span class="line">cat /vat/log/cron | grep &quot;ud&quot;</span><br><span class="line">cat /etc/crontab</span><br><span class="line">/var/spool/crom/*</span><br><span class="line">/etc/cron.d/</span><br><span class="line">/etc/cron.daily/</span><br><span class="line">/etc/cron.hourly/</span><br><span class="line">/etc/cron.weekly/</span><br><span class="line">/etc/cron.monthly/</span><br></pre></td></tr></table></figure>
+
+<h3 id="7、查看系统登录情况"><a href="#7、查看系统登录情况" class="headerlink" title="7、查看系统登录情况"></a>7、查看系统登录情况</h3><p>历史登录成功IP和账号，当前登录成功账号IP</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /var/log/secure</span><br><span class="line">last</span><br></pre></td></tr></table></figure>
+
+<h3 id="8、查看SSH-key"><a href="#8、查看SSH-key" class="headerlink" title="8、查看SSH key"></a>8、查看SSH key</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat .ssh/authorized_keys</span><br></pre></td></tr></table></figure>
+
+<h3 id="9、用户及hosts"><a href="#9、用户及hosts" class="headerlink" title="9、用户及hosts"></a>9、用户及hosts</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/etc/passwd</span><br><span class="line">/etc/hosts</span><br></pre></td></tr></table></figure>
+
+<h3 id="10、查看动态链接库"><a href="#10、查看动态链接库" class="headerlink" title="10、查看动态链接库"></a>10、查看动态链接库</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">echo $LD_PRELOAD</span><br><span class="line">Linux预加载库：</span><br><span class="line">/etc/ld.so.preload</span><br><span class="line">/usr/local/lib</span><br></pre></td></tr></table></figure>
+
+<h3 id="11、日志分析"><a href="#11、日志分析" class="headerlink" title="11、日志分析"></a>11、日志分析</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Linux日志文件存在/var/log/</span><br><span class="line">/var/log/message	记录系统重要信息的日志，这个日志文件会记录Linux系统的绝大多数重要信息</span><br><span class="line">/var/log/cron	记录系统定时任务相关日志</span><br><span class="line">/var/log/btmp	记录错误登陆日志，不能vi查看，要用lastb</span><br><span class="line">/var/log/lastlog	记录系统中所有用户最后一次登陆事件的日志，不能使用vi，使用lastlog</span><br><span class="line">/var/logsecure	记录验证和授权方面的信息，只要设计账号和密码的程序都会记录，比如ssh登陆，su切换用户，sudo授权</span><br><span class="line"></span><br><span class="line">1、定位有多少IP在爆破主机的root账号</span><br><span class="line">grep &quot;Failed password for root&quot; /var/log/secure | awk &#x27;&#123;print $11&#125;&#x27; | sort | uniq -c |sort -nr| more</span><br><span class="line">2、登陆成功的IP有那些</span><br><span class="line">grep &quot;Accepted&quot; /var/log/secure |awk &#x27;&#123;print $11&#125;&#x27; |sort|uniq -c|sort -nr |more</span><br></pre></td></tr></table></figure>
+
+<h2 id="Windows排查方法"><a href="#Windows排查方法" class="headerlink" title="Windows排查方法"></a>Windows排查方法</h2><h3 id="1、系统状态排查"><a href="#1、系统状态排查" class="headerlink" title="1、系统状态排查"></a>1、系统状态排查</h3><p>查看CPU、内存、网络占有率</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1733.png" alt="图片"></p>
+<h3 id="2、文件分析"><a href="#2、文件分析" class="headerlink" title="2、文件分析"></a>2、文件分析</h3><h4 id="临时文件"><a href="#临时文件" class="headerlink" title="临时文件"></a>临时文件</h4><p>黑客往往可能将病毒放在临时目录，或者将病毒相关文件释放到临时目录，因此需要检查临时目录是否存在异常文件。假设系统盘是在C盘，则通常情况下的临时目录如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">C:\User\\[用户名]\Local Settings\Temp</span><br><span class="line">C:\Documents and Settings\\[用户名]\Local Settings\Temp</span><br><span class="line">C:\User\\[用户名]\桌面</span><br><span class="line">C:\Documents and Settings\\[用户名]\桌面</span><br><span class="line">C:\User\\[用户名]\Local Settings\Temporary Internet Files</span><br><span class="line">C:\Documents and Settings\\[用户名]\local Settings\Temporary Intermet Files</span><br></pre></td></tr></table></figure>
+
+<h4 id="浏览器相对文件"><a href="#浏览器相对文件" class="headerlink" title="浏览器相对文件"></a>浏览器相对文件</h4><p>黑客可能通过浏览器下载恶意文件，或者盗取用户信息，因此需要检查下浏览器的历史访问记录、文件下载记录、cookie信息，对应相关文件目录如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">C:\User\\[用户名]\Cookies</span><br><span class="line">C:\Documents and Settings\\[用户名]\Cookies</span><br><span class="line">C:\Users\\[用户名]\Local Settings\History</span><br><span class="line">C:\Documents and Settings\\[用户名]\Local Settings\History</span><br><span class="line">C:\Users\\[用户名]\Local Settings\Temporary Internet Files</span><br></pre></td></tr></table></figure>
+
+<h4 id="最近文件"><a href="#最近文件" class="headerlink" title="最近文件"></a>最近文件</h4><p>检查下最近打开了那些文件，可疑文件有可能就在最近打开的文件中，打开以下这些目录及可看到：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">C:\User\\[用户名]\Recent</span><br><span class="line">C:\Documents and Settings\\[用户名]\Recent</span><br></pre></td></tr></table></figure>
+
+<h4 id="文件修改时间"><a href="#文件修改时间" class="headerlink" title="文件修改时间"></a>文件修改时间</h4><p>可以根据文件夹内文件列表时间排序，查找可疑文件。一般情况下，修改时间越近的文件越可疑</p>
+<h4 id="system32和hosts文件"><a href="#system32和hosts文件" class="headerlink" title="system32和hosts文件"></a>system32和hosts文件</h4><p>system32也是常见病毒释放目录，因此也要检查下该目录。hosts文件是系统配置文件，用于本地DOS查询的域名设置，可以强制将某个域名对应到某个IP，因此需要检查hosts文件有没有被黑客恶意篡改。</p>
+<p>这里以hosts文件为例，检查三种异常：</p>
+<ul>
+<li>知名站点，检查对应IP是否真的归属该站点，防止”钓鱼“</li>
+<li>为知站点，检查该域名的IP是否恶意</li>
+<li>无法访问的安全站点，即IP是否指向127.0.0.1、0.0.0.0等本地地址、无效地址</li>
+</ul>
+<h3 id="网络连接"><a href="#网络连接" class="headerlink" title="网络连接"></a>网络连接</h3><p>可以使用D盾、还可以使用命令<code>netstat -ano</code>查看当前网络连接，排查可疑的服务、端口、外连的IP。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1734.png" alt="图片"></p>
+<p>如发现<code>netstat</code>定位出的<code>pid</code>有问题，可再通过<code>tastlist</code>命令进一步追踪该可疑程序（<code>tasklist | findstr PID</code>）</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1735.png" alt="图片"></p>
+<p>以上图片只是打个比方！</p>
+<h3 id="流量分析"><a href="#流量分析" class="headerlink" title="流量分析"></a>流量分析</h3><p>流量分析可以使用<code>Wireshark</code>，主要分析一下当前主机访问了那些域名、URL、服务、或者有那些外网IP在访问本地主机的那些端口、服务和目录，又使用了那些协议等等。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1736.png" alt="图片"></p>
+<h3 id="漏洞与补丁信息"><a href="#漏洞与补丁信息" class="headerlink" title="漏洞与补丁信息"></a>漏洞与补丁信息</h3><p>使用命令<code>systeminfo</code>，查看系统版本信息以及补丁信息，确认当前系统是否存在漏洞、是否已经打了相应补丁。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1737.png" alt="图片"></p>
+<h3 id="进程分析"><a href="#进程分析" class="headerlink" title="进程分析"></a>进程分析</h3><ul>
+<li>进程名字异常</li>
+<li>进程信息异常</li>
+</ul>
+<h3 id="启动项异常"><a href="#启动项异常" class="headerlink" title="启动项异常"></a>启动项异常</h3><p>黑客为了保持病毒能够开机自启、登陆启动或者定时启动，通常会有相应的启动项。</p>
+<h3 id="用户排查"><a href="#用户排查" class="headerlink" title="用户排查"></a>用户排查</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net user</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1738.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lusrmgr.msc</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1739.png" alt="图片"></p>
+<h3 id="删除guest用户"><a href="#删除guest用户" class="headerlink" title="删除guest用户"></a>删除guest用户</h3><p>按住 <code>win+r</code>，输入<code>regedit</code>打开注册表：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1740.png" alt="图片"></p>
+<p>然后展开：<code>HKEY_LOCAL_MACHINE\SAM\SAM</code>：（如果不能展开就给他一个管理员权限）</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1741.png" alt="图片"></p>
+<p>然后重新打开就可以了：<code>HKEY_LOCAL_MACHINE\SAM\SAM\Domains\account\Users\Names\Guest</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1742.png" alt="图片"></p>
+<p>可以看到，<code>guest</code>的<code>type</code>值是<code>0x1f5</code>，我们把它删除就可以了</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1743.png" alt="图片"></p>
+<h3 id="常用工具及命令"><a href="#常用工具及命令" class="headerlink" title="常用工具及命令"></a>常用工具及命令</h3><h4 id="Webshell查杀"><a href="#Webshell查杀" class="headerlink" title="Webshell查杀"></a>Webshell查杀</h4><p>D盾、深信服webshellkiller等等</p>
+<h4 id="木马病毒类查杀"><a href="#木马病毒类查杀" class="headerlink" title="木马病毒类查杀"></a>木马病毒类查杀</h4><ul>
+<li>ClarmAV</li>
+<li>RKHunter</li>
+<li>Chkrootkit</li>
+</ul>
+<h4 id="进程分析-1"><a href="#进程分析-1" class="headerlink" title="进程分析"></a>进程分析</h4><ul>
+<li>火绒</li>
+</ul>
+<h4 id="流量分析-1"><a href="#流量分析-1" class="headerlink" title="流量分析"></a>流量分析</h4><ul>
+<li>Wireshark（windows）</li>
+<li>Tcpdump（linux）</li>
+</ul>
+<h4 id="启动项分析"><a href="#启动项分析" class="headerlink" title="启动项分析"></a>启动项分析</h4><ul>
+<li>Autoruns</li>
+</ul>
+<h4 id="其他辅助工具"><a href="#其他辅助工具" class="headerlink" title="其他辅助工具"></a>其他辅助工具</h4><p>IP分析、超级文件监控工具，Mysql监控工具。</p>
+<h1 id="3、Linux入侵排查，木马处理"><a href="#3、Linux入侵排查，木马处理" class="headerlink" title="3、Linux入侵排查，木马处理"></a>3、Linux入侵排查，木马处理</h1><h2 id="1、应急常用Linux命令"><a href="#1、应急常用Linux命令" class="headerlink" title="1、应急常用Linux命令"></a>1、应急常用Linux命令</h2><h3 id="（1）查看进程"><a href="#（1）查看进程" class="headerlink" title="（1）查看进程"></a>（1）查看进程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">top</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1744.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps -aux</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1745.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lsof</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1746.jpg" alt="图片"></p>
+<h3 id="（2）网络连接"><a href="#（2）网络连接" class="headerlink" title="（2）网络连接"></a>（2）网络连接</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -pantu</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1747.jpg" alt="图片"></p>
+<h3 id="（3）开机启动项"><a href="#（3）开机启动项" class="headerlink" title="（3）开机启动项"></a>（3）开机启动项</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/etc/init.d/*</span><br><span class="line">/etc/rc*.d/</span><br><span class="line">/etc/rc.local</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1748.jpg" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1749.jpg" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1750.jpg" alt="图片"></p>
+<h3 id="（4）查看计划任务"><a href="#（4）查看计划任务" class="headerlink" title="（4）查看计划任务"></a>（4）查看计划任务</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls -altr /var/spool/cron/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1751.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls -altr /etc/cron.daily/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1752.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls -altr /etc/cron.weekly/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1753.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls -altr /etc/cron.hourly/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1754.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls -altr /etc/cron.monthly/</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1755.jpg" alt="图片"></p>
+<h3 id="（5）查看登录情况"><a href="#（5）查看登录情况" class="headerlink" title="（5）查看登录情况"></a>（5）查看登录情况</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">last	//上一次登陆情况</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1756.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /var/log/secure* | grep &quot;Access&quot;	//查看登陆成功</span><br><span class="line">cat /var/log/secure* | grep &quot;Fail&quot;	//查看登陆失败</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1757.jpg" alt="图片"></p>
+<p>###（6）查看ssh key</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd /root/.ssh/</span><br><span class="line">authorized_keys	//这个文件可能会被写入ssh密钥</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1758.jpg" alt="图片"></p>
+<p>###（7）查看用户和hosts</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/passwd		//看看有没有新增用户</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1759.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/hosts		//查看hosts是防止木马地址绑定到一个正常的网页</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1760.jpg" alt="图片"></p>
+<h3 id="（8）查看动态链接库"><a href="#（8）查看动态链接库" class="headerlink" title="（8）查看动态链接库"></a>（8）查看动态链接库</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo $LD_PRELOAD	//如果有动态链接库，那么看看路径之前的文件有没有别篡改，是不是正常的</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1761.jpg" alt="图片"></p>
+<p>###（9）Linux预加载库</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/etc/ld.so.preload</span><br><span class="line">/usr/local/lib</span><br></pre></td></tr></table></figure>
+
+<h2 id="2、入侵排查"><a href="#2、入侵排查" class="headerlink" title="2、入侵排查"></a>2、入侵排查</h2><h3 id="2-1：账号安全"><a href="#2-1：账号安全" class="headerlink" title="2.1：账号安全"></a>2.1：账号安全</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1、用户信息文件/etc/passwd</span><br><span class="line">root:x:0:0:root:/root:/bin/bash</span><br><span class="line">account:password:UID:GID:GECOS:directory:shell</span><br><span class="line">用户名：密码：用户ID：组ID：用户说明：家目录：登陆之后shell</span><br><span class="line">注意：无密码只允许本机登陆，远程不允许登陆</span><br><span class="line"></span><br><span class="line">2、影子文件/etc/shadow</span><br><span class="line">root:$6$oGs1PqhL2p3ZetrE$X7o7bzoouHQVSEmSgsYN5UD4.kMHx6qgbTqwNVC5oOAouXvcjQSt.Ft7ql1WpkopY0UV9ajBwUt1DpYxTCVvI/:16809:0:99999:7:::</span><br><span class="line">用户名：加密密码：密码最后一次修改日期：两次密码的修改时间间隔：密码有效期：密码修改到期到的警告天数：密码过期之后的宽限天数：账号失效时间：保留</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">who     查看当前登录用户（tty本地登陆  pts远程登录）</span><br><span class="line">w       查看系统信息，想知道某一时刻用户的行为</span><br><span class="line">uptime  查看登陆多久、多少用户，负载</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1762.jpg" alt="图片"></p>
+<h3 id="入侵排查"><a href="#入侵排查" class="headerlink" title="入侵排查"></a>入侵排查</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1、查询特权用户特权用户(uid 为0)</span><br><span class="line">awk -F: &#x27;$3==0&#123;print $1&#125;&#x27; /etc/passwd</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1763.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2、查询可以远程登录的帐号信息</span><br><span class="line">awk &#x27;/\$1|\$6/&#123;print $1&#125;&#x27; /etc/shadow</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1764.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">3、除root帐号外，其他帐号是否存在sudo权限。如非管理需要，普通帐号应删除sudo权限</span><br><span class="line">more /etc/sudoers | grep -v &quot;^#\|^$&quot; | grep &quot;ALL=(ALL)&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1765.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">4、禁用或删除多余及可疑的帐号</span><br><span class="line">    usermod -L user    禁用帐号，帐号无法登录，/etc/shadow第二栏为!开头</span><br><span class="line">	userdel user       删除user用户</span><br><span class="line">	userdel -r user    将删除user用户，并且将/home目录下的user目录一并删除</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2：历史命令"><a href="#2-2：历史命令" class="headerlink" title="2.2：历史命令"></a>2.2：历史命令</h3><p>通过<code>.bash_history</code>查看帐号执行过的系统命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1、root的历史命令</span><br><span class="line">history</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1766.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">为历史的命令增加登录的IP地址、执行命令时间等信息：</span><br><span class="line">1）保存1万条命令</span><br><span class="line">sed -i &#x27;s/^HISTSIZE=1000/HISTSIZE=10000/g&#x27; /etc/profile</span><br><span class="line">2）在/etc/profile的文件尾部添加如下行数配置信息：</span><br><span class="line">######jiagu history xianshi#########</span><br><span class="line">USER_IP=`who -u am i 2&gt;/dev/null | awk &#x27;&#123;print $NF&#125;&#x27; | sed -e &#x27;s/[()]//g&#x27;`</span><br><span class="line">if [ &quot;$USER_IP&quot; = &quot;&quot; ]</span><br><span class="line">then</span><br><span class="line">USER_IP=`hostname`</span><br><span class="line">fi</span><br><span class="line">export HISTTIMEFORMAT=&quot;%F %T $USER_IP `whoami` &quot;</span><br><span class="line">shopt -s histappend</span><br><span class="line">export PROMPT_COMMAND=&quot;history -a&quot;</span><br><span class="line">######### jiagu history xianshi ##########</span><br><span class="line">3）source /etc/profile让配置生效</span><br><span class="line"></span><br><span class="line">生成效果： 1  2018-07-10 19:45:39 192.168.204.1 root source /etc/profile</span><br><span class="line"></span><br><span class="line">3、历史操作命令的清除：history -c</span><br><span class="line">但此命令并不会清除保存在文件中的记录，因此需要手动删除.bash_profile文件中的记录。</span><br></pre></td></tr></table></figure>
+
+<h3 id="入侵排查-1"><a href="#入侵排查-1" class="headerlink" title="入侵排查"></a>入侵排查</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">进入用户目录下</span><br><span class="line">cat .bash_history &gt;&gt; history.txt</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3：检查异常端口"><a href="#2-3：检查异常端口" class="headerlink" title="2.3：检查异常端口"></a>2.3：检查异常端口</h2><p>使用<code>netstat</code> 网络连接命令，分析可疑端口、<code>IP</code>、<code>PID</code>.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">netstat -antlp|more</span><br><span class="line"></span><br><span class="line">查看下pid所对应的进程文件路径，</span><br><span class="line">运行ls -l /proc/$PID/exe或file /proc/$PID/exe（$PID 为对应的pid 号）</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1767.jpg" alt="图片"></p>
+<h2 id="2-4：检查异常进程"><a href="#2-4：检查异常进程" class="headerlink" title="2.4：检查异常进程"></a>2.4：检查异常进程</h2><p>使用<code>ps</code>命令，分析进程</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps aux | grep pid </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1768.jpg" alt="图片"></p>
+<h2 id="2-5：检查开机启动项"><a href="#2-5：检查开机启动项" class="headerlink" title="2.5：检查开机启动项"></a>2.5：检查开机启动项</h2><p>基本使用：系统运行级别示意图</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1769.jpg" alt="图片"></p>
+<p>查看运行级别命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">runlevel</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1770.jpg" alt="图片"></p>
+<p>系统默认允许级别：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vi  /etc/inittab</span><br><span class="line">id=3：initdefault  系统开机后直接进入哪个运行级别</span><br></pre></td></tr></table></figure>
+
+<p>开机启动配置文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/etc/rc.local</span><br><span class="line">/etc/rc.d/rc[0~6].d</span><br></pre></td></tr></table></figure>
+
+<p>例子:当我们需要开机启动自己的脚本时，只需要将可执行脚本丢在<code>/etc/init.d</code>目录下，然后在<code>/etc/rc.d/rc*.d</code>中建立软链接即可：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ln -s /etc/init.d/sshd /etc/rc.d/rc3.d/S100ssh</span><br></pre></td></tr></table></figure>
+
+<p>此处<code>sshd</code>是具体服务的脚本文件，<code>S100ssh</code>是其软链接，<code>S</code>开头代表加载时自启动；如果是<code>K</code>开头的脚本文件，代表运行级别加载时需要关闭的。</p>
+<h3 id="入侵排查-2"><a href="#入侵排查-2" class="headerlink" title="入侵排查"></a>入侵排查</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">启动项文件：</span><br><span class="line">	more /etc/rc.local</span><br><span class="line">	/etc/rc.d/rc[0~6].d</span><br><span class="line">	ls -l /etc/rc.d/rc3.d/</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-6：检查定时任务"><a href="#2-6：检查定时任务" class="headerlink" title="2.6：检查定时任务"></a>2.6：检查定时任务</h2><p>基本使用</p>
+<h3 id="1、利用crontab创建计划任务"><a href="#1、利用crontab创建计划任务" class="headerlink" title="1、利用crontab创建计划任务"></a>1、利用crontab创建计划任务</h3><p>基本命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">crontab -l   列出某个用户cron服务的详细内容</span><br><span class="line"></span><br><span class="line">Tips：默认编写的crontab文件会保存在 (/var/spool/cron/用户名 例如: /var/spool/cron/root</span><br><span class="line"></span><br><span class="line">crontab -r   删除每个用户cront任务(谨慎：删除所有的计划任务)</span><br><span class="line"></span><br><span class="line">crontab -e   使用编辑器编辑当前的crontab文件 </span><br><span class="line"></span><br><span class="line">如：*/1 * * * * echo &quot;hello world&quot; &gt;&gt; /tmp/test.txt 每分钟写入文件</span><br></pre></td></tr></table></figure>
+
+<h3 id="2、利用anacron实现异步定时任务调度"><a href="#2、利用anacron实现异步定时任务调度" class="headerlink" title="2、利用anacron实现异步定时任务调度"></a>2、利用anacron实现异步定时任务调度</h3><p>使用案例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">每天运行 /home/backup.sh脚本： vi /etc/anacrontab @daily 10 example.daily /bin/bash /home/backup.sh</span><br><span class="line"></span><br><span class="line">当机器在 backup.sh 期望被运行时是关机的，anacron会在机器开机十分钟之后运行它，而不用再等待 7天。</span><br></pre></td></tr></table></figure>
+
+<h3 id="入侵排查-3"><a href="#入侵排查-3" class="headerlink" title="入侵排查"></a>入侵排查</h3><p>重点关注以下目录中是否存在恶意脚本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">/var/spool/cron/* </span><br><span class="line">/etc/crontab</span><br><span class="line">/etc/cron.d/*</span><br><span class="line">/etc/cron.daily/* </span><br><span class="line">/etc/cron.hourly/* </span><br><span class="line">/etc/cron.monthly/*</span><br><span class="line">/etc/cron.weekly/</span><br><span class="line">/etc/anacrontab</span><br><span class="line">/var/spool/anacron/*</span><br></pre></td></tr></table></figure>
+
+<p>小技巧：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">more /etc/cron.daily/*  查看目录下所有文件</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-7：检查服务"><a href="#2-7：检查服务" class="headerlink" title="2.7：检查服务"></a>2.7：检查服务</h2><p>服务自启动</p>
+<p>第一种修改方法：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">chkconfig [--level 运行级别] [独立服务名] [on|off]</span><br><span class="line">chkconfig –level  2345 httpd on  开启自启动</span><br><span class="line">chkconfig httpd on （默认level是2345）</span><br></pre></td></tr></table></figure>
+
+<p>第二种修改方法：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">修改/etc/re.d/rc.local 文件  </span><br><span class="line">加入 /etc/init.d/httpd start</span><br></pre></td></tr></table></figure>
+
+<p>第三种修改方法：</p>
+<p>使用ntsysv命令管理自启动，可以管理独立服务和xinetd服务。</p>
+<h3 id="入侵排查-4"><a href="#入侵排查-4" class="headerlink" title="入侵排查"></a>入侵排查</h3><p>1、查询已安装的服务：</p>
+<p>RPM包安装的服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">chkconfig  --list  查看服务自启动状态，可以看到所有的RPM包安装的服务</span><br><span class="line">ps aux | grep crond 查看当前服务</span><br><span class="line"></span><br><span class="line">系统在3与5级别下的启动项 </span><br><span class="line">中文环境</span><br><span class="line">chkconfig --list | grep &quot;3:启用\|5:启用&quot;</span><br><span class="line">英文环境</span><br><span class="line">chkconfig --list | grep &quot;3:on\|5:on&quot;</span><br></pre></td></tr></table></figure>
+
+<p>源码包安装的服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">查看服务安装位置 ，一般是在/user/local/</span><br><span class="line">service httpd start</span><br><span class="line">搜索/etc/rc.d/init.d/  查看是否存在</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-8：检查异常文件"><a href="#2-8：检查异常文件" class="headerlink" title="2.8：检查异常文件"></a>2.8：检查异常文件</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1、查看敏感目录，如/tmp目录下的文件，同时注意隐藏文件夹，以“..”为名的文件夹具有隐藏属性</span><br><span class="line"></span><br><span class="line">2、得到发现WEBSHELL、远控木马的创建时间，如何找出同一时间范围内创建的文件？</span><br><span class="line"></span><br><span class="line">可以使用find命令来查找，如 find /opt -iname &quot;*&quot; -atime 1 -type f  找出 /opt 下一天前访问过的文件</span><br><span class="line"></span><br><span class="line">3、针对可疑文件可以使用stat进行创建修改时间。</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-9：检查系统日志"><a href="#2-9：检查系统日志" class="headerlink" title="2.9：检查系统日志"></a>2.9：检查系统日志</h2><p>日志默认存放位置：<code>/var/log/</code></p>
+<p>查看日志配置情况：<code>more /etc/rsyslog.conf</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1771.jpg" alt="图片"></p>
+<p>日志分析技巧：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1、定位有多少IP在爆破主机的root帐号：    </span><br><span class="line">grep &quot;Failed password for root&quot; /var/log/secure | awk &#x27;&#123;print $11&#125;&#x27; | sort | uniq -c | sort -nr | more</span><br><span class="line"></span><br><span class="line">定位有哪些IP在爆破：</span><br><span class="line">grep &quot;Failed password&quot; /var/log/secure|grep -E -o &quot;(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)&quot;|uniq -c</span><br><span class="line"></span><br><span class="line">爆破用户名字典是什么？</span><br><span class="line"> grep &quot;Failed password&quot; /var/log/secure|perl -e &#x27;while($_=&lt;&gt;)&#123; /for(.*?) from/; print &quot;$1\n&quot;;&#125;&#x27;|uniq -c|sort -nr</span><br><span class="line"> </span><br><span class="line">2、登录成功的IP有哪些： 	</span><br><span class="line">grep &quot;Accepted &quot; /var/log/secure | awk &#x27;&#123;print $11&#125;&#x27; | sort | uniq -c | sort -nr | more</span><br><span class="line"></span><br><span class="line">登录成功的日期、用户名、IP：</span><br><span class="line">grep &quot;Accepted &quot; /var/log/secure | awk &#x27;&#123;print $1,$2,$3,$9,$11&#125;&#x27; </span><br><span class="line"></span><br><span class="line">3、增加一个用户kali日志：</span><br><span class="line">Jul 10 00:12:15 localhost useradd[2382]: new group: name=kali, GID=1001</span><br><span class="line">Jul 10 00:12:15 localhost useradd[2382]: new user: name=kali, UID=1001, GID=1001, home=/home/kali</span><br><span class="line">, shell=/bin/bash</span><br><span class="line">Jul 10 00:12:58 localhost passwd: pam_unix(passwd:chauthtok): password changed for kali</span><br><span class="line">#grep &quot;useradd&quot; /var/log/secure </span><br><span class="line"></span><br><span class="line">4、删除用户kali日志：</span><br><span class="line">Jul 10 00:14:17 localhost userdel[2393]: delete user &#x27;kali&#x27;</span><br><span class="line">Jul 10 00:14:17 localhost userdel[2393]: removed group &#x27;kali&#x27; owned by &#x27;kali&#x27;</span><br><span class="line">Jul 10 00:14:17 localhost userdel[2393]: removed shadow group &#x27;kali&#x27; owned by &#x27;kali&#x27;</span><br><span class="line"># grep &quot;userdel&quot; /var/log/secure</span><br><span class="line"></span><br><span class="line">5、su切换用户：</span><br><span class="line">Jul 10 00:38:13 localhost su: pam_unix(su-l:session): session opened for user good by root(uid=0)</span><br><span class="line"></span><br><span class="line">sudo授权执行:</span><br><span class="line">sudo -l</span><br><span class="line">Jul 10 00:43:09 localhost sudo:    good : TTY=pts/4 ; PWD=/home/good ; USER=root ; COMMAND=/sbin/shutdown -r now</span><br></pre></td></tr></table></figure>
+
+<h2 id="3、工具篇"><a href="#3、工具篇" class="headerlink" title="3、工具篇"></a>3、工具篇</h2><h3 id="3-1：Rootkit查杀"><a href="#3-1：Rootkit查杀" class="headerlink" title="3.1：Rootkit查杀"></a>3.1：Rootkit查杀</h3><p>chkrootkit</p>
+<p>网址：<a target="_blank" rel="noopener" href="http://www.chkrootkit.org/">http://www.chkrootkit.org</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">使用方法：</span><br><span class="line">wget ftp://ftp.pangeia.com.br/pub/seg/pac/chkrootkit.tar.gz</span><br><span class="line">tar zxvf chkrootkit.tar.gz</span><br><span class="line">cd chkrootkit-0.52</span><br><span class="line">make sense</span><br><span class="line">#编译完成没有报错的话执行检查</span><br><span class="line">./chkrootkit</span><br></pre></td></tr></table></figure>
+
+<p>rkhunter</p>
+<p>网址：<a target="_blank" rel="noopener" href="http://rkhunter.sourceforge.net/">http://rkhunter.sourceforge.net</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">使用方法：</span><br><span class="line">Wget https://nchc.dl.sourceforge.net/project/rkhunter/rkhunter/1.4.4/rkhunter-1.4.4.tar.gz</span><br><span class="line">tar -zxvf rkhunter-1.4.4.tar.gz</span><br><span class="line">cd rkhunter-1.4.4</span><br><span class="line">./installer.sh --install</span><br><span class="line">rkhunter -c</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2：病毒查杀"><a href="#3-2：病毒查杀" class="headerlink" title="3.2：病毒查杀"></a>3.2：病毒查杀</h3><p>Clamav</p>
+<p>ClamAV的官方下载地址为：<a target="_blank" rel="noopener" href="http://www.clamav.net/download.html">http://www.clamav.net/download.html</a></p>
+<p>安装方式一：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">1、安装zlib：</span><br><span class="line">wget http://nchc.dl.sourceforge.net/project/libpng/zlib/1.2.7/zlib-1.2.7.tar.gz </span><br><span class="line">tar -zxvf  zlib-1.2.7.tar.gz</span><br><span class="line">cd zlib-1.2.7</span><br><span class="line">#安装一下gcc编译环境： yum install gcc</span><br><span class="line">CFLAGS=&quot;-O3 -fPIC&quot; ./configure --prefix= /usr/local/zlib/</span><br><span class="line">make &amp;&amp; make install</span><br><span class="line"></span><br><span class="line">2、添加用户组clamav和组成员clamav：</span><br><span class="line">groupadd clamav</span><br><span class="line">useradd -g clamav -s /bin/false -c &quot;Clam AntiVirus&quot; clamav</span><br><span class="line"></span><br><span class="line">3、安装Clamav</span><br><span class="line">tar –zxvf clamav-0.97.6.tar.gz</span><br><span class="line">cd clamav-0.97.6</span><br><span class="line">./configure --prefix=/opt/clamav --disable-clamav -with-zlib=/usr/local/zlib</span><br><span class="line">make</span><br><span class="line">make install</span><br><span class="line"></span><br><span class="line">4、配置Clamav</span><br><span class="line">mkdir /opt/clamav/logs</span><br><span class="line">mkdir /opt/clamav/updata</span><br><span class="line">touch /opt/clamav/logs/freshclam.log</span><br><span class="line">touch /opt/clamav/logs/clamd.log</span><br><span class="line">cd /opt/clamav/logs</span><br><span class="line">chown clamav:clamav clamd.log</span><br><span class="line">chown clamav:clamav freshclam.log</span><br><span class="line"></span><br><span class="line">5、ClamAV 使用：</span><br><span class="line"> /opt/clamav/bin/freshclam 升级病毒库</span><br><span class="line">./clamscan –h 查看相应的帮助信息</span><br><span class="line">./clamscan -r /home  扫描所有用户的主目录就使用</span><br><span class="line">./clamscan -r --bell -i /bin  扫描bin目录并且显示有问题的文件的扫描结果</span><br></pre></td></tr></table></figure>
+
+<p>安装方式二： </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#安装</span><br><span class="line">yum install -y clamav</span><br><span class="line">#更新病毒库</span><br><span class="line">freshclam</span><br><span class="line">#扫描方法</span><br><span class="line">clamscan -r /etc --max-dir-recursion=5 -l /root/etcclamav.log</span><br><span class="line">clamscan -r /bin --max-dir-recursion=5 -l /root/binclamav.log</span><br><span class="line">clamscan -r /usr --max-dir-recursion=5 -l /root/usrclamav.log</span><br><span class="line">#扫描并杀毒</span><br><span class="line">clamscan -r  --remove  /usr/bin/bsd-port</span><br><span class="line">clamscan -r  --remove  /usr/bin/</span><br><span class="line">clamscan -r --remove  /usr/local/zabbix/sbin</span><br><span class="line">#查看日志发现</span><br><span class="line">cat /root/usrclamav.log |grep FOUND</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3：webshell查杀"><a href="#3-3：webshell查杀" class="headerlink" title="3.3：webshell查杀"></a>3.3：webshell查杀</h3><p>linux版：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">河马webshell查杀：http://www.shellpub.com</span><br><span class="line">深信服Webshell网站后门检测工具：http://edr.sangfor.com.cn/backdoor_detection.html</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-4：RPM-check检查"><a href="#3-4：RPM-check检查" class="headerlink" title="3.4：RPM check检查"></a>3.4：RPM check检查</h3><p>系统完整性可以通过<code>rpm</code>自带的<code>-Va</code>来校验检查所有的rpm软件包，查看哪些命令是否被替换了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./rpm -Va &gt; rpm.log</span><br></pre></td></tr></table></figure>
+
+<p>如果一切均校验正常将不会产生任何输出，如果有不一致的地方，就会显示出来，输出格式是<code>8</code>位长字符串，每个字符都用以表示文件与<code>RPM</code>数据库中一种属性的比较结果 ，如果是<code>.</code> (点) 则表示测试通过。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">验证内容中的8个信息的具体内容如下：</span><br><span class="line">		S         文件大小是否改变</span><br><span class="line">		M         文件的类型或文件的权限（rwx）是否被改变</span><br><span class="line">		5         文件MD5校验是否改变（可以看成文件内容是否改变）</span><br><span class="line">		D         设备中，从代码是否改变</span><br><span class="line">		L         文件路径是否改变</span><br><span class="line">		U         文件的属主（所有者）是否改变</span><br><span class="line">		G         文件的属组是否改变</span><br><span class="line">		T         文件的修改时间是否改变</span><br></pre></td></tr></table></figure>
+
+<p>如果命令被替换了，如何还原回来：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">文件提取还原案例：</span><br><span class="line">rpm  -qf /bin/ls  查询ls命令属于哪个软件包</span><br><span class="line">mv  /bin/ls /tmp  先把ls转移到tmp目录下，造成ls命令丢失的假象</span><br><span class="line">rpm2cpio /mnt/cdrom/Packages/coreutils-8.4-19.el6.i686.rpm | cpio -idv ./bin/ls 提取rpm包中ls命令到当前目录的/bin/ls下</span><br><span class="line">cp /root/bin/ls  /bin/ 把ls命令复制到/bin/目录 修复文件丢失</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-5：linux安全检查脚本"><a href="#3-5：linux安全检查脚本" class="headerlink" title="3.5：linux安全检查脚本"></a>3.5：linux安全检查脚本</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Github项目地址：</span><br><span class="line"></span><br><span class="line">https://github.com/grayddq/GScan</span><br><span class="line"></span><br><span class="line">https://github.com/ppabc/security_check</span><br><span class="line"></span><br><span class="line">https://github.com/T0xst/linux</span><br></pre></td></tr></table></figure>
+
+<h1 id="4、Windows入侵排查，木马处理"><a href="#4、Windows入侵排查，木马处理" class="headerlink" title="4、Windows入侵排查，木马处理"></a>4、Windows入侵排查，木马处理</h1><h2 id="1、入侵排查思路"><a href="#1、入侵排查思路" class="headerlink" title="1、入侵排查思路"></a>1、入侵排查思路</h2><h3 id="1-1：检查系统账号安全"><a href="#1-1：检查系统账号安全" class="headerlink" title="1.1：检查系统账号安全"></a>1.1：检查系统账号安全</h3><h4 id="（1）查看服务器是否有弱口令，远程管理端口是否对公网开放"><a href="#（1）查看服务器是否有弱口令，远程管理端口是否对公网开放" class="headerlink" title="（1）查看服务器是否有弱口令，远程管理端口是否对公网开放"></a>（1）查看服务器是否有弱口令，远程管理端口是否对公网开放</h4><p>检查方法：根据实际情况咨询相关服务器管理员。</p>
+<h4 id="（2）查看服务器是否存在可疑账号、新增账号"><a href="#（2）查看服务器是否存在可疑账号、新增账号" class="headerlink" title="（2）查看服务器是否存在可疑账号、新增账号"></a>（2）查看服务器是否存在可疑账号、新增账号</h4><p>检查方法：打开<code>cmd</code>窗口，输入 <code>lusrmgr.msc</code> 命令：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1772.png" alt="图片"></p>
+<p>查看是否有<code>新增/可疑</code>的账号，如有管理员群组的（Administrators）里的新增用户，请立即禁用或者删除掉。</p>
+<h4 id="（3）查看服务器是否存在隐藏账号、克隆账号"><a href="#（3）查看服务器是否存在隐藏账号、克隆账号" class="headerlink" title="（3）查看服务器是否存在隐藏账号、克隆账号"></a>（3）查看服务器是否存在隐藏账号、克隆账号</h4><p>检查方法：打开<code>注册表</code>，查看管理员对应<code>键值</code>、使用<code>D盾_web查杀工具</code>，集成了对克隆账号检测的功能。</p>
+<p>下载地址：<a target="_blank" rel="noopener" href="http://www.d99net.net/News.asp?id=47">http://www.d99net.net/News.asp?id=47</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1773.jpg" alt="图片"></p>
+<h4 id="（4）结合日志，查看管理员登陆时间、用户名是否存在异常"><a href="#（4）结合日志，查看管理员登陆时间、用户名是否存在异常" class="headerlink" title="（4）结合日志，查看管理员登陆时间、用户名是否存在异常"></a>（4）结合日志，查看管理员登陆时间、用户名是否存在异常</h4><p>检查方法：输入命令<code>eventvwr.msc</code>，打开事件查看器：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1774.jpg" alt="图片"></p>
+<p>导出<code>Windows日志</code>-<code>安全</code>，利用<code>Log Parser</code>进行分析：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1775.jpg" alt="图片"></p>
+<p><code>Log Parser</code>具体用法：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/pythonal/p/10127795.html">https://www.cnblogs.com/pythonal/p/10127795.html</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LogParser.exe -i:EVT &quot;SELECT TimeGenerated,EXTRACT_TOKEN(Strings,0,&#x27;|&#x27;) AS USERNAME,EXTRACT_TOKEN(Strings,2,&#x27;|&#x27;) AS SERVICE\_NAME,EXTRACT_TOKEN(Strings,5,&#x27;|&#x27;) AS Client_IP FROM &#x27;C:\Users\Administrator\Desktop\1.evtx&#x27; WHERE EventID=4798&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1776.jpg" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LogParser.exe -i:EVT &quot;SELECT TimeGenerated,EXTRACT_TOKEN(Strings,0,&#x27;|&#x27;) AS USERNAME,EXTRACT_TOKEN(Strings,2,&#x27;|&#x27;) AS SERVICE\_NAME,EXTRACT_TOKEN(Strings,5,&#x27;|&#x27;) AS Client_IP FROM &#x27;C:\Users\Administrator\Desktop\1.evtx&#x27; WHERE EventID=4624&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1777.jpg" alt="图片"></p>
+<h3 id="1-2：检查异常端口进程"><a href="#1-2：检查异常端口进程" class="headerlink" title="1.2：检查异常端口进程"></a>1.2：检查异常端口进程</h3><h4 id="（1）检查端口连接情况，是否有远程连接、可疑连接"><a href="#（1）检查端口连接情况，是否有远程连接、可疑连接" class="headerlink" title="（1）检查端口连接情况，是否有远程连接、可疑连接"></a>（1）检查端口连接情况，是否有远程连接、可疑连接</h4><p>检查方法：</p>
+<p>a：<code>netstat -ano</code>查看目前的网络连接，定位可疑的<code>ESTABLISHED</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1778.png" alt="图片"></p>
+<p>b：根据<code>netstat</code>定位出的<code>pid</code>，在通过<code>tasklist</code>命令进行进程定位，<code>tasklist | findstr &quot;PID&quot;</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1779.png" alt="图片"></p>
+<h4 id="（2）进程"><a href="#（2）进程" class="headerlink" title="（2）进程"></a>（2）进程</h4><p>a：<code>开始</code>-<code>运行</code>-输入<code>msinfo32</code>，依次点击<code>软件环境</code>-<code>正在运行任务</code>，就可以查看到进程的详细信息，比如进程路径、进程ID、文件创建日期、启动时间等等。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1780.png" alt="图片"></p>
+<p>b：打开<code>D盾_web查杀工具</code>，进程查看，关注没有签名信息的进程</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1781.png" alt="图片"></p>
+<p>c：查看可疑的进程其子进程，可以通过观察下面内容</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">没有签名验证信息的进程</span><br><span class="line">没有描述信息的进程</span><br><span class="line">进程的属主</span><br><span class="line">进程的路径是否合法</span><br><span class="line">CPU或内存资源占用长时间过高的进程</span><br></pre></td></tr></table></figure>
+
+<h4 id="（3）小技巧"><a href="#（3）小技巧" class="headerlink" title="（3）小技巧"></a>（3）小技巧</h4><p>a：查看端口对应的<code>PID</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -ano | findstr &quot;port&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1782.png" alt="图片"></p>
+<p>b：查看进程对应的<code>PID</code>，<code>任务管理器</code>-<code>查看</code>-<code>选择列</code>-<code>PID</code>、或者<code>tasklist | findstr &quot;PID&quot;</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1783.png" alt="图片"></p>
+<p>c：查看进程对应的程序位置：</p>
+<p><code>任务管理器</code>-选择对应进程，右键<code>打开文件位置</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1784.png" alt="图片"></p>
+<p>在运行输入<code>wmic</code>，<code>cmd</code>界面输入<code>process</code>：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1785.png" alt="图片"></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1786.png" alt="图片"></p>
+<p>d：<code>tasklist /svc</code> （进程-PID-服务)</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1787.png" alt="图片"></p>
+<h3 id="1-3：检查启动项、计划任务、服务"><a href="#1-3：检查启动项、计划任务、服务" class="headerlink" title="1.3：检查启动项、计划任务、服务"></a>1.3：检查启动项、计划任务、服务</h3><h4 id="（1）检查服务器是否有异常的启动项"><a href="#（1）检查服务器是否有异常的启动项" class="headerlink" title="（1）检查服务器是否有异常的启动项"></a>（1）检查服务器是否有异常的启动项</h4><p>检查方法：</p>
+<p>a：登陆服务器，单击【开始】&gt;【所有程序】&gt;【启动】，默认情况下此目录在是一个空目录，确认是否有非业务程序在该目录下。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1788.png" alt="图片"></p>
+<p>b：单击【开始菜单】 &gt;【运行】，输入 <code>msconfig</code>，查看是否存在命名异常的启动项目，是则取消勾选命名异常的启动项目，并到命令中显示的路径删除文件。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1789.png" alt="图片"></p>
+<p>c：单击【开始】&gt;【运行】，输入 <code>regedit</code>，打开注册表，查看开机启动项是否正常，特别注意如下三个注册表项：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HKEY_CURRENT_USER\software\micorsoft\windows\currentversion\run</span><br><span class="line">HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run</span><br><span class="line">HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Runonce</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1790.png" alt="图片"></p>
+<p>检查右侧是否有启动异常的项目，如有请删除，并建议安装杀毒软件进行病毒查杀，清除残留病毒或木马。</p>
+<p>d：利用安全软件查看启动项、开机时间管理等。</p>
+<p>e：组策略，运行<code>gpedit.msc</code>。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1791.png" alt="图片"></p>
+<h4 id="（2）检查计划任务"><a href="#（2）检查计划任务" class="headerlink" title="（2）检查计划任务"></a>（2）检查计划任务</h4><p>检查方法：</p>
+<p>a：单击【开始】&gt;【设置】&gt;【控制面板】&gt;【任务计划】，查看计划任务属性，便可以发现木马文件的路径。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1792.png" alt="图片"></p>
+<p>b：单击【开始】&gt;【运行】；输入 <code>cmd</code>，然后输入<code>at</code>，检查计算机与网络上的其它计算机之间的会话或计划任务，如有，则确认是否为正常连接。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1793.png" alt="图片"></p>
+<h4 id="（3）服务自启动"><a href="#（3）服务自启动" class="headerlink" title="（3）服务自启动"></a>（3）服务自启动</h4><p>检查方法：单击【开始】&gt;【运行】，输入<code>services.msc</code>，注意服务状态和启动类型，检查是否有异常服务。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1794.png" alt="图片"></p>
+<h3 id="1-4：检查系统相关信息"><a href="#1-4：检查系统相关信息" class="headerlink" title="1.4：检查系统相关信息"></a>1.4：检查系统相关信息</h3><h4 id="（1）查看系统版本以及补丁信息"><a href="#（1）查看系统版本以及补丁信息" class="headerlink" title="（1）查看系统版本以及补丁信息"></a>（1）查看系统版本以及补丁信息</h4><p>检查方法：单击【开始】&gt;【运行】，输入<code>systeminfo</code>，查看系统信息</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1795.png" alt="图片"></p>
+<h4 id="（2）查找可疑目录及文件"><a href="#（2）查找可疑目录及文件" class="headerlink" title="（2）查找可疑目录及文件"></a>（2）查找可疑目录及文件</h4><p>检查方法：</p>
+<p>a：查看用户目录，新建账号会在这个目录生成一个用户目录，查看是否有新建用户目录。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Window 2003  C:\Documents and Settings</span><br><span class="line">Window 2008R2  C:\Users\</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1796.png" alt="图片"></p>
+<p>b：单击【开始】&gt;【运行】，输入<code>%UserProfile%\Recent</code>，分析最近打开分析可疑文件。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1797.png" alt="图片"></p>
+<p>c：在服务器各个目录，可根据文件夹内文件列表时间进行排序，查找可疑文件。</p>
+<p>d：回收站、浏览器下载目录、浏览器历史记录</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1798.png" alt="图片"></p>
+<p>e：修改时间在创建时间之前的为可疑文件</p>
+<h4 id="（3）得到发现WEBSHELL、远控木马的创建时间，如何找出同一时间范围内创建的文件？"><a href="#（3）得到发现WEBSHELL、远控木马的创建时间，如何找出同一时间范围内创建的文件？" class="headerlink" title="（3）得到发现WEBSHELL、远控木马的创建时间，如何找出同一时间范围内创建的文件？"></a>（3）得到发现WEBSHELL、远控木马的创建时间，如何找出同一时间范围内创建的文件？</h4><p>a：利用 <code>Registry Workshop</code> 注册表编辑器的搜索功能，可以找到最后写入时间区间的文件。</p>
+<p>b：利用计算机自带文件搜索功能，指定修改时间进行搜索。</p>
+<h3 id="1-5：自动化查杀"><a href="#1-5：自动化查杀" class="headerlink" title="1.5：自动化查杀"></a>1.5：自动化查杀</h3><p>病毒查杀：检查方法：下载安全软件，更新最新病毒库，进行全盘扫描。</p>
+<p>webshell查杀：检查方法：选择具体站点路径进行webshell查杀，建议使用两款webshell查杀工具同时查杀，可相互补充规则库的不足。</p>
+<h3 id="1-6：日志分析"><a href="#1-6：日志分析" class="headerlink" title="1.6：日志分析"></a>1.6：日志分析</h3><p>系统日志分析方法：</p>
+<p>a：前提：开启审核策略，若日后系统出现故障、安全事故则可以查看系统的日志文件，排除故障，追查入侵者的信息等。</p>
+<p>b：<code>Win+R</code>打开运行，输入【<code>eventvwr.msc</code>】，回车运行，打开<code>事件查看器</code>。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1799.png" alt="图片"></p>
+<p>c：导出应用程序日志、安全日志、系统日志，利用<code>Log Parser</code>进行分析。</p>
+<h4 id="WEB访问日志分析方法："><a href="#WEB访问日志分析方法：" class="headerlink" title="WEB访问日志分析方法："></a>WEB访问日志分析方法：</h4><p>a：找到中间件的web日志，打包到本地方便进行分析。</p>
+<p>b：推荐工具：<code>Window</code>下，推荐用 <code>EmEditor</code> 进行日志分析，支持大文本，搜索效率还不错。<code>Linux</code>下，使用<code>Shell</code>命令组合查询分析</p>
+<h2 id="2、工具篇"><a href="#2、工具篇" class="headerlink" title="2、工具篇"></a>2、工具篇</h2><h3 id="2-1：病毒分析"><a href="#2-1：病毒分析" class="headerlink" title="2.1：病毒分析"></a>2.1：病毒分析</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">PCHunter：http://www.xuetr.com</span><br><span class="line"></span><br><span class="line">火绒剑：https://www.huorong.cn</span><br><span class="line"></span><br><span class="line">Process Explorer：https://docs.microsoft.com/zh-cn/sysinternals/downloads/process-explorer</span><br><span class="line"></span><br><span class="line">processhacker：https://processhacker.sourceforge.io/downloads.php</span><br><span class="line"></span><br><span class="line">autoruns：https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns</span><br><span class="line"></span><br><span class="line">OTL：https://www.bleepingcomputer.com/download/otl/</span><br><span class="line"></span><br><span class="line">SysInspector：http://download.eset.com.cn/download/detail/?product=sysinspector</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2：病毒查杀"><a href="#2-2：病毒查杀" class="headerlink" title="2.2：病毒查杀"></a>2.2：病毒查杀</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">卡巴斯基：http://devbuilds.kaspersky-labs.com/devbuilds/KVRT/latest/full/KVRT.exe   （推荐理由：绿色版、最新病毒库）</span><br><span class="line"></span><br><span class="line">大蜘蛛：http://free.drweb.ru/download+cureit+free（推荐理由：扫描快、一次下载只能用1周，更新病毒库）</span><br><span class="line"></span><br><span class="line">火绒安全软件：https://www.huorong.cn</span><br><span class="line"></span><br><span class="line">360杀毒：http://sd.360.cn/download_center.html</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3：病毒动态"><a href="#2-3：病毒动态" class="headerlink" title="2.3：病毒动态"></a>2.3：病毒动态</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">CVERC-国家计算机病毒应急处理中心：http://www.cverc.org.cn</span><br><span class="line"></span><br><span class="line">微步在线威胁情报社区：https://x.threatbook.cn</span><br><span class="line"></span><br><span class="line">火绒安全论坛：http://bbs.huorong.cn/forum-59-1.html</span><br><span class="line"></span><br><span class="line">爱毒霸社区：http://bbs.duba.net</span><br><span class="line"></span><br><span class="line">腾讯电脑管家：http://bbs.guanjia.qq.com/forum-2-1.html</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-4：在线病毒扫描网站"><a href="#2-4：在线病毒扫描网站" class="headerlink" title="2.4：在线病毒扫描网站"></a>2.4：在线病毒扫描网站</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">http://www.virscan.org         //多引擎在线病毒扫描网 v1.02，当前支持 41 款杀毒引擎     </span><br><span class="line"></span><br><span class="line">https://habo.qq.com             //腾讯哈勃分析系统</span><br><span class="line"></span><br><span class="line">https://virusscan.jotti.org      //Jotti恶意软件扫描系统</span><br><span class="line"></span><br><span class="line">http://www.scanvir.com        //针对计算机病毒、手机病毒、可疑文件等进行检测分析</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-5：webshell查杀"><a href="#2-5：webshell查杀" class="headerlink" title="2.5：webshell查杀"></a>2.5：webshell查杀</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">D盾_Web查杀：http://www.d99net.net/index.asp</span><br><span class="line"></span><br><span class="line">河马webshell查杀：http://www.shellpub.com</span><br><span class="line"></span><br><span class="line">深信服Webshell网站后门检测工具：http://edr.sangfor.com.cn/backdoor_detection.html</span><br><span class="line"></span><br><span class="line">Safe3：http://www.uusec.com/webshell.zip</span><br></pre></td></tr></table></figure>
+
+<h1 id="5、常见的Webshell查杀工具"><a href="#5、常见的Webshell查杀工具" class="headerlink" title="5、常见的Webshell查杀工具"></a>5、常见的Webshell查杀工具</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>当网站服务器被入侵时，我们需要一款Webshell检测工具，来帮助我们发现webshell，进一步排查系统可能存在的安全漏洞。</p>
+<h2 id="1、D盾-Web查杀"><a href="#1、D盾-Web查杀" class="headerlink" title="1、D盾_Web查杀"></a>1、D盾_Web查杀</h2><p>阿D出品，使用自行研发不分扩展名的代码分析引擎，能分析更为隐藏的WebShell后门行为。</p>
+<p>兼容性：只提供Windows版本。</p>
+<p>工具下载地址：<a target="_blank" rel="noopener" href="http://www.d99net.net/down/WebShellKill_V2.0.9.zip">http://www.d99net.net/down/WebShellKill_V2.0.9.zip</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1800.jpg" alt="图片"></p>
+<h2 id="2、百度WEBDIR"><a href="#2、百度WEBDIR" class="headerlink" title="2、百度WEBDIR+"></a>2、百度WEBDIR+</h2><p>下一代WebShell检测引擎，采用先进的动态监测技术，结合多种引擎零规则查杀。</p>
+<p>兼容性：提供在线查杀木马，免费开放API支持批量检测。</p>
+<p>在线查杀地址：<a target="_blank" rel="noopener" href="https://scanner.baidu.com/">https://scanner.baidu.com/</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1801.png" alt="图片"></p>
+<h2 id="3、河马"><a href="#3、河马" class="headerlink" title="3、河马"></a>3、河马</h2><p>专注webshell查杀研究，拥有海量webshell样本和自主查杀技术，采用传统特征+云端大数据双引擎的查杀技术。查杀速度快、精度高、误报低。</p>
+<p>兼容性：支持Windows、linux，支持在线查杀。</p>
+<p>官方网站：<a target="_blank" rel="noopener" href="https://www.shellpub.com/">https://www.shellpub.com/</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1802.png" alt="图片"></p>
+<h2 id="4、Web-Shell-Detector"><a href="#4、Web-Shell-Detector" class="headerlink" title="4、Web Shell Detector"></a>4、Web Shell Detector</h2><p>Webshell Detector具有“ Webshell”签名数据库，可帮助识别高达99％的“ Webshell”。</p>
+<p>兼容性：提供php/python脚本，可跨平台，在线检测。</p>
+<p>官方网站：<a target="_blank" rel="noopener" href="http://www.shelldetector.com/">http://www.shelldetector.com/</a></p>
+<p>github项目地址：<a target="_blank" rel="noopener" href="https://github.com/emposha/PHP-Shell-Detector">https://github.com/emposha/PHP-Shell-Detector</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1803.png" alt="图片"></p>
+<h2 id="5、CloudWalker（牧云）"><a href="#5、CloudWalker（牧云）" class="headerlink" title="5、CloudWalker（牧云）"></a>5、CloudWalker（牧云）</h2><p>一个可执行的命令行版本 Webshell 检测工具。目前，项目已停止更新。</p>
+<p>兼容性，提供linux版本，Windows 暂不支持。</p>
+<p>在线查杀demo：<a target="_blank" rel="noopener" href="https://webshellchop.chaitin.cn/">https://webshellchop.chaitin.cn/</a></p>
+<p>github项目地址：<a target="_blank" rel="noopener" href="https://github.com/chaitin/cloudwalker">https://github.com/chaitin/cloudwalker</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1804.png" alt="图片"></p>
+<h2 id="6、深度学习模型检测PHP-Webshell"><a href="#6、深度学习模型检测PHP-Webshell" class="headerlink" title="6、深度学习模型检测PHP Webshell"></a>6、深度学习模型检测PHP Webshell</h2><p>一个深度学习PHP webshell查杀引擎demo，提供在线样本检测。</p>
+<p>在线查杀地址：<a target="_blank" rel="noopener" href="http://webshell.cdxy.me/">http://webshell.cdxy.me/</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1805.png" alt="图片"></p>
+<h2 id="6、在线webshell查杀工具"><a href="#6、在线webshell查杀工具" class="headerlink" title="6、在线webshell查杀工具"></a>6、在线webshell查杀工具</h2><p>在线查杀地址：<a target="_blank" rel="noopener" href="http://tools.bugscaner.com/killwebshell/">http://tools.bugscaner.com/killwebshell/</a></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1806.png" alt="图片"></p>
+<h1 id="6、如何发现隐藏的Webshell后门"><a href="#6、如何发现隐藏的Webshell后门" class="headerlink" title="6、如何发现隐藏的Webshell后门"></a>6、如何发现隐藏的Webshell后门</h1><h2 id="如何在百万行代码里发现隐藏的后门"><a href="#如何在百万行代码里发现隐藏的后门" class="headerlink" title="如何在百万行代码里发现隐藏的后门"></a>如何在百万行代码里发现隐藏的后门</h2><p>试想一下，如果你的网站被入侵，攻击者留下隐藏的后门，你真的都可以找出来嘛？面对一个大中型的应用系统，数以百万级的代码行，是不可能做到每个文件每段代码进行手工检查的。</p>
+<p>即使是一款拥有99.9%的Webshell检出率的检测引擎，依然可能存在Webshell绕过的情况。另外，像暗链、网页劫持、页面跳转等常见的黑帽SEO手法，也很难通过手动检测或工具检测全部识别出来。</p>
+<p>最好的方式就是做文件完整性验证。通过与原始代码对比，可以快速发现文件是否被篡改以及被篡改的位置。当然，第一个前提是，你所在的团队已具备代码版本管理的能力，如果你是个人站长，相信你已经备份了原始代码。</p>
+<h2 id="1、文件MD5校验"><a href="#1、文件MD5校验" class="headerlink" title="1、文件MD5校验"></a>1、文件MD5校验</h2><p>下载D盾_Web查杀工具的时候，我们可以留意到下载的压缩包里，除了有一个exe可执行文件，还有一个文件md5值。这个是软件作者在发布软件时，通过md5算法计算出该exe文件的“特征值”。<br>当用户下载软件时，可以使用相同的校验算法计算下载到exe文件的特征值，并与软件开发者发布的特征值比较。如果两个特征值相同，则认为下载到的exe文件是正确的。如果两个特征值不同，则认为下载到exe文件是被篡改过的。</p>
+<p>那同理可得，我们可以将所有网站文件计算一次hash值保存，当出现应急情况时，重新计算一次hash值，并与上次保存的hash值进行对比，从而输出新创建的、修改过及删除的文件列表。</p>
+<h2 id="2、diff命令"><a href="#2、diff命令" class="headerlink" title="2、diff命令"></a>2、diff命令</h2><p>在linux中，我们经常使用diff来比较两个文本文件的差异。同样，我们可以通过一行命令快速找出两个项目文件的差异。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">diff -c -a -r cms1 cms2</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1807.png" alt="图片"></p>
+<blockquote>
+<p>备注：如果只是想查看两个文件是否不同又不想显示差异之处的话，可以加上－q选项</p>
+</blockquote>
+<h2 id="3、文件对比工具"><a href="#3、文件对比工具" class="headerlink" title="3、文件对比工具"></a>3、文件对比工具</h2><p>Beyond Compare是一套由Scooter Software推出的文件比较工具。主要用途是对比两个文件夹或者文件，并将差异以颜色标示，比较范围包括目录，文档内容等。</p>
+<p>下载地址：<a target="_blank" rel="noopener" href="http://www.scootersoftware.com/download.php">http://www.scootersoftware.com/download.php</a></p>
+<p>软件使用示例，通过文件夹比较，找出文件夹中的差异内容。</p>
+<p>1、双击<code>Beyond Compare</code> ，打开软件主页，选择文件夹比较。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1808.png" alt="图片"></p>
+<p>2、在双边栏输入文件夹路径，点击显示差别，列出差异部分的内容，紫色部分为新增文件，红色部分为篡改文件</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1809.png" alt="图片"></p>
+<p>3、双击具体文件，进入代码对比，找到代码差异部分。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1810.png" alt="图片"></p>
+<h1 id="7、中了勒索病毒，该怎么办"><a href="#7、中了勒索病毒，该怎么办" class="headerlink" title="7、中了勒索病毒，该怎么办"></a>7、中了勒索病毒，该怎么办</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>经常会有一些小伙伴问：中了勒索病毒，该怎么办，可以解密吗？</p>
+<p>第一次遇到勒索病毒是在早几年的时候，客户因网站访问异常，进而远程协助进行排查。登录服务器，在站点目录下发现所有的脚本文件及附件后缀名被篡改，每个文件夹下都有一个文件打开后显示勒索提示信息，这便是勒索病毒的特征。</p>
+<p>出于职业习惯，我打包了部分加密文件样本和勒索病毒提示信息用于留档，就在今天，我又重新上传了样本，至今依然无法解密。</p>
+<p>作为一个安全工程师，而非一个专业的病毒分析师，我们可以借助各大安全公司的能力，寻找勒索病毒的解密工具。</p>
+<p>本文整理了一份勒索病毒自救指南，通过勒索病毒索引引擎查找勒索病毒相关信息，再通过各个安全公司提供的免费勒索软件解密工具解密。当然，能否解密全凭运气，so，平时还是勤打补丁多备份。</p>
+<h2 id="勒索病毒搜索引擎"><a href="#勒索病毒搜索引擎" class="headerlink" title="勒索病毒搜索引擎"></a>勒索病毒搜索引擎</h2><p>在勒索病毒搜索引擎输入病毒名、勒索邮箱、被加密后文件的后缀名，或直接上传被加密文件、勒索提示信息，即可可快速查找到病毒详情和解密工具。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/1811.png" alt="图片"></p>
+<p>这些网站的解密能力还在持续更新中，是值得收藏的几个勒索病毒工具型网站。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">【360】 勒索病毒搜索引擎，支持检索超过800种常见勒索病毒，</span><br><span class="line">http://lesuobingdu.360.cn</span><br><span class="line"></span><br><span class="line">【腾讯】 勒索病毒搜索引擎，支持检索超过 300 种常见勒索病毒</span><br><span class="line">https://guanjia.qq.com/pr/ls/</span><br><span class="line"></span><br><span class="line">【启明】VenusEye勒索病毒搜索引擎，超300种勒索病毒家族</span><br><span class="line">https://lesuo.venuseye.com.cn/</span><br><span class="line"></span><br><span class="line">【奇安信】勒索病毒搜索引擎</span><br><span class="line">https://lesuobingdu.qianxin.com/</span><br><span class="line"></span><br><span class="line">【深信服】勒索病毒搜索引擎</span><br><span class="line">https://edr.sangfor.com.cn/#/information/ransom_search</span><br></pre></td></tr></table></figure>
+
+<h2 id="勒索软件解密工具集"><a href="#勒索软件解密工具集" class="headerlink" title="勒索软件解密工具集"></a>勒索软件解密工具集</h2><p>很多安全公司都提供了免费的勒索病毒解密工具下载，收集和整理相关下载地址，可以帮助我们了解和获取最新的勒索病毒解密工具。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">【腾讯哈勃】勒索软件专杀工具</span><br><span class="line">https://habo.qq.com/tool/index</span><br><span class="line"></span><br><span class="line">【金山毒霸】勒索病毒免疫工具</span><br><span class="line">http://www.duba.net/dbt/wannacry.html</span><br><span class="line"></span><br><span class="line">【火绒】安全工具下载</span><br><span class="line">http://bbs.huorong.cn/forum-55-1.html</span><br><span class="line"></span><br><span class="line">【瑞星】解密工具下载</span><br><span class="line">http://it.rising.com.cn/fanglesuo/index.html</span><br><span class="line"></span><br><span class="line">【nomoreransom】勒索软件解密工具集</span><br><span class="line">https://www.nomoreransom.org/zh/index.html</span><br><span class="line"></span><br><span class="line">【MalwareHunterTeam】勒索软件解密工具集</span><br><span class="line">https://id-ransomware.malwarehunterteam.com/</span><br><span class="line"></span><br><span class="line">【卡巴斯基】免费勒索解密器</span><br><span class="line">https://noransom.kaspersky.com/</span><br><span class="line"></span><br><span class="line">【Avast】免费勒索软件解密工具</span><br><span class="line">https://www.avast.com/zh-cn/ransomware-decryption-tools</span><br><span class="line"></span><br><span class="line">【Emsisoft】免费勒索软件解密工具</span><br><span class="line">https://www.emsisoft.com/ransomware-decryption-tools/free-download</span><br><span class="line"></span><br><span class="line">【Github项目】勒索病毒解密工具收集汇总</span><br><span class="line">https://github.com/jiansiting/Decryption-Tools</span><br></pre></td></tr></table></figure>
+
+<p>未完待续</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2020/07/03/penetrationtest-blue-1/">http://example.com/2020/07/03/penetrationtest-blue-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"># 渗透测试</a>
+                    
+                        <a href="/tags/%E6%8A%A4%E7%BD%91/"># 护网</a>
+                    
+                        <a href="/tags/%E8%93%9D%E9%98%9F/"># 蓝队</a>
+                    
+                        <a href="/tags/%E6%94%BB%E5%87%BB%E9%98%B2%E5%AE%88/"># 攻击防守</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2021/06/09/redTeam-1/">从外网代码审计到三层内网各种漏洞拿到域控</a>
+            
+            
+            <a class="next" rel="next" href="/2020/06/29/ad-information-search/">《内网安全攻防》学习笔记，第二章-域内信息收集</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

