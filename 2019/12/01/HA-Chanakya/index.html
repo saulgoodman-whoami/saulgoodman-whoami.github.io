@@ -308,6 +308,7 @@
 <p>最后也是拿到了 <code>root</code> 权限和 <code>final</code> 的banner~</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次渗透呢先是扫描内网主机存活，然后找到了 <code>192.168.136.140</code> 这台靶机的 <code>IP</code>，接着呢是在 <code>HTTP</code> 服务找到了一段 <code>ROT13</code> 的加密后的文本，后来用<code>Wireshark</code>打开后分析数据包得到<code>FTP</code>账号密码，通过生成<code>SSH</code>密匙来登陆目标主机的<code>SSH</code>，最后使用 <code>Chkrootkit</code> 来进行了提权操作。</p>
 <p>自己还是太菜了，全部搞完都已经快凌晨3点了，总共花了4个多小时才完成这次渗透测试，继续学习吧</p>
+<h2 id="公众号"><a href="#公众号" class="headerlink" title="公众号"></a>公众号</h2><p><strong>若有好的建议和合作可以通过公众号与我联系！</strong><br>微信公众号：<code>渗透攻击红队</code><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/logo/vxgzh.jpeg"></p>
 
         </div>
 

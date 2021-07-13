@@ -417,6 +417,7 @@
 <h2 id="结尾"><a href="#结尾" class="headerlink" title="结尾"></a>结尾</h2><p>这次呢，先是通过信息搜集发现了一个<code>wordpress</code>的页面，页面中有一篇文章是有密码的。</p>
 <p>通过社工的手段和<code>BurpSuite</code>得到了文章密码，进入文章页面后发现里面泄露了一个邮箱的账号和密码，之后登陆邮箱发现里面有两个附件，通过解密出来附件中的内容得到一个web页面。而这个Web页面是一个创建<code>PDF</code>的编辑器叫做： <code>LaTeX</code>编辑器，我通过<code>Pdflatex</code>手段我们利用<code>nc</code>的<code>python</code>代码得到了一枚<code>shell</code>。</p>
 <p>然后通过<code>Linux</code>受限我们绕过了不能执行<code>shell</code>命令的限制，后来又发现<code>ayush</code>用户安装了<code>火狐浏览器</code>（Firefox），最终是通过<code>python</code>脚本解出了<code>Firefox</code>的用户凭证得到了<code>root</code>密码，拿到<code>Flag</code>！</p>
+<h2 id="公众号"><a href="#公众号" class="headerlink" title="公众号"></a>公众号</h2><p><strong>若有好的建议和合作可以通过公众号与我联系！</strong><br>微信公众号：<code>渗透攻击红队</code><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/logo/vxgzh.jpeg"></p>
 
         </div>
 
