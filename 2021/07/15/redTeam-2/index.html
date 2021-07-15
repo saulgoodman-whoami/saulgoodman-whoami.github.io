@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="saulGoodman">
+
+
+
+
+
+<title>域渗透不用进程窃取如何横向 Bypass Psexec AV 拿到域控? | 渗透攻击红队-专注于渗透红队攻击</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+<body>
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">saulGoodman</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">saulGoodman</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+        <div class="main">
+            <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    document.ready(
+        function () {
+            tocbot.init({
+                tocSelector: '.tocbot-list',
+                contentSelector: '.post-content',
+                headingSelector: 'h1, h2, h3, h4, h5',
+                collapseDepth: 1,
+                orderedList: false,
+                scrollSmooth: true,
+            })
+        }
+    )
+
+    function expand_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 6,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "collapse_toc()");
+        b.innerHTML = "Collapse all"
+    }
+
+    function collapse_toc() {
+        var b = document.querySelector(".tocbot-toc-expand");
+        tocbot.init({
+            tocSelector: '.tocbot-list',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            collapseDepth: 1,
+            orderedList: false,
+            scrollSmooth: true,
+        });
+        b.setAttribute("onclick", "expand_toc()");
+        b.innerHTML = "Expand all"
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">域渗透不用进程窃取如何横向 Bypass Psexec AV 拿到域控?</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">saulGoodman</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">July 15, 2021&nbsp;&nbsp;14:16:29</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/redTeam/">redTeam</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="作战前期"><a href="#作战前期" class="headerlink" title="作战前期"></a>作战前期</h2><p>在一次渗透中，打算遇见域环境的话不能靠<code>窃取进程</code>这种骚操作来打，只能使用域渗透的姿势：<code>委派</code>、<code>spn</code> … 这些操作来打。</p>
+<h3 id="规划"><a href="#规划" class="headerlink" title="规划"></a>规划</h3><p>要求：拿到内网核心数据，以及人员架构，梳理分析，域内成员分析<br><code>c2</code> 准备阶段，使用 <code>poshc2</code> ，<code>CobaltStrike</code> + <code>混淆免杀</code>，<code>Metasploit</code> + <code>流量混淆编码</code>。<br>总体分为以下阶段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">入口权限维持阶段</span><br><span class="line">核心人员定位</span><br><span class="line">重要业务定位</span><br><span class="line">用户日志分析</span><br><span class="line">域内后门持久化</span><br><span class="line">痕迹清理</span><br><span class="line">域渗透阶段</span><br></pre></td></tr></table></figure>
+<h2 id="找到-Weblogic-执行命令口子"><a href="#找到-Weblogic-执行命令口子" class="headerlink" title="找到 Weblogic 执行命令口子"></a>找到 Weblogic 执行命令口子</h2><p>首先是找到了一个 <code>Weblogic</code> 的反序列化命令执行：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/1zG1OX.png"><br>随后写了一个免杀一句话方便连接 <code>webshell</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/FmKRoo.png"><br>通过查看进程发现有 <code>VIPRE Internet Security</code> 杀毒：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/7DHRYJ.jpg"><br>因为事先我就做好了免杀的 <code>exe</code>，随后直接 <code>Bypass</code> AV 后直接上线到 <code>CobaltStrike</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/HOxlwX.png"><br>初步发现当前机器是一个域机器：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/2aUwbu.png"><br><code>JuicyPotato</code> (ms16-075)  提权到 <code>SYSTEM</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/dgs4Z2.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/MxN85G.png"><br>拿到 <code>SYSYEM</code> 权限后我立马做了一个权限维持：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">自启动：</span><br><span class="line">REG ADD <span class="string">&quot;HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&quot;</span> /V <span class="string">&quot;VMwareTools&quot;</span> /t REG_SZ /F /D <span class="string">&quot;C:\temp\ma.exe&quot;</span></span><br><span class="line">    </span><br><span class="line">计划任务：</span><br><span class="line">schtasks /create /RL HIGHEST /F /tn <span class="string">&quot;Windows Server Update&quot;</span> /tr <span class="string">&quot;C:\temp\ma.exe&quot;</span> /sc DAILY /mo 1 /ST 09:00 /RU SYSTEM</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/k9mrtL.jpg"></p>
+<h2 id="域内信息搜集"><a href="#域内信息搜集" class="headerlink" title="域内信息搜集"></a>域内信息搜集</h2><p>知道了当前是域环境，那么就对域进行信息搜集吧！<br>首先是查看了下当前域管有哪些：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">net group <span class="string">&quot;domain admins&quot;</span> /domain</span><br><span class="line"></span><br><span class="line">Administrator            BLombardo                caroot                   </span><br><span class="line">CThomas                  dbagent                  EFisher                  </span><br><span class="line">PSAdmin                  SMSUSER                  sqladmin </span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/dcb3BC.png"><br>再查看当前域控是哪些机器，然后定位域控的 <code>IP</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">net group <span class="string">&quot;Domain Controllers&quot;</span> /domain</span><br><span class="line"></span><br><span class="line">xxxDC1$ 192.168.0.6                  </span><br><span class="line">xxxDC2$	192.168.0.13</span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/u4w5Q1.png"><br>由于当前 <code>ip</code> 是 <code>10</code> 这个网段，而域控是 <code>192</code> 这个网段，猜测会有多网段：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/CdiFLG.png"><br>由于当前进程是有域管进程的，可以直接拿到域控，我之前写的文章也讲过怎么拿，在这里几句不多阐述。<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/3aFTd9.png"><br>由于不能用进程窃取这个骚操作拿到域控，那按照老传统来打吧！<br>由于当前机器是 <code>Windows 2012</code> 不能直接抓到明文，只能获取到 <code>Hash</code>：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/zYU3xV.png"><br>且当前 <code>Hash</code> 也解密不出来：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/P6B63Z.png"><br>只能通过 <code>Hash The Pass</code> 这种方式来横向移动！<br>看了看 <code>10</code> 这个段的 <code>B</code> 段存活机器很少：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/8GAXLI.png"><br>看 <code>192</code> 这个网段发现存活机器很多：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/Z6UFhs.jpg"><br>本来想翻翻敏感文件看看有没有密码文件等等，这里教大家一个单靠命令对系统文件进行搜集的技巧：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell dir /s /b <span class="string">&quot;*pass*&quot;</span> <span class="string">&quot;*user*&quot;</span> <span class="string">&quot;*config*&quot;</span> <span class="string">&quot;username.*&quot;</span> <span class="string">&quot;password.*&quot;</span></span><br></pre></td></tr></table></figure>
+<p><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/OOo3Yy.jpg"></p>
+<h3 id="漏洞探测信息搜集"><a href="#漏洞探测信息搜集" class="headerlink" title="漏洞探测信息搜集"></a>漏洞探测信息搜集</h3><p>通过对 <code>192</code> 和 <code>10</code> 网段存活的主机探测发现有 <code>0708</code>、<code>永恒之蓝</code>有以下机器：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">永恒之蓝：</span><br><span class="line">192.168.0.6(Windows Server 2012 R2 Datacenter 9600) stays <span class="keyword">in</span> safety</span><br><span class="line">192.168.0.13(Windows Server 2012 R2 Standard 9600) stays <span class="keyword">in</span> safety</span><br><span class="line"></span><br><span class="line">0708:</span><br><span class="line">192.168.0.74 - SAFE - CredSSP/NLA required</span><br><span class="line">192.168.0.13 - SAFE - Target appears patched</span><br><span class="line">192.168.0.34 - SAFE - CredSSP/NLA required</span><br><span class="line">192.168.0.28 - SAFE - CredSSP/NLA required</span><br><span class="line">192.168.0.6 - SAFE - CredSSP/NLA required</span><br></pre></td></tr></table></figure>
+<p>至此信息搜集差不多了，进行下一步横向移动。</p>
+<h2 id="内网横向移动-Bypass-AV"><a href="#内网横向移动-Bypass-AV" class="headerlink" title="内网横向移动 Bypass AV"></a>内网横向移动 Bypass AV</h2><p>通过 <code>PTH</code> 对 <code>10</code> 网段的机器，成功拿到了多台机器权限：（有些没成功的应该是被 <code>AV</code> 拦截了）<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/ouUKOL.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/vkPof3.png"><br>随后对这些主机进行信息搜集，看看有没有密码文件：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/vEi9t2.png"><br>密码文件倒是没找到，但是看上去这个域已经被大哥来过！字典文件都直接放到目标系统，小伙子你不讲武德啊！<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/nZUSUY.png"><br>随后我通过 <code>Mimikatz</code> 抓密码，成功拿到个明文：（当前机器是 <code>Windows 2012</code> 看来已经被大哥修改过注册表了）<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/rfcVJp.png"><br>通过拿到当前密码去横向密码喷洒：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/F0jW7L.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/uMUawJ.png"><br>这不就横向出来了吗？大量机器密码都相同！其实域控两台密码也是这个！<br>由于当前内网是有 <code>VIPRE</code> AV 的，不能使用常规的 <code>Psexec</code> 和 <code>WMI</code>，不然必被拦截！这个时候我使用我插件里的工具进行 <code>Psexec</code>：(其实有很多工具都可以实现 <code>Bypass</code> AV 横向 <code>psexec</code> 的，我只写了一个(github上的项目)，有空再加上去发出来给兄弟们)<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/368uEn.jpg"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/aY6ZGW.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/wK1ckl.png"><br>成功 <code>Bypass</code> 完成命令执行！既然域控（<code>192.168.0.6</code>、<code>192.168.0.13</code>）的密码也是这个密码，我们也可以通过相同的密码对他们进行横向移动：<br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/GSjagN.png"><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/uPic/w0Sjhb.png"><br>两个域控都拿到执行命令的权限了，就不上线到 <code>CobaltStrike</code> 了，太简单了。<br><code>CobaltStrike</code> 这工具还是太变态了，有手就能打穿内网域，还是少用这玩意虽然方便，但是很多原理和攻击手法不懂那就 GG了，下次写实战文章我打算少用 <code>CobaltStrike</code> 来打内网，尽量让 XD 们都了解内网域渗透的攻击手法和原理！</p>
+<h2 id="公众号"><a href="#公众号" class="headerlink" title="公众号"></a>公众号</h2><p><strong>若有好的建议和合作可以通过公众号与我联系！</strong><br>微信公众号：<code>渗透攻击红队</code><br><img src="https://blog-1259310507.cos.ap-chengdu.myqcloud.com/logo/vxgzh.jpeg"></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>saulGoodman</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="http://example.com/2021/07/15/redTeam-2/">http://example.com/2021/07/15/redTeam-2/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/redTeam/"># redTeam</a>
+                    
+                        <a href="/tags/%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F/"># 内网渗透</a>
+                    
+                        <a href="/tags/%E5%9F%9F%E6%B8%97%E9%80%8F/"># 域渗透</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2021/07/04/apt-redteam-1/">一次小型 APT 内网域渗透</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+        </div>
+        <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© saulGoodman | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+</html>
